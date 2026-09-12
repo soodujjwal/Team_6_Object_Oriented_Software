@@ -1,0 +1,117 @@
+.app-background {
+  align-items: center;
+  background:
+    radial-gradient(circle at 15% 8%, var(--ambient-1), transparent 25%),
+    radial-gradient(circle at 88% 18%, var(--ambient-2), transparent 24%),
+    radial-gradient(circle at 10% 86%, var(--ambient-3), transparent 28%),
+    linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-2) 100%);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.auth-canvas {
+  align-items: center;
+  background:
+    radial-gradient(circle at 7% 18%, var(--ambient-1), transparent 24%),
+    radial-gradient(circle at 92% 82%, var(--ambient-2), transparent 25%),
+    linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-2) 100%);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: auto;
+  padding: 28px;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 100%;
+  padding: calc(env(safe-area-inset-top) + 22px) 22px 26px;
+}
+
+.app-web {
+  align-items: stretch;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-content: stretch;
+  padding: 0;
+}
+
+.app-content {
+  margin: 0 auto;
+  max-width: 920px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 20px 104px;
+  width: 100%;
+}
+
+.top-bar,
+.simple-header {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  min-height: 42px;
+}
+
+.top-bar h1,
+.simple-header h1 {
+  color: var(--color-text);
+  font-size: var(--font-title);
+  font-weight: 850;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.simple-header button {
+  background: transparent;
+  border: 0;
+  color: var(--color-primary);
+  padding: 0;
+}
+
+.bottom-nav {
+  background: var(--color-glass-control);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  padding: 8px 10px calc(env(safe-area-inset-bottom) + 10px);
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+}
+
+.nav-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 16px;
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 54px;
+  justify-content: center;
+  padding: 4px 2px;
+}
+
+.nav-button span {
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.nav-button.active {
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+}
+
+@media (max-width: 520px) {
+  .app-background {
+    padding: 0;
+  }
+}

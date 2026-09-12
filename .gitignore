@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+finance_manager.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example
+node_modules/
+*.tsbuildinfo
+dist/
+build/

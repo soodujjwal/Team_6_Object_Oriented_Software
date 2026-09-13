@@ -46,7 +46,7 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
     event.preventDefault();
     const account = accounts[0];
     if (!account) {
-      setStatus("Create an account in the API docs before adding transactions.");
+      setStatus("Create a financial account from the Accounts page before adding transactions.");
       return;
     }
     await createTransaction({

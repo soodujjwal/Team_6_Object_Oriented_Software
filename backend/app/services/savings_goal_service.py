@@ -45,6 +45,6 @@ class SavingsGoalService:
             update={
                 "remaining_amount": goal.remaining_amount,
                 "progress_percent": goal.progress_percent,
+                "daily_savings_amount": goal.daily_savings_required(),
             }
         )
-

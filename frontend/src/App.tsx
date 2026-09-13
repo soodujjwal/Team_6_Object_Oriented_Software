@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CircleHelp, FileClock, ReceiptText, WalletCards } from "lucide-react";
+import { CircleHelp, FileClock } from "lucide-react";
 import { AppShell } from "./components/AppShell";
 import { AUTH_TOKEN_KEY } from "./api/client";
 import type { User } from "./api/auth";
@@ -10,8 +10,10 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { AccountSettingsPage } from "./pages/AccountSettingsPage";
+import { AccountsPage } from "./pages/AccountsPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { SavingsGoalsPage } from "./pages/SavingsGoalsPage";
+import { TransactionsPage } from "./pages/TransactionsPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { THEME_STORAGE_KEY, type Theme } from "./theme/theme";
 
@@ -121,20 +123,8 @@ export default function App() {
       {page === "settings" && (
         <AccountSettingsPage onLogout={handleLogout} onThemeChange={setTheme} theme={theme} user={user} />
       )}
-      {page === "accounts" && (
-        <PlaceholderPage
-          description="Account overview screens will show balances, account types, and account health here."
-          icon={WalletCards}
-          title="Accounts"
-        />
-      )}
-      {page === "transactions" && (
-        <PlaceholderPage
-          description="A full searchable transaction history will live here. Use Add for now to create transactions."
-          icon={ReceiptText}
-          title="Transactions"
-        />
-      )}
+      {page === "accounts" && <AccountsPage />}
+      {page === "transactions" && <TransactionsPage />}
       {page === "recurring" && (
         <PlaceholderPage
           description="Recurring income and payment schedules will be managed from this section."

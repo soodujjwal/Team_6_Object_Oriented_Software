@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, ROUND_CEILING
 
 from app.domain.money import money, require_non_negative
 
@@ -28,3 +28,16 @@ class SavingsGoal:
             return money(100)
         return money(min((self.current_amount / self.target_amount) * 100, Decimal("100")))
 
+    def daily_savings_required(self, as_of: date | None = None) -> Decimal | None:
+        if self.target_date is None:
+            return None
+        remaining = self.remaining_amount
+        if remaining == 0:
+            return money(0)
+        days_remaining = (self.target_date - (as_of or date.today())).days
+        if days_remaining <= 0:
+            return None
+        return (remaining / Decimal(days_remaining)).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_CEILING,
+        )

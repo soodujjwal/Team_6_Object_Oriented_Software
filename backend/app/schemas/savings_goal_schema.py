@@ -24,3 +24,4 @@ class SavingsGoalRead(SavingsGoalCreate):
     id: int
     remaining_amount: Decimal | None = None
     progress_percent: Decimal | None = None
+    daily_savings_amount: Decimal | None = None

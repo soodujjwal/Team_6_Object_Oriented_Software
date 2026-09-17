@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { CircleHelp, FileClock, ReceiptText, WalletCards } from "lucide-react";
 import { AppShell } from "./components/AppShell";
 import { AUTH_TOKEN_KEY } from "./api/client";
 import type { User } from "./api/auth";
@@ -10,9 +9,14 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { AccountSettingsPage } from "./pages/AccountSettingsPage";
+import { AccountsPage } from "./pages/AccountsPage";
 import { ReportsPage } from "./pages/ReportsPage";
+import { RecurringTransactionsPage } from "./pages/RecurringTransactionsPage";
 import { SavingsGoalsPage } from "./pages/SavingsGoalsPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { TransactionsPage } from "./pages/TransactionsPage";
+import { HelpPage } from "./pages/HelpPage";
+import { SplitBillPage } from "./pages/SplitBillPage";
+import { OnboardingPage, hasCompletedOnboarding, markOnboardingComplete } from "./pages/OnboardingPage";
 import { THEME_STORAGE_KEY, type Theme } from "./theme/theme";
 
 export type Page =
@@ -26,7 +30,8 @@ export type Page =
   | "accounts"
   | "transactions"
   | "recurring"
-  | "help";
+  | "help"
+  | "split";
 
 const USER_KEY = "pfm_user";
 type AuthRoute = "/login" | "/register";
@@ -52,6 +57,10 @@ export default function App() {
   const [user, setUser] = useState<User | null>(() => {
     const stored = localStorage.getItem(USER_KEY);
     return stored ? (JSON.parse(stored) as User) : null;
+  });
+  const [onboardingComplete, setOnboardingComplete] = useState(() => {
+    const stored = localStorage.getItem(USER_KEY);
+    return stored ? hasCompletedOnboarding(JSON.parse(stored) as User) : false;
   });
 
   useEffect(() => {
@@ -86,6 +95,7 @@ export default function App() {
     localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     setUser(nextUser);
+    setOnboardingComplete(hasCompletedOnboarding(nextUser));
     setPage("dashboard");
     window.history.replaceState(null, "", "/");
   }
@@ -94,7 +104,14 @@ export default function App() {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setUser(null);
+    setOnboardingComplete(false);
     setPage("dashboard");
+  }
+
+  function handleUserUpdate(nextUser: User, accessToken?: string) {
+    if (accessToken) localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+    setUser(nextUser);
   }
 
   if (!user) {
@@ -102,6 +119,19 @@ export default function App() {
       <RegisterPage onRegister={handleAuth} onShowLogin={() => navigateAuth("/login")} />
     ) : (
       <LoginPage onLogin={handleAuth} onShowRegister={() => navigateAuth("/register")} />
+    );
+  }
+
+  if (!onboardingComplete) {
+    return (
+      <OnboardingPage
+        onComplete={(destination = "dashboard") => {
+          markOnboardingComplete(user);
+          setOnboardingComplete(true);
+          setPage(destination);
+        }}
+        user={user}
+      />
     );
   }
 
@@ -119,36 +149,13 @@ export default function App() {
       {page === "afford" && <AffordabilityPage />}
       {page === "reports" && <ReportsPage />}
       {page === "settings" && (
-        <AccountSettingsPage onLogout={handleLogout} onThemeChange={setTheme} theme={theme} user={user} />
+        <AccountSettingsPage onLogout={handleLogout} onThemeChange={setTheme} onUserUpdate={handleUserUpdate} theme={theme} user={user} />
       )}
-      {page === "accounts" && (
-        <PlaceholderPage
-          description="Account overview screens will show balances, account types, and account health here."
-          icon={WalletCards}
-          title="Accounts"
-        />
-      )}
-      {page === "transactions" && (
-        <PlaceholderPage
-          description="A full searchable transaction history will live here. Use Add for now to create transactions."
-          icon={ReceiptText}
-          title="Transactions"
-        />
-      )}
-      {page === "recurring" && (
-        <PlaceholderPage
-          description="Recurring income and payment schedules will be managed from this section."
-          icon={FileClock}
-          title="Recurring Transactions"
-        />
-      )}
-      {page === "help" && (
-        <PlaceholderPage
-          description="Help content, FAQs, and support guidance will be added here."
-          icon={CircleHelp}
-          title="Help"
-        />
-      )}
+      {page === "accounts" && <AccountsPage onAddAccount={() => setPage("settings")} />}
+      {page === "transactions" && <TransactionsPage />}
+      {page === "recurring" && <RecurringTransactionsPage />}
+      {page === "help" && <HelpPage onNavigate={setPage} />}
+      {page === "split" && <SplitBillPage userName={user.name} />}
     </AppShell>
   );
 }

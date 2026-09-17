@@ -2,6 +2,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
 import type { Account } from "./types";
 
 export type AccountPayload = {
+  account_type?: Account["account_type"];
   bank_name: string;
   name: string;
   starting_balance: string;

@@ -126,6 +126,12 @@
   --radius-xl: 28px;
   --glass-blur: blur(20px);
   --glass-border: 1px solid var(--color-border);
+  --z-sticky-nav: 100;
+  --z-drawer: 300;
+  --z-notifications: 320;
+  --z-modal: 400;
+  --z-popover: 700;
+  --z-skip-link: 900;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);

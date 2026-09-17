@@ -14,6 +14,8 @@ class TransactionCreate(ORMModel):
     transaction_type: TransactionType
     transaction_date: date
     note: str | None = Field(default=None, max_length=255)
+    receipt_items: list[dict] | None = None
+    receipt_metadata: dict | None = None
 
 
 class TransactionUpdate(ORMModel):
@@ -23,7 +25,13 @@ class TransactionUpdate(ORMModel):
     transaction_type: TransactionType | None = None
     transaction_date: date | None = None
     note: str | None = Field(default=None, max_length=255)
+    receipt_items: list[dict] | None = None
+    receipt_metadata: dict | None = None
 
 
 class TransactionRead(TransactionCreate):
     id: int
+
+
+class TransactionBulkCreate(ORMModel):
+    transactions: list[TransactionCreate] = Field(min_length=1, max_length=1000)

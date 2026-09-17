@@ -40,6 +40,7 @@ class SavingsGoalService:
             target_amount=goal_model.target_amount,
             current_amount=goal_model.current_amount,
             target_date=goal_model.target_date,
+            monthly_income=goal_model.monthly_income,
         )
         return SavingsGoalRead.model_validate(goal_model).model_copy(
             update={
@@ -47,4 +48,3 @@ class SavingsGoalService:
                 "progress_percent": goal.progress_percent,
             }
         )
-

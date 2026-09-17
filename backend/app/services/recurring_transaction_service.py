@@ -26,6 +26,7 @@ class RecurringTransactionService:
     def create_recurring_transaction(self, payload: RecurringTransactionCreate):
         self._require_account(payload.account_id)
         data = payload.model_dump()
+        data["name"] = self._display_name(data)
         data["transaction_type"] = payload.transaction_type.value
         data["frequency"] = payload.frequency.value
         return self.recurring.create(data)
@@ -39,6 +40,8 @@ class RecurringTransactionService:
             data["transaction_type"] = data["transaction_type"].value
         if "frequency" in data and data["frequency"] is not None:
             data["frequency"] = data["frequency"].value
+        if "name" in data:
+            data["name"] = self._display_name({**recurring.__dict__, **data})
         return self.recurring.update(recurring, data)
 
     def delete_recurring_transaction(self, recurring_id: int) -> None:
@@ -48,3 +51,9 @@ class RecurringTransactionService:
         if self.accounts.get(account_id) is None:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "account_id does not exist")
 
+    def _display_name(self, data: dict) -> str:
+        name = str(data.get("name") or "").strip()
+        if name:
+            return name
+        note = str(data.get("note") or "").strip()
+        return note or str(data.get("category") or "Recurring payment").strip()

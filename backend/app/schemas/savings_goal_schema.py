@@ -11,6 +11,7 @@ class SavingsGoalCreate(ORMModel):
     target_amount: Decimal = money_field()
     current_amount: Decimal = money_field()
     target_date: date | None = None
+    monthly_income: Decimal = Field(default=Decimal("0"), ge=Decimal("0"), max_digits=12, decimal_places=2)
 
 
 class SavingsGoalUpdate(ORMModel):
@@ -18,6 +19,7 @@ class SavingsGoalUpdate(ORMModel):
     target_amount: Decimal | None = Field(default=None, ge=Decimal("0"), max_digits=12, decimal_places=2)
     current_amount: Decimal | None = Field(default=None, ge=Decimal("0"), max_digits=12, decimal_places=2)
     target_date: date | None = None
+    monthly_income: Decimal | None = Field(default=None, ge=Decimal("0"), max_digits=12, decimal_places=2)
 
 
 class SavingsGoalRead(SavingsGoalCreate):

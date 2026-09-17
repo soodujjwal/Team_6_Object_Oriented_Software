@@ -1,5 +1,11 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Page } from "../App";
+import { getAccounts } from "../api/accounts";
+import { getBudgets, BUDGETS_UPDATED_EVENT } from "../api/budgets";
+import { TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
+import { getRecurringTransactions, RECURRING_TRANSACTIONS_UPDATED_EVENT } from "../api/recurringTransactions";
+import { getBudgetAlertMessage } from "../domain/budgeting";
+import { buildBillNotifications } from "../domain/recurringBills";
 import { BottomNav } from "./BottomNav";
 import { AppChromeProvider } from "./AppChromeContext";
 import { NavigationDrawer } from "./NavigationDrawer";
@@ -13,22 +19,6 @@ type AppShellProps = {
 };
 
 const MOCK_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: "budget-food",
-    description: "You've used 85% of your Food & Dining budget.",
-    read: false,
-    time: "Today",
-    title: "Budget Alert",
-    type: "budget",
-  },
-  {
-    id: "upcoming-payment",
-    description: "Your upcoming recurring payment of $15.49 is due tomorrow.",
-    read: false,
-    time: "Tomorrow",
-    title: "Upcoming Payment",
-    type: "payment",
-  },
   {
     id: "emergency-fund",
     description: "You're 75% toward your Emergency Fund goal.",
@@ -60,6 +50,59 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
 
+  useEffect(() => {
+    let active = true;
+    async function refreshBudgetNotifications() {
+      const today = new Date();
+      try {
+        const [budgets, recurring, accounts] = await Promise.all([
+          getBudgets(),
+          getRecurringTransactions(),
+          getAccounts(),
+        ]);
+        if (!active) return;
+        const alerts = budgets
+          .filter((budget) => budget.month === today.getMonth() + 1 && budget.year === today.getFullYear())
+          .map((budget) => ({ budget, message: getBudgetAlertMessage(budget.category, Number(budget.usage_percent ?? 0)) }))
+          .filter((entry): entry is { budget: (typeof budgets)[number]; message: string } => Boolean(entry.message));
+        const billAlerts = buildBillNotifications(recurring, accounts, today);
+        setNotifications((current) => {
+          const previousBudgetAlerts = new Map(current.filter((item) => item.type === "budget").map((item) => [item.id, item]));
+          const previousBillAlerts = new Map(current.filter((item) => item.type === "payment").map((item) => [item.id, item]));
+          return [
+            ...current.filter((item) => item.type !== "budget" && item.type !== "payment"),
+            ...alerts.map(({ budget, message }) => ({
+              id: `budget-${budget.id}`,
+              description: message,
+              read: previousBudgetAlerts.get(`budget-${budget.id}`)?.read ?? false,
+              time: "This month",
+              title: "Budget Alert",
+              type: "budget" as const,
+            })),
+            ...billAlerts.map((alert) => ({
+              ...alert,
+              read: previousBillAlerts.get(alert.id)?.read ?? false,
+            })),
+          ];
+        });
+      } catch {
+        // Budget and bill notifications remain unavailable until the backend responds.
+      }
+    }
+    void refreshBudgetNotifications();
+    window.addEventListener(BUDGETS_UPDATED_EVENT, refreshBudgetNotifications);
+    window.addEventListener(TRANSACTIONS_UPDATED_EVENT, refreshBudgetNotifications);
+    window.addEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, refreshBudgetNotifications);
+    window.addEventListener("focus", refreshBudgetNotifications);
+    return () => {
+      active = false;
+      window.removeEventListener(BUDGETS_UPDATED_EVENT, refreshBudgetNotifications);
+      window.removeEventListener(TRANSACTIONS_UPDATED_EVENT, refreshBudgetNotifications);
+      window.removeEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, refreshBudgetNotifications);
+      window.removeEventListener("focus", refreshBudgetNotifications);
+    };
+  }, []);
+
   const hasUnreadNotifications = notifications.some((notification) => !notification.read);
   const chromeValue = useMemo(
     () => ({
@@ -72,7 +115,8 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
 
   return (
     <AppChromeProvider value={chromeValue}>
-      <main className="app-background app-web">
+        <a className="skip-link" href="#main-content">Skip to main content</a>
+        <main className="app-background app-web" id="main-content" tabIndex={-1}>
         <section className="app-content">
           {children}
         </section>

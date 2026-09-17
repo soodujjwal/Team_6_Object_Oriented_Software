@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 type DatePickerProps = {
@@ -6,28 +7,79 @@ type DatePickerProps = {
   onChange: (value: string) => void;
   required?: boolean;
   value: string;
+  hideLabel?: boolean;
+  compact?: boolean;
 };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export function DatePicker({ label, onChange, required = false, value }: DatePickerProps) {
+export function DatePicker({ label, onChange, required = false, value, hideLabel = false, compact = false }: DatePickerProps) {
   const selectedDate = parseDate(value) ?? new Date();
   const [open, setOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(
     () => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
   );
-  const pickerRef = useRef<HTMLLabelElement>(null);
+  const [position, setPosition] = useState<CSSProperties | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  const updatePosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const edge = 12;
+    const gap = 6;
+    const width = Math.min(342, window.innerWidth - edge * 2);
+    const left = Math.max(edge, Math.min(rect.left, window.innerWidth - width - edge));
+    const below = window.innerHeight - rect.bottom - edge - gap;
+    const above = rect.top - edge - gap;
+    const estimatedHeight = compact ? 336 : 384;
+    const placeAbove = below < Math.min(260, estimatedHeight) && above > below;
+    const maxHeight = Math.max(220, Math.min(estimatedHeight, placeAbove ? above : below));
+    const top = placeAbove ? rect.top - maxHeight - gap : rect.bottom + gap;
+    setPosition({
+      left,
+      top: Math.max(edge, Math.min(window.innerHeight - maxHeight - edge, top)),
+      width,
+      maxHeight,
+    });
+  }, [compact]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
-      if (!pickerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (!pickerRef.current?.contains(target) && !calendarRef.current?.contains(target)) {
         setOpen(false);
       }
     }
 
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && open) {
+        event.preventDefault();
+        setOpen(false);
+        requestAnimationFrame(() => triggerRef.current?.focus());
+      }
+    }
+
     document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, []);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, updatePosition]);
 
   useEffect(() => {
     const nextDate = parseDate(value);
@@ -55,13 +107,25 @@ export function DatePicker({ label, onChange, required = false, value }: DatePic
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
   }
 
+  function toggleCalendar() {
+    if (open) {
+      setOpen(false);
+    } else {
+      updatePosition();
+      setOpen(true);
+    }
+  }
+
   return (
-    <label className="ui-field date-picker" ref={pickerRef}>
-      <span>{label}</span>
+    <div className={`ui-field date-picker${compact ? " compact" : ""}`} ref={pickerRef}>
+      {!hideLabel && <span>{label}</span>}
       <button
         aria-expanded={open}
-        className="ui-field-control date-trigger"
-        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="dialog"
+        aria-label={label}
+        className={`ui-field-control date-trigger${compact ? " compact" : ""}`}
+        onClick={toggleCalendar}
+        ref={triggerRef}
         type="button"
       >
         <CalendarDays size={18} />
@@ -71,8 +135,8 @@ export function DatePicker({ label, onChange, required = false, value }: DatePic
         <span />
       </button>
 
-      {open && (
-        <div className="calendar-popover" role="dialog" aria-label="Choose date">
+      {open && position && createPortal(
+        <div className={`calendar-popover${compact ? " compact" : ""}`} ref={calendarRef} role="dialog" aria-label={`Choose ${label.toLowerCase()}`} style={position}>
           <div className="calendar-header">
             <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month">
               <ChevronLeft size={19} />
@@ -115,9 +179,10 @@ export function DatePicker({ label, onChange, required = false, value }: DatePic
               Today
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
-    </label>
+    </div>
   );
 }
 

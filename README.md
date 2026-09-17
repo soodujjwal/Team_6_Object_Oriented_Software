@@ -56,6 +56,7 @@ python -m pytest
 - JWT registration and login
 - Protected finance API endpoints using `Authorization: Bearer <token>`
 - Account CRUD with computed current balance
+- Savings/Checking account types and atomic Savings-to-Checking transfers
 - Income and expense transaction CRUD
 - Monthly category budget CRUD with usage calculations
 - Savings goal CRUD with progress calculations
@@ -63,6 +64,28 @@ python -m pytest
 - Budget alerts for near-limit and over-limit budgets
 - Monthly reports
 - "Can I Afford It?" affordability check
+
+## Move Funds
+
+Settings shows **Move Funds** when at least one account has the Savings type. Select an existing Savings source and Checking destination, enter a positive amount up to the available Savings balance, and optionally add a note. A Checking account must exist before submitting.
+
+Transfers are recorded in a separate ledger (`GET /transfers`, `POST /transfers`) and included in account balances without changing income, expenses, budget usage, or report totals. Successful transfers refresh the financial views. Accounts referenced by transfers cannot be deleted, preserving the ledger and the other account's balance.
+
+On backend startup, existing names containing “Savings” or “Checking” are classified automatically. Other accounts keep the Other type; their type can be changed using Edit in Settings. Renaming an account preserves its type.
+
+## Split Bill
+
+Open **Split Bill** from the navigation menu. Enter items manually or scan a JPG, PNG, WebP, or BMP receipt. Scanning uses [Tesseract.js](https://github.com/naptha/tesseract.js) in the browser; the first scan downloads OCR resources and requires internet access. Review the image and recognized text before applying the result. Scanned amounts are treated as line totals with quantity 1 to avoid guessing unit prices; quantities and prices can then be edited.
+
+Add or select saved friends, check each item's participants, and enter tax, tip, and the final receipt total including tip. Shared items are divided equally among selected people; tax and tip are proportional to their item subtotals. Deterministic cent allocation keeps all shares equal to the final total. Every item must be assigned and the receipt must reconcile before payment can be recorded.
+
+Saving a draft does not change balances. **Record bill as paid** deducts the subtotal and tax from the selected account, plus the tip only when Bank is selected. Record a receipt here only if it has not already been entered/imported as a transaction. Recording the same saved bill twice does not charge twice.
+
+Friends' **Payment received** checkboxes open a confirmation with an editable actual amount. Repayments credit the original paying account as Refund income. Overrides replace the previous received amount, support partial repayments and overpayments, and do not duplicate credits. Unchecking reverses the credit. Editing a paid bill adjusts the original expense while preserving actual repayments. Linked transactions and paying accounts are protected from deletion that would break the bill's records.
+
+Bills and friends are persisted per signed-in user. Bank payments and repayments use existing transaction events to refresh accounts, the dashboard, budgets, and reports. Cash tips are tracked in the split but do not create a bank transaction. Reports show gross bank expenses and repayment income separately.
+
+Run backend checks with `python -m pytest` and frontend calculation/parser checks with `npm run test:split-bill`.
 
 ## Run the Frontend
 

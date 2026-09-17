@@ -10,6 +10,8 @@ from app.api import (
     reports,
     savings_goals,
     transactions,
+    transfers,
+    split_bills,
 )
 from app.core.config import get_settings
 from app.core.database import create_database
@@ -36,11 +38,22 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(accounts.router, dependencies=protected)
     app.include_router(transactions.router, dependencies=protected)
+    app.include_router(transfers.router, dependencies=protected)
+    app.include_router(split_bills.router, dependencies=protected)
     app.include_router(budgets.router, dependencies=protected)
     app.include_router(savings_goals.router, dependencies=protected)
     app.include_router(recurring_transactions.router, dependencies=protected)
     app.include_router(reports.router, dependencies=protected)
     app.include_router(affordability.router, dependencies=protected)
+
+    @app.get("/", tags=["system"])
+    def root():
+        return {
+            "message": "Personal Finance Manager API",
+            "docs": "/docs",
+            "health": "/health",
+            "frontend": "http://127.0.0.1:5173",
+        }
 
     @app.get("/health", tags=["system"])
     def health_check():

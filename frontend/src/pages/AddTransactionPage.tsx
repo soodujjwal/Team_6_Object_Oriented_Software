@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, DollarSign, FileText, Tag } from "lucide-react";
+import { DollarSign, FileText } from "lucide-react";
 import { getAccounts } from "../api/accounts";
-import { createTransaction } from "../api/transactions";
+import { createTransaction, getTransactions } from "../api/transactions";
 import type { Account, TransactionType } from "../api/types";
 import { TopBar } from "../components/TopBar";
-import { Button, DatePicker, GlassCard, TextField } from "../components/ui";
-import {
-  getCategoriesForType,
-  getDefaultCategory,
-} from "../domain/transactionCategories";
+import { TransactionImportPanel } from "../components/TransactionImportPanel";
+import { Button, CategorySelect, DatePicker, GlassCard, TextField } from "../components/ui";
+import { getDefaultCategory } from "../domain/transactionCategories";
 
 type AddTransactionPageProps = {
   onDone: () => void;
@@ -21,6 +19,7 @@ const TYPE_HELPER_TEXT: Record<TransactionType, string> = {
 
 export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<import("../api/types").Transaction[]>([]);
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(getDefaultCategory("expense"));
@@ -29,12 +28,11 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
   const [status, setStatus] = useState("");
 
   useEffect(() => {
-    getAccounts()
-      .then(setAccounts)
+    Promise.all([getAccounts(), getTransactions()])
+      .then(([accountData, transactionData]) => { setAccounts(accountData); setTransactions(transactionData); })
       .catch(() => setStatus("Start the backend and create an account before saving."));
   }, []);
 
-  const categories = getCategoriesForType(type);
   const submitLabel = type === "expense" ? "Save Expense" : "Save Income";
 
   function handleTypeChange(nextType: TransactionType) {
@@ -83,21 +81,10 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
 
         <TextField icon={<DollarSign size={18} />} label="Amount" min="0" onChange={(event) => setAmount(event.target.value)} placeholder="$0.00" required step="0.01" type="number" value={amount} />
 
-        <label className="ui-field">
-          Category
-          <div className="ui-field-control">
-            <Tag size={18} />
-            <select onChange={(event) => setCategory(event.target.value)} value={category}>
-              {categories.map((categoryOption) => (
-                <option key={categoryOption.id} value={categoryOption.label}>
-                  {categoryOption.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown aria-hidden="true" size={18} />
-          </div>
+        <div className="category-field-stack">
+          <CategorySelect onChange={setCategory} type={type} value={category} />
           <small className="field-helper">{TYPE_HELPER_TEXT[type]}</small>
-        </label>
+        </div>
 
         <DatePicker label="Date" onChange={setDate} required value={date} />
 
@@ -106,6 +93,7 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
         <Button type="submit">{submitLabel}</Button>
         </form>
       </GlassCard>
+      <TransactionImportPanel accounts={accounts} existingTransactions={transactions} onSaved={() => { void Promise.all([getAccounts(), getTransactions()]).then(([accountData, transactionData]) => { setAccounts(accountData); setTransactions(transactionData); }); }} />
     </section>
   );
 }

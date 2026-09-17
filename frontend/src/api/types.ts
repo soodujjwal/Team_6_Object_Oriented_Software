@@ -1,6 +1,7 @@
 export type TransactionType = "income" | "expense";
 
 export type Account = {
+  account_type: "savings" | "checking" | "other";
   id: number;
   bank_name: string;
   name: string;
@@ -16,6 +17,24 @@ export type Transaction = {
   transaction_type: TransactionType;
   transaction_date: string;
   note: string | null;
+  receipt_items?: ReceiptItem[] | null;
+  receipt_metadata?: ReceiptMetadata | null;
+};
+
+export type ReceiptItem = {
+  name: string;
+  quantity: number;
+  price: string;
+};
+
+export type ReceiptMetadata = {
+  merchant?: string;
+  subtotal?: string;
+  tax?: string;
+  tip?: string;
+  currency?: string;
+  source?: "receipt" | "csv" | "pdf";
+  original_filename?: string;
 };
 
 export type Budget = {

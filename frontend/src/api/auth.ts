@@ -1,10 +1,11 @@
-import { apiGet, apiPost } from "./client";
+import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
 
 export type User = {
   id: number;
   name: string;
   email: string;
   phone_number: string;
+  occupation: string;
 };
 
 export type AuthSession = {
@@ -23,4 +24,16 @@ export function register(name: string, email: string, phone_number: string, pass
 
 export function getCurrentUser() {
   return apiGet<User>("/auth/me");
+}
+
+export function updateProfile(payload: { name: string; email: string; occupation: string }) {
+  return apiPatch<AuthSession>("/auth/me", payload);
+}
+
+export function changePassword(payload: { current_password: string; new_password: string }) {
+  return apiPatch<User>("/auth/me/password", payload);
+}
+
+export function deleteCurrentUser() {
+  return apiDelete("/auth/me");
 }

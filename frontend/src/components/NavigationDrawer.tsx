@@ -8,6 +8,7 @@ import {
   Settings,
   Target,
   TrendingUp,
+  Users,
   WalletCards,
 } from "lucide-react";
 import type { Page } from "../App";
@@ -19,6 +20,7 @@ type DrawerItem =
 const drawerItems: DrawerItem[] = [
   { label: "Accounts", icon: WalletCards, page: "accounts" },
   { label: "Transactions", icon: ReceiptText, page: "transactions" },
+  { label: "Split Bill", icon: Users, page: "split" },
   { label: "Goals", icon: Target, page: "goals" },
   { label: "Reports", icon: TrendingUp, page: "reports" },
   { label: "Recurring Transactions", icon: FileClock, page: "recurring" },
@@ -96,4 +98,3 @@ export function NavigationDrawer({ isOpen, onClose, onLogout, onNavigate }: Navi
     </div>
   );
 }
-

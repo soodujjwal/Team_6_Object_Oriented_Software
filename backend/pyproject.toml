@@ -1,0 +1,23 @@
+[project]
+name = "personal-finance-manager-iteration-1"
+version = "0.1.0"
+description = "Iteration 1 demo: spending log and affordability calculator."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.12",
+    "pydantic==2.11.5",
+    "uvicorn==0.34.3",
+]
+
+[dependency-groups]
+dev = [
+    "httpx==0.28.1",
+    "pytest==8.3.5",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

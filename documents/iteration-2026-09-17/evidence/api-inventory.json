@@ -1,0 +1,370 @@
+[
+  {
+    "method": "GET",
+    "path": "/accounts",
+    "handler": "list_accounts",
+    "file": "backend/app/api/accounts.py",
+    "line": 12,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/accounts",
+    "handler": "create_account",
+    "file": "backend/app/api/accounts.py",
+    "line": 17,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/accounts/{account_id}",
+    "handler": "get_account",
+    "file": "backend/app/api/accounts.py",
+    "line": 22,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PATCH",
+    "path": "/accounts/{account_id}",
+    "handler": "update_account",
+    "file": "backend/app/api/accounts.py",
+    "line": 27,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "DELETE",
+    "path": "/accounts/{account_id}",
+    "handler": "delete_account",
+    "file": "backend/app/api/accounts.py",
+    "line": 32,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/affordability/check",
+    "handler": "check_affordability",
+    "file": "backend/app/api/affordability.py",
+    "line": 12,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/register",
+    "handler": "register",
+    "file": "backend/app/api/auth.py",
+    "line": 13,
+    "authentication": "Public"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "handler": "login",
+    "file": "backend/app/api/auth.py",
+    "line": 18,
+    "authentication": "Public"
+  },
+  {
+    "method": "GET",
+    "path": "/auth/me",
+    "handler": "me",
+    "file": "backend/app/api/auth.py",
+    "line": 23,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PATCH",
+    "path": "/auth/me",
+    "handler": "update_profile",
+    "file": "backend/app/api/auth.py",
+    "line": 28,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PATCH",
+    "path": "/auth/me/password",
+    "handler": "change_password",
+    "file": "backend/app/api/auth.py",
+    "line": 33,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "DELETE",
+    "path": "/auth/me",
+    "handler": "delete_account",
+    "file": "backend/app/api/auth.py",
+    "line": 38,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/budgets",
+    "handler": "list_budgets",
+    "file": "backend/app/api/budgets.py",
+    "line": 14,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/budgets",
+    "handler": "create_budget",
+    "file": "backend/app/api/budgets.py",
+    "line": 19,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/budgets/alerts",
+    "handler": "budget_alerts",
+    "file": "backend/app/api/budgets.py",
+    "line": 24,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/budgets/{budget_id}",
+    "handler": "get_budget",
+    "file": "backend/app/api/budgets.py",
+    "line": 29,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PATCH",
+    "path": "/budgets/{budget_id}",
+    "handler": "update_budget",
+    "file": "backend/app/api/budgets.py",
+    "line": 34,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "DELETE",
+    "path": "/budgets/{budget_id}",
+    "handler": "delete_budget",
+    "file": "backend/app/api/budgets.py",
+    "line": 39,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/recurring-transactions",
+    "handler": "list_recurring_transactions",
+    "file": "backend/app/api/recurring_transactions.py",
+    "line": 16,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/recurring-transactions",
+    "handler": "create_recurring_transaction",
+    "file": "backend/app/api/recurring_transactions.py",
+    "line": 21,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/recurring-transactions/{recurring_id}",
+    "handler": "get_recurring_transaction",
+    "file": "backend/app/api/recurring_transactions.py",
+    "line": 26,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PATCH",
+    "path": "/recurring-transactions/{recurring_id}",
+    "handler": "update_recurring_transaction",
+    "file": "backend/app/api/recurring_transactions.py",
+    "line": 31,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "DELETE",
+    "path": "/recurring-transactions/{recurring_id}",
+    "handler": "delete_recurring_transaction",
+    "file": "backend/app/api/recurring_transactions.py",
+    "line": 40,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/reports/monthly",
+    "handler": "monthly_report",
+    "file": "backend/app/api/reports.py",
+    "line": 12,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/savings-goals",
+    "handler": "list_goals",
+    "file": "backend/app/api/savings_goals.py",
+    "line": 12,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/savings-goals",
+    "handler": "create_goal",
+    "file": "backend/app/api/savings_goals.py",
+    "line": 17,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/savings-goals/{goal_id}",
+    "handler": "get_goal",
+    "file": "backend/app/api/savings_goals.py",
+    "line": 22,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PATCH",
+    "path": "/savings-goals/{goal_id}",
+    "handler": "update_goal",
+    "file": "backend/app/api/savings_goals.py",
+    "line": 27,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "DELETE",
+    "path": "/savings-goals/{goal_id}",
+    "handler": "delete_goal",
+    "file": "backend/app/api/savings_goals.py",
+    "line": 32,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/split-bills/friends",
+    "handler": "friends",
+    "file": "backend/app/api/split_bills.py",
+    "line": 18,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/split-bills/friends",
+    "handler": "add_friend",
+    "file": "backend/app/api/split_bills.py",
+    "line": 23,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/split-bills",
+    "handler": "list_bills",
+    "file": "backend/app/api/split_bills.py",
+    "line": 38,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/split-bills",
+    "handler": "create_bill",
+    "file": "backend/app/api/split_bills.py",
+    "line": 43,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PUT",
+    "path": "/split-bills/{bill_id}",
+    "handler": "update_bill",
+    "file": "backend/app/api/split_bills.py",
+    "line": 48,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/split-bills/{bill_id}/pay",
+    "handler": "pay_bill",
+    "file": "backend/app/api/split_bills.py",
+    "line": 53,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PUT",
+    "path": "/split-bills/{bill_id}/repayments/{person_id}",
+    "handler": "repay",
+    "file": "backend/app/api/split_bills.py",
+    "line": 58,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/transactions",
+    "handler": "list_transactions",
+    "file": "backend/app/api/transactions.py",
+    "line": 12,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/transactions",
+    "handler": "create_transaction",
+    "file": "backend/app/api/transactions.py",
+    "line": 17,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/transactions/bulk",
+    "handler": "create_transactions",
+    "file": "backend/app/api/transactions.py",
+    "line": 22,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/transactions/{transaction_id}",
+    "handler": "get_transaction",
+    "file": "backend/app/api/transactions.py",
+    "line": 27,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "PATCH",
+    "path": "/transactions/{transaction_id}",
+    "handler": "update_transaction",
+    "file": "backend/app/api/transactions.py",
+    "line": 32,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "DELETE",
+    "path": "/transactions/{transaction_id}",
+    "handler": "delete_transaction",
+    "file": "backend/app/api/transactions.py",
+    "line": 37,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "POST",
+    "path": "/transfers",
+    "handler": "create_transfer",
+    "file": "backend/app/api/transfers.py",
+    "line": 13,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/transfers",
+    "handler": "list_transfers",
+    "file": "backend/app/api/transfers.py",
+    "line": 18,
+    "authentication": "Bearer token"
+  },
+  {
+    "method": "GET",
+    "path": "/",
+    "handler": "root",
+    "file": "backend/app/main.py",
+    "line": 50,
+    "authentication": "Public"
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "handler": "health_check",
+    "file": "backend/app/main.py",
+    "line": 59,
+    "authentication": "Public"
+  }
+]

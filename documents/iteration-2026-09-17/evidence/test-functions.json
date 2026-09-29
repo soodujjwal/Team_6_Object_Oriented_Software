@@ -1,0 +1,118 @@
+[
+  {
+    "file": "backend/tests/test_affordability.py",
+    "name": "test_affordability_allows_purchase_when_projection_is_non_negative"
+  },
+  {
+    "file": "backend/tests/test_affordability.py",
+    "name": "test_affordability_warns_when_purchase_interferes_with_plan"
+  },
+  {
+    "file": "backend/tests/test_budget.py",
+    "name": "test_budget_calculates_used_remaining_and_percent"
+  },
+  {
+    "file": "backend/tests/test_budget.py",
+    "name": "test_budget_rejects_invalid_month"
+  },
+  {
+    "file": "backend/tests/test_recurring_payment_matching.py",
+    "name": "test_matching_transaction_marks_recurring_bill_paid_and_advances_due_date"
+  },
+  {
+    "file": "backend/tests/test_recurring_payment_matching.py",
+    "name": "test_due_date_alone_does_not_mark_recurring_bill_paid"
+  },
+  {
+    "file": "backend/tests/test_registration_profile.py",
+    "name": "test_registration_persists_phone_number_on_user_profile"
+  },
+  {
+    "file": "backend/tests/test_registration_profile.py",
+    "name": "test_registration_rejects_malformed_phone_number"
+  },
+  {
+    "file": "backend/tests/test_registration_profile.py",
+    "name": "test_financial_account_creation_needs_no_phone_number"
+  },
+  {
+    "file": "backend/tests/test_registration_profile.py",
+    "name": "test_migration_adds_user_phone_column_and_drops_account_phone_column"
+  },
+  {
+    "file": "backend/tests/test_reports.py",
+    "name": "test_monthly_report_totals_income_expenses_and_categories"
+  },
+  {
+    "file": "backend/tests/test_savings_goal.py",
+    "name": "test_savings_goal_progress_and_remaining_amount"
+  },
+  {
+    "file": "backend/tests/test_savings_goal.py",
+    "name": "test_savings_goal_progress_is_capped_at_one_hundred_percent"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_example_fair_tax_tip_and_shared_items"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_pennies_and_quantities_always_reconcile"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_payment_debits_bank_once_and_cash_tip_is_excluded"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_repayments_override_partial_overpayment_and_undo_are_idempotent"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_editing_paid_bill_adjusts_charge_and_preserves_actual_repayment"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_invalid_payment_cannot_change_balance"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_ownership_and_linked_transaction_guards"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_parallel_payment_requests_only_charge_once"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_paid_bill_cannot_drop_repaid_person_or_overdraw_with_edits"
+  },
+  {
+    "file": "backend/tests/test_split_bills.py",
+    "name": "test_api_persists_friends_and_split_bill_and_requires_login"
+  },
+  {
+    "file": "backend/tests/test_transfers.py",
+    "name": "test_transfer_moves_only_selected_balances_and_preserves_reports_and_budgets"
+  },
+  {
+    "file": "backend/tests/test_transfers.py",
+    "name": "test_invalid_amounts_are_rejected"
+  },
+  {
+    "file": "backend/tests/test_transfers.py",
+    "name": "test_invalid_transfers_leave_no_partial_changes"
+  },
+  {
+    "file": "backend/tests/test_transfers.py",
+    "name": "test_transfer_account_rename_preserves_type_and_delete_preserves_ledger"
+  },
+  {
+    "file": "backend/tests/test_transfers.py",
+    "name": "test_migration_classifies_existing_accounts_and_is_repeatable"
+  },
+  {
+    "file": "backend/tests/test_transfers.py",
+    "name": "test_competing_transfers_cannot_overdraw_savings"
+  }
+]

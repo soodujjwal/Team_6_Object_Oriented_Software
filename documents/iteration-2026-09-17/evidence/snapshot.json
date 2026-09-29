@@ -1,0 +1,32 @@
+{
+  "captured_utc": "2026-09-17T17:48:06.380125+00:00",
+  "report_date": "2026-09-17",
+  "head": "271b5e6f76671cf64b5bf12915d0149a85e0e7c8",
+  "branch": "main",
+  "remote": "https://github.com/soodujjwal/Team_6_Object_Oriented_Software.git",
+  "history": "271b5e6 2026-09-16 Add fund transfers, simplify bill splitting, and expand finance workflows\n6848b58 2026-09-12 Implement Personal Finance Manager app\n544d9c1 2026-09-06 Create Inception.pdf",
+  "application_status": [
+    "M frontend/src/App.tsx",
+    " M frontend/src/api/client.ts",
+    " M frontend/src/pages/LoginPage.tsx",
+    "?? frontend/tests/authSession.test.mjs"
+  ],
+  "python": "3.11.8",
+  "packages": {
+    "fastapi": "0.141.1",
+    "pydantic": "2.13.5",
+    "sqlalchemy": "2.0.52",
+    "uvicorn": "0.52.4",
+    "pytest": "9.1.1",
+    "httpx": "0.28.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "vite": "7.3.6",
+    "typescript": "5.9.3",
+    "lucide-react": "0.544.0",
+    "tesseract.js": "7.0.0"
+  },
+  "file_count": 158,
+  "endpoint_count": 46,
+  "table_count": 9
+}

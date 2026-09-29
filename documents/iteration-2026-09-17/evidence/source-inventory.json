@@ -1,0 +1,1739 @@
+[
+  {
+    "path": ".gitignore",
+    "bytes": 162,
+    "sha256": "cf2e2b40bb2cb881e236b11f4212c48ba9483b3230b7ced9f064786d87993a10",
+    "purpose": "Generated files, local databases, environments, and dependencies excluded from Git.",
+    "lines": 15
+  },
+  {
+    "path": "README.md",
+    "bytes": 4944,
+    "sha256": "c28fa22eda1cf6ae84106c90c7128ceb2a73c5f5d854354426172864d5d28a8b",
+    "purpose": "Project setup and feature documentation; some Split Bill wording predates the simplified UI.",
+    "lines": 102
+  },
+  {
+    "path": "backend/app/__init__.py",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "purpose": "Python package marker.",
+    "lines": 1,
+    "symbols": []
+  },
+  {
+    "path": "backend/app/api/__init__.py",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "purpose": "Python package marker.",
+    "lines": 1,
+    "symbols": []
+  },
+  {
+    "path": "backend/app/api/accounts.py",
+    "bytes": 1337,
+    "sha256": "daee9609cc1c8e74cca56e8154c70e4c7ae1da6045ece87156cc6e34d54afd0d",
+    "purpose": "HTTP route definitions: accounts.",
+    "lines": 35,
+    "symbols": [
+      "list_accounts",
+      "create_account",
+      "get_account",
+      "update_account",
+      "delete_account"
+    ]
+  },
+  {
+    "path": "backend/app/api/affordability.py",
+    "bytes": 557,
+    "sha256": "7a2b13071b66b5cf7a1498d86d985028518846b8b3798ecbb636afc64e1d050d",
+    "purpose": "HTTP route definitions: affordability.",
+    "lines": 14,
+    "symbols": [
+      "check_affordability"
+    ]
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "bytes": 1615,
+    "sha256": "076829fe18301b20c13fd0760e96bfdfa8c59178aad60c4caec6aaa1ee0ee020",
+    "purpose": "HTTP route definitions: auth.",
+    "lines": 40,
+    "symbols": [
+      "register",
+      "login",
+      "me",
+      "update_profile",
+      "change_password",
+      "delete_account"
+    ]
+  },
+  {
+    "path": "backend/app/api/budgets.py",
+    "bytes": 1599,
+    "sha256": "592c3474a52f9a784c5073ca5dc69ff162219846084f6e9069ba4d02141ae3b6",
+    "purpose": "HTTP route definitions: budgets.",
+    "lines": 41,
+    "symbols": [
+      "list_budgets",
+      "create_budget",
+      "budget_alerts",
+      "get_budget",
+      "update_budget",
+      "delete_budget"
+    ]
+  },
+  {
+    "path": "backend/app/api/recurring_transactions.py",
+    "bytes": 1778,
+    "sha256": "6b81ee783c65db161a4b955ab72789146ab65897e9b02e180fdf26b6c352f814",
+    "purpose": "HTTP route definitions: recurring transactions.",
+    "lines": 43,
+    "symbols": [
+      "list_recurring_transactions",
+      "create_recurring_transaction",
+      "get_recurring_transaction",
+      "update_recurring_transaction",
+      "delete_recurring_transaction"
+    ]
+  },
+  {
+    "path": "backend/app/api/reports.py",
+    "bytes": 540,
+    "sha256": "c9446da05f586df82f37cd63753e707e068e7be696df8b025f2a9db253781b52",
+    "purpose": "HTTP route definitions: reports.",
+    "lines": 18,
+    "symbols": [
+      "monthly_report"
+    ]
+  },
+  {
+    "path": "backend/app/api/savings_goals.py",
+    "bytes": 1360,
+    "sha256": "4de2324ce68edba71aba5bdac3a448a0292029d2d96cfbb98504aa2093212aa7",
+    "purpose": "HTTP route definitions: savings goals.",
+    "lines": 35,
+    "symbols": [
+      "list_goals",
+      "create_goal",
+      "get_goal",
+      "update_goal",
+      "delete_goal"
+    ]
+  },
+  {
+    "path": "backend/app/api/split_bills.py",
+    "bytes": 1984,
+    "sha256": "1f1a528f7f18344df6d7e1654ff2940772f59ceaec5c50476bcf9e5875324202",
+    "purpose": "HTTP route definitions: split bills.",
+    "lines": 59,
+    "symbols": [
+      "service",
+      "friends",
+      "add_friend",
+      "list_bills",
+      "create_bill",
+      "update_bill",
+      "pay_bill",
+      "repay"
+    ]
+  },
+  {
+    "path": "backend/app/api/transactions.py",
+    "bytes": 1774,
+    "sha256": "228cca289db71647b3b526508bbb3bc3fedb5e11ac8669ae49e940d31d6b5ae7",
+    "purpose": "HTTP route definitions: transactions.",
+    "lines": 39,
+    "symbols": [
+      "list_transactions",
+      "create_transaction",
+      "create_transactions",
+      "get_transaction",
+      "update_transaction",
+      "delete_transaction"
+    ]
+  },
+  {
+    "path": "backend/app/api/transfers.py",
+    "bytes": 746,
+    "sha256": "359c1c5f6c7e2303a002628aac4c7ef2949f66c437fd5ca1ccc8845449ee0f3a",
+    "purpose": "HTTP route definitions: transfers.",
+    "lines": 19,
+    "symbols": [
+      "create_transfer",
+      "list_transfers"
+    ]
+  },
+  {
+    "path": "backend/app/core/__init__.py",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "purpose": "Python package marker.",
+    "lines": 1,
+    "symbols": []
+  },
+  {
+    "path": "backend/app/core/config.py",
+    "bytes": 397,
+    "sha256": "5e81736683023a6430cf4f01e2e7a9b8df1b3d6891470c9bbacfef127d96aee7",
+    "purpose": "Local API, SQLite, signing-key, and token-lifetime settings.",
+    "lines": 15,
+    "symbols": [
+      "Settings",
+      "get_settings"
+    ]
+  },
+  {
+    "path": "backend/app/core/database.py",
+    "bytes": 4567,
+    "sha256": "eb380e39e0eb5613664683c0fa0f0dd83d8a34d2e55bfa302aafe187d6c3d0ef",
+    "purpose": "Database engine, sessions, schema creation, and incremental compatibility migrations.",
+    "lines": 94,
+    "symbols": [
+      "Base",
+      "get_db",
+      "create_database",
+      "migrate_database"
+    ]
+  },
+  {
+    "path": "backend/app/core/security.py",
+    "bytes": 3286,
+    "sha256": "eda7bc6799ae72137efa8a2b3317501b4345fd79b943ec92aa48e13d3cd7f65f",
+    "purpose": "Password hashing, JWT creation/verification, and current-user dependency.",
+    "lines": 96,
+    "symbols": [
+      "hash_password",
+      "verify_password",
+      "create_access_token",
+      "decode_access_token",
+      "get_current_user",
+      "_encode_json",
+      "_base64url_encode",
+      "_base64url_decode",
+      "_sign"
+    ]
+  },
+  {
+    "path": "backend/app/domain/__init__.py",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "purpose": "Python package marker.",
+    "lines": 1,
+    "symbols": []
+  },
+  {
+    "path": "backend/app/domain/account.py",
+    "bytes": 785,
+    "sha256": "6eaaf3e9fc42891e8befbd7f0864467885725b5d632df633070d7cc414457d0f",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: account.",
+    "lines": 26,
+    "symbols": [
+      "Account"
+    ]
+  },
+  {
+    "path": "backend/app/domain/affordability.py",
+    "bytes": 1535,
+    "sha256": "0f8cd6c8e20ec51bbab310e1d13745cb14221ed84f8b7fb14f10b2f76ce56ef0",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: affordability.",
+    "lines": 46,
+    "symbols": [
+      "AffordabilityResult",
+      "AffordabilityCalculator"
+    ]
+  },
+  {
+    "path": "backend/app/domain/budget.py",
+    "bytes": 1449,
+    "sha256": "6cf6755cd2e4b093b2668b4aab1eb05e58330ff4edf6c8e5bcb52c7bd781b2b3",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: budget.",
+    "lines": 40,
+    "symbols": [
+      "Budget"
+    ]
+  },
+  {
+    "path": "backend/app/domain/financial_report.py",
+    "bytes": 1485,
+    "sha256": "d032b63df8f83c3b5d885ecc90d75e16873ee95614f93e70c524cf176086c413",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: financial report.",
+    "lines": 41,
+    "symbols": [
+      "MonthlyReport",
+      "FinancialReportBuilder"
+    ]
+  },
+  {
+    "path": "backend/app/domain/money.py",
+    "bytes": 430,
+    "sha256": "8389073124fb84e76853b8bae23cd134f84e5fe9bd4843709ae83572538331d5",
+    "purpose": "Decimal cent rounding and nonnegative monetary validation.",
+    "lines": 17,
+    "symbols": [
+      "money",
+      "require_non_negative"
+    ]
+  },
+  {
+    "path": "backend/app/domain/notification.py",
+    "bytes": 254,
+    "sha256": "a47f0aab0f8382085aff81a6794d86f099b9bac01e67e23cacd40ee28b20ddcb",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: notification.",
+    "lines": 16,
+    "symbols": [
+      "AlertLevel",
+      "Notification"
+    ]
+  },
+  {
+    "path": "backend/app/domain/recurring_transaction.py",
+    "bytes": 744,
+    "sha256": "3c3971f95daccc981865c6ccc4928674d3ab264574b3aeaed8f145cb4cdf36f0",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: recurring transaction.",
+    "lines": 29,
+    "symbols": [
+      "RecurrenceFrequency",
+      "RecurringTransaction"
+    ]
+  },
+  {
+    "path": "backend/app/domain/savings_goal.py",
+    "bytes": 1075,
+    "sha256": "b1b5ae669a4d9d79472e88d0bf4727ca2df66885ae7c3e10b211d8afd7da5c89",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: savings goal.",
+    "lines": 31,
+    "symbols": [
+      "SavingsGoal"
+    ]
+  },
+  {
+    "path": "backend/app/domain/split_bill.py",
+    "bytes": 1858,
+    "sha256": "437667f08dd9c3a740425e596d4fe6334fe4be97d09d2291ac29af63ef2430f9",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: split bill.",
+    "lines": 38,
+    "symbols": [
+      "allocate",
+      "calculate_bill"
+    ]
+  },
+  {
+    "path": "backend/app/domain/transaction.py",
+    "bytes": 648,
+    "sha256": "e810f186b61448a7925166b218c2cae6e2cdf38bfa79c74adc108de4bc317344",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: transaction.",
+    "lines": 27,
+    "symbols": [
+      "TransactionType",
+      "Transaction"
+    ]
+  },
+  {
+    "path": "backend/app/domain/user.py",
+    "bytes": 135,
+    "sha256": "4f8bfd2c71556007b9fea349f9050cad4bd45738670367e9bfb8839368932bc4",
+    "purpose": "Business value objects, calculation rules, or supporting enumerations: user.",
+    "lines": 9,
+    "symbols": [
+      "User"
+    ]
+  },
+  {
+    "path": "backend/app/main.py",
+    "bytes": 1932,
+    "sha256": "93963bbaa5341027a9f4805b57b2a3d0fdbf353fb4bbd58324ad87078ad87cda",
+    "purpose": "FastAPI application creation, middleware, route registration, and system endpoints.",
+    "lines": 65,
+    "symbols": [
+      "create_app"
+    ]
+  },
+  {
+    "path": "backend/app/repositories/__init__.py",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "purpose": "Python package marker.",
+    "lines": 1,
+    "symbols": []
+  },
+  {
+    "path": "backend/app/repositories/account_repository.py",
+    "bytes": 181,
+    "sha256": "510562b7425644e9305faad230c4f5aab98f4d8ced47d7fe6586a53c8310ee61",
+    "purpose": "Persistence access for account repository.",
+    "lines": 7,
+    "symbols": [
+      "AccountRepository"
+    ]
+  },
+  {
+    "path": "backend/app/repositories/base.py",
+    "bytes": 943,
+    "sha256": "69f55bb556556f527efd910003b54c5b2a0ce8728a4a5c1fe29c44217d55de96",
+    "purpose": "Generic repository CRUD implementation.",
+    "lines": 38,
+    "symbols": [
+      "BaseRepository"
+    ]
+  },
+  {
+    "path": "backend/app/repositories/budget_repository.py",
+    "bytes": 421,
+    "sha256": "f318c167c2389a2e4f89b7ef8eb5a658cc670d88c2206eda630c969c677726ab",
+    "purpose": "Persistence access for budget repository.",
+    "lines": 14,
+    "symbols": [
+      "BudgetRepository"
+    ]
+  },
+  {
+    "path": "backend/app/repositories/models.py",
+    "bytes": 5370,
+    "sha256": "4c8c925a700e3a1b268b14e2d7ca2123696d54d4b615031887e4b53e861f6fbd",
+    "purpose": "SQLAlchemy persistence models for all nine database tables.",
+    "lines": 117,
+    "symbols": [
+      "UserModel",
+      "AccountModel",
+      "TransferModel",
+      "TransactionModel",
+      "FriendModel",
+      "SplitBillModel",
+      "BudgetModel",
+      "SavingsGoalModel",
+      "RecurringTransactionModel"
+    ]
+  },
+  {
+    "path": "backend/app/repositories/recurring_transaction_repository.py",
+    "bytes": 633,
+    "sha256": "0305a5b0f2c4ad4373a90aeb6df5f51e8728d225d925bba34ddd8c7548b918f6",
+    "purpose": "Persistence access for recurring transaction repository.",
+    "lines": 19,
+    "symbols": [
+      "RecurringTransactionRepository"
+    ]
+  },
+  {
+    "path": "backend/app/repositories/savings_goal_repository.py",
+    "bytes": 197,
+    "sha256": "dec34807f2937879789e2a362c28a9aa577381161fc3c416bb5dd3cf73aefd99",
+    "purpose": "Persistence access for savings goal repository.",
+    "lines": 7,
+    "symbols": [
+      "SavingsGoalRepository"
+    ]
+  },
+  {
+    "path": "backend/app/repositories/transaction_repository.py",
+    "bytes": 644,
+    "sha256": "ce1732aa85758e350899c55afa33910b9244543e37256dffa05e869adefcb713",
+    "purpose": "Persistence access for transaction repository.",
+    "lines": 17,
+    "symbols": [
+      "TransactionRepository"
+    ]
+  },
+  {
+    "path": "backend/app/repositories/user_repository.py",
+    "bytes": 308,
+    "sha256": "920228d5e1b252944cc58bd49972abbf3481715f7b087bb6519e1275d3949c0d",
+    "purpose": "Persistence access for user repository.",
+    "lines": 9,
+    "symbols": [
+      "UserRepository"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/__init__.py",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "purpose": "Python package marker.",
+    "lines": 1,
+    "symbols": []
+  },
+  {
+    "path": "backend/app/schemas/account_schema.py",
+    "bytes": 853,
+    "sha256": "8cc801c557e1dc90c7b74612e1c979fad450410739d707537793b409e2f13c89",
+    "purpose": "Pydantic input/output validation contracts: account schema.",
+    "lines": 25,
+    "symbols": [
+      "AccountCreate",
+      "AccountUpdate",
+      "AccountRead"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/affordability_schema.py",
+    "bytes": 397,
+    "sha256": "d49cf9212608bcf341048abf3c6dc60cbec33b1aa77c9f8670bb278a75619b03",
+    "purpose": "Pydantic input/output validation contracts: affordability schema.",
+    "lines": 17,
+    "symbols": [
+      "AffordabilityRequest",
+      "AffordabilityRead"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/auth_schema.py",
+    "bytes": 1103,
+    "sha256": "6386139d05246044ec259fc432da6823c3d3abbb2d1b236701da973b363233eb",
+    "purpose": "Pydantic input/output validation contracts: auth schema.",
+    "lines": 42,
+    "symbols": [
+      "RegisterRequest",
+      "LoginRequest",
+      "UserRead",
+      "ProfileUpdateRequest",
+      "PasswordChangeRequest",
+      "AuthResponse"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/budget_schema.py",
+    "bytes": 818,
+    "sha256": "b3e4b43e8c7b6f19747e83e26d47f8c749c3a7cd8c54a27e3b2354a66580a02d",
+    "purpose": "Pydantic input/output validation contracts: budget schema.",
+    "lines": 26,
+    "symbols": [
+      "BudgetCreate",
+      "BudgetUpdate",
+      "BudgetRead"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/common.py",
+    "bytes": 248,
+    "sha256": "718f8c1f24d72b0e4b8d055739566541a90c49187f8f58621d4091fc083b0ad2",
+    "purpose": "Pydantic input/output validation contracts: common.",
+    "lines": 11,
+    "symbols": [
+      "ORMModel",
+      "money_field"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/notification_schema.py",
+    "bytes": 179,
+    "sha256": "2bf76055094908f29b02fd6e6d9a4ea2a5841d99afb41b9838595db34643bc45",
+    "purpose": "Pydantic input/output validation contracts: notification schema.",
+    "lines": 9,
+    "symbols": [
+      "NotificationRead"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/recurring_transaction_schema.py",
+    "bytes": 1502,
+    "sha256": "2d7ecc9b663574c6d5ae6f7566313d35f9619f6cbfa09cbd35850b29bbda845b",
+    "purpose": "Pydantic input/output validation contracts: recurring transaction schema.",
+    "lines": 40,
+    "symbols": [
+      "RecurringTransactionCreate",
+      "RecurringTransactionUpdate",
+      "RecurringTransactionRead"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/report_schema.py",
+    "bytes": 308,
+    "sha256": "3838b8982debc91fbccfd415a87adac55596b7b290207693b4fc9eac3a295808",
+    "purpose": "Pydantic input/output validation contracts: report schema.",
+    "lines": 15,
+    "symbols": [
+      "MonthlyReportRead"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/savings_goal_schema.py",
+    "bytes": 1066,
+    "sha256": "26f517ccd08e61c7019d803ef2ac68c57677d27ff831087e2f6c2298f220b9c3",
+    "purpose": "Pydantic input/output validation contracts: savings goal schema.",
+    "lines": 28,
+    "symbols": [
+      "SavingsGoalCreate",
+      "SavingsGoalUpdate",
+      "SavingsGoalRead"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/split_bill_schema.py",
+    "bytes": 2272,
+    "sha256": "770ca2dcb7121459972e1cfa855bebe072ccaf0e6f2da492f3854d315914498a",
+    "purpose": "Pydantic input/output validation contracts: split bill schema.",
+    "lines": 61,
+    "symbols": [
+      "Person",
+      "BillItem",
+      "SplitBillDraft",
+      "RepaymentUpdate",
+      "FriendCreate",
+      "FriendRead"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/transaction_schema.py",
+    "bytes": 1205,
+    "sha256": "c4d8d7444803731aa6448e79bfe4e4f81b927e5f4e4a76c78b4b70d1eaaaeb58",
+    "purpose": "Pydantic input/output validation contracts: transaction schema.",
+    "lines": 37,
+    "symbols": [
+      "TransactionCreate",
+      "TransactionUpdate",
+      "TransactionRead",
+      "TransactionBulkCreate"
+    ]
+  },
+  {
+    "path": "backend/app/schemas/transfer_schema.py",
+    "bytes": 515,
+    "sha256": "4e69561f9a6a1e41b27d8ff0d3097c1c497e70711ce06ff166c818b5c0d56e04",
+    "purpose": "Pydantic input/output validation contracts: transfer schema.",
+    "lines": 20,
+    "symbols": [
+      "TransferCreate",
+      "TransferRead"
+    ]
+  },
+  {
+    "path": "backend/app/services/__init__.py",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "purpose": "Python package marker.",
+    "lines": 1,
+    "symbols": []
+  },
+  {
+    "path": "backend/app/services/account_service.py",
+    "bytes": 3383,
+    "sha256": "7b3933605f9523c5fac01fe2474cb7248490e8ba96b11eccd0b4164b417ba8a3",
+    "purpose": "Application workflow and validation orchestration: account service.",
+    "lines": 68,
+    "symbols": [
+      "AccountService",
+      "total_available_balance"
+    ]
+  },
+  {
+    "path": "backend/app/services/affordability_service.py",
+    "bytes": 1462,
+    "sha256": "91fca0b04895ffa657235cce7cd53f1bd8944d40e748568b7906f6b7b7d1e48e",
+    "purpose": "Application workflow and validation orchestration: affordability service.",
+    "lines": 36,
+    "symbols": [
+      "AffordabilityService"
+    ]
+  },
+  {
+    "path": "backend/app/services/alert_service.py",
+    "bytes": 980,
+    "sha256": "0f9118713abfffa427e4b0598f0da3269d03a34a695df802bc31442cb48094a6",
+    "purpose": "Application workflow and validation orchestration: alert service.",
+    "lines": 27,
+    "symbols": [
+      "AlertService"
+    ]
+  },
+  {
+    "path": "backend/app/services/auth_service.py",
+    "bytes": 2653,
+    "sha256": "5b984d313e1502fe31482c10b11771eba1b680611399edfd6552894e5618120d",
+    "purpose": "Application workflow and validation orchestration: auth service.",
+    "lines": 62,
+    "symbols": [
+      "AuthService"
+    ]
+  },
+  {
+    "path": "backend/app/services/budget_service.py",
+    "bytes": 2546,
+    "sha256": "3fbfcb13d9f2c264d0358158a094a26df07c64210add9149da2898eed80430cb",
+    "purpose": "Application workflow and validation orchestration: budget service.",
+    "lines": 58,
+    "symbols": [
+      "BudgetService"
+    ]
+  },
+  {
+    "path": "backend/app/services/converters.py",
+    "bytes": 498,
+    "sha256": "ede36b6d00249ab2b9e5948511152ffda81e952fea01da46e72ea07507d09c5e",
+    "purpose": "Application workflow and validation orchestration: converters.",
+    "lines": 14,
+    "symbols": [
+      "to_domain_transaction"
+    ]
+  },
+  {
+    "path": "backend/app/services/recurring_transaction_service.py",
+    "bytes": 2615,
+    "sha256": "bcc63357ca3076ffda33540006361d8a021353f0976d352d8ce0667ea755ef09",
+    "purpose": "Application workflow and validation orchestration: recurring transaction service.",
+    "lines": 59,
+    "symbols": [
+      "RecurringTransactionService"
+    ]
+  },
+  {
+    "path": "backend/app/services/report_service.py",
+    "bytes": 734,
+    "sha256": "1725cef5ed912261c1c4f2de3bfee2c4ff2420c0cb7cbfbe3e288cf5dc0a373a",
+    "purpose": "Application workflow and validation orchestration: report service.",
+    "lines": 17,
+    "symbols": [
+      "ReportService"
+    ]
+  },
+  {
+    "path": "backend/app/services/savings_goal_service.py",
+    "bytes": 2034,
+    "sha256": "22f9096fc61e12f38343950f700cecd29aeaf285a32b08866c8dacb1d95a9a9d",
+    "purpose": "Application workflow and validation orchestration: savings goal service.",
+    "lines": 50,
+    "symbols": [
+      "SavingsGoalService"
+    ]
+  },
+  {
+    "path": "backend/app/services/split_bill_service.py",
+    "bytes": 6818,
+    "sha256": "3fb9be7abb37709acd40b67d41f04375252b01f615c85a6baab499189898ad1b",
+    "purpose": "Application workflow and validation orchestration: split bill service.",
+    "lines": 130,
+    "symbols": [
+      "SplitBillService"
+    ]
+  },
+  {
+    "path": "backend/app/services/transaction_service.py",
+    "bytes": 5761,
+    "sha256": "177fa537a7fb04603c88b7ef356320523e840a282d7311ee51df55b68ee9d9ea",
+    "purpose": "Application workflow and validation orchestration: transaction service.",
+    "lines": 121,
+    "symbols": [
+      "TransactionService"
+    ]
+  },
+  {
+    "path": "backend/app/services/transfer_service.py",
+    "bytes": 1827,
+    "sha256": "3d94900721df525a9e613156ab1a3cdc8f796cd11996de86f9f2de0029a902e3",
+    "purpose": "Application workflow and validation orchestration: transfer service.",
+    "lines": 39,
+    "symbols": [
+      "TransferService"
+    ]
+  },
+  {
+    "path": "backend/pyproject.toml",
+    "bytes": 436,
+    "sha256": "bf1acad2206330e65eb6a2f487d74eba4028f7fad99796c459c1045a9d014b03",
+    "purpose": "Backend package metadata, Python dependencies, and pytest configuration.",
+    "lines": 21
+  },
+  {
+    "path": "backend/tests/test_affordability.py",
+    "bytes": 899,
+    "sha256": "f65ff522cf0dd8fddf29e77c25c773b691fe65fe2b3c35efcf5e69e0b1fb3729",
+    "purpose": "Automated verification: test affordability.",
+    "lines": 28,
+    "symbols": [
+      "test_affordability_allows_purchase_when_projection_is_non_negative",
+      "test_affordability_warns_when_purchase_interferes_with_plan"
+    ]
+  },
+  {
+    "path": "backend/tests/test_budget.py",
+    "bytes": 1199,
+    "sha256": "4b94a058a9ba50345e60c1003ee8d17ff07cb71169db4e65b50af55d1da18104",
+    "purpose": "Automated verification: test budget.",
+    "lines": 29,
+    "symbols": [
+      "test_budget_calculates_used_remaining_and_percent",
+      "test_budget_rejects_invalid_month"
+    ]
+  },
+  {
+    "path": "backend/tests/test_recurring_payment_matching.py",
+    "bytes": 2818,
+    "sha256": "464c8f1bd233fa01324dc890a5a3208baca2b81837e09280009075c735e10361",
+    "purpose": "Automated verification: test recurring payment matching.",
+    "lines": 80,
+    "symbols": [
+      "session",
+      "test_matching_transaction_marks_recurring_bill_paid_and_advances_due_date",
+      "test_due_date_alone_does_not_mark_recurring_bill_paid"
+    ]
+  },
+  {
+    "path": "backend/tests/test_registration_profile.py",
+    "bytes": 2965,
+    "sha256": "d524c66566c6510478abfe7196e4e69b56c32e44ab0c7d64e5afc528eb3bf23f",
+    "purpose": "Automated verification: test registration profile.",
+    "lines": 83,
+    "symbols": [
+      "test_registration_persists_phone_number_on_user_profile",
+      "test_registration_rejects_malformed_phone_number",
+      "test_financial_account_creation_needs_no_phone_number",
+      "test_migration_adds_user_phone_column_and_drops_account_phone_column"
+    ]
+  },
+  {
+    "path": "backend/tests/test_reports.py",
+    "bytes": 1117,
+    "sha256": "a775a533e9300d66c2de2c60b3a7a6dad9fdcc0b47931de649efb5482c8728cc",
+    "purpose": "Automated verification: test reports.",
+    "lines": 26,
+    "symbols": [
+      "test_monthly_report_totals_income_expenses_and_categories"
+    ]
+  },
+  {
+    "path": "backend/tests/test_savings_goal.py",
+    "bytes": 702,
+    "sha256": "c9099168a7501394e5c7c994a5aca93d1d3e932cb4fe79dc414a492c4ed4e35d",
+    "purpose": "Automated verification: test savings goal.",
+    "lines": 26,
+    "symbols": [
+      "test_savings_goal_progress_and_remaining_amount",
+      "test_savings_goal_progress_is_capped_at_one_hundred_percent"
+    ]
+  },
+  {
+    "path": "backend/tests/test_split_bills.py",
+    "bytes": 10210,
+    "sha256": "90eb8846d329bbe64ecb31e1798e8ebe792c92efc96374349d355225173ce68b",
+    "purpose": "Automated verification: test split bills.",
+    "lines": 213,
+    "symbols": [
+      "draft",
+      "db",
+      "account",
+      "test_example_fair_tax_tip_and_shared_items",
+      "test_pennies_and_quantities_always_reconcile",
+      "test_payment_debits_bank_once_and_cash_tip_is_excluded",
+      "test_repayments_override_partial_overpayment_and_undo_are_idempotent",
+      "test_editing_paid_bill_adjusts_charge_and_preserves_actual_repayment",
+      "test_invalid_payment_cannot_change_balance",
+      "test_ownership_and_linked_transaction_guards",
+      "test_parallel_payment_requests_only_charge_once",
+      "test_paid_bill_cannot_drop_repaid_person_or_overdraw_with_edits",
+      "test_api_persists_friends_and_split_bill_and_requires_login"
+    ]
+  },
+  {
+    "path": "backend/tests/test_transfers.py",
+    "bytes": 6498,
+    "sha256": "3fabad59bb202259f94c5652bac029371f284ff78680a2394b054182f09d545e",
+    "purpose": "Automated verification: test transfers.",
+    "lines": 139,
+    "symbols": [
+      "db",
+      "account",
+      "test_transfer_moves_only_selected_balances_and_preserves_reports_and_budgets",
+      "test_invalid_amounts_are_rejected",
+      "test_invalid_transfers_leave_no_partial_changes",
+      "test_transfer_account_rename_preserves_type_and_delete_preserves_ledger",
+      "test_migration_classifies_existing_accounts_and_is_repeatable",
+      "test_competing_transfers_cannot_overdraw_savings"
+    ]
+  },
+  {
+    "path": "documents/Inception.pdf",
+    "bytes": 167253,
+    "sha256": "6bd22dd102bc073a635caf72ae12becc457de4d110dd01133b53f31de217418e",
+    "purpose": "Committed project inception artifact."
+  },
+  {
+    "path": "frontend/COMPONENTS.md",
+    "bytes": 839,
+    "sha256": "d66fafafa750d3fe2ef90b6c93b31769153a30cd65efcd701aa570fbb6778aae",
+    "purpose": "Shared dropdown/date-picker conventions.",
+    "lines": 9
+  },
+  {
+    "path": "frontend/index.html",
+    "bytes": 758,
+    "sha256": "bec1234e963812a11200c34c4d24ff47294bf441d686ea33b87f9d7d3a3f5b1c",
+    "purpose": "Browser entry document and initial theme selection.",
+    "lines": 25
+  },
+  {
+    "path": "frontend/package-lock.json",
+    "bytes": 64934,
+    "sha256": "eb78ae45ff346d4a29dc2be99e02d8fddc621e87fc23e157ebefdba10b772980",
+    "purpose": "Resolved frontend dependency versions and integrity hashes.",
+    "lines": 1895
+  },
+  {
+    "path": "frontend/package.json",
+    "bytes": 599,
+    "sha256": "9830eb47caf02884c928870e19b6524dd38210c2fbeb4a96fae578ab4eaa0571",
+    "purpose": "Frontend dependencies and npm scripts.",
+    "lines": 25
+  },
+  {
+    "path": "frontend/src/App.tsx",
+    "bytes": 6551,
+    "sha256": "a1f1a5c484e5e1ba21c98bd7c3686b2dbdf5e778ddc1cf74146edef447422ed2",
+    "purpose": "Session restoration and page selection; connects page callbacks and the application shell.",
+    "lines": 176,
+    "symbols": [
+      "Page"
+    ]
+  },
+  {
+    "path": "frontend/src/api/accounts.ts",
+    "bytes": 683,
+    "sha256": "7271ab392cd1772d1b252e4f472cf6d00b2dd66c38d8c937f7219b56bd2e9794",
+    "purpose": "Typed API calls and, where implemented, refresh events: accounts.",
+    "lines": 25,
+    "symbols": [
+      "AccountPayload",
+      "getAccounts",
+      "createAccount",
+      "updateAccount",
+      "deleteAccount"
+    ]
+  },
+  {
+    "path": "frontend/src/api/affordability.ts",
+    "bytes": 435,
+    "sha256": "240cfba28a7d0159c864c5ef118a5b041c18de519e7fba74381b4c36a7fbc48b",
+    "purpose": "Typed API calls and, where implemented, refresh events: affordability.",
+    "lines": 18,
+    "symbols": [
+      "AffordabilityResult",
+      "checkAffordability"
+    ]
+  },
+  {
+    "path": "frontend/src/api/auth.ts",
+    "bytes": 1041,
+    "sha256": "7bd78884158b0becdb6f85096c7090f0a77501f6547bcedd41a14f93beda830d",
+    "purpose": "Typed API calls and, where implemented, refresh events: auth.",
+    "lines": 39,
+    "symbols": [
+      "User",
+      "AuthSession",
+      "login",
+      "register",
+      "getCurrentUser",
+      "updateProfile",
+      "changePassword",
+      "deleteCurrentUser"
+    ]
+  },
+  {
+    "path": "frontend/src/api/budgets.ts",
+    "bytes": 980,
+    "sha256": "ab9c12f9f821234eea86fb165ccd610463ce41044590e5c1a2ffe88fb0225949",
+    "purpose": "Typed API calls and, where implemented, refresh events: budgets.",
+    "lines": 35,
+    "symbols": [
+      "BUDGETS_UPDATED_EVENT",
+      "BudgetPayload",
+      "getBudgets",
+      "createBudget",
+      "updateBudget",
+      "deleteBudget"
+    ]
+  },
+  {
+    "path": "frontend/src/api/client.ts",
+    "bytes": 3873,
+    "sha256": "402ce7ed9235152b683b0f74581daecfd150947fbcd4c7c52c3011b4d7891314",
+    "purpose": "Shared HTTP transport, bearer authorization, cached-session validation, and 401 handling.",
+    "lines": 88,
+    "symbols": [
+      "API_BASE_URL",
+      "AUTH_TOKEN_KEY",
+      "AUTH_USER_KEY",
+      "SESSION_EXPIRED_EVENT",
+      "SESSION_EXPIRED_MESSAGE",
+      "isTokenCurrent",
+      "readStoredSession",
+      "apiGet",
+      "apiPost",
+      "apiPatch",
+      "apiPut",
+      "apiDelete"
+    ]
+  },
+  {
+    "path": "frontend/src/api/recurringTransactions.ts",
+    "bytes": 1768,
+    "sha256": "aa474d6303422f9c094ba1b5acbf8ae4fc2682bd4155465e62da0ffef4dc8c18",
+    "purpose": "Typed API calls and, where implemented, refresh events: recurring Transactions.",
+    "lines": 56,
+    "symbols": [
+      "RECURRING_TRANSACTIONS_UPDATED_EVENT",
+      "RecurringTransaction",
+      "RecurringTransactionPayload",
+      "getRecurringTransactions",
+      "createRecurringTransaction",
+      "updateRecurringTransaction",
+      "deleteRecurringTransaction"
+    ]
+  },
+  {
+    "path": "frontend/src/api/reports.ts",
+    "bytes": 370,
+    "sha256": "e576f1ea7386ae17ac027e6921ecbb1ea3ed9e28d655d18a9c1ced0c03ebd78a",
+    "purpose": "Typed API calls and, where implemented, refresh events: reports.",
+    "lines": 15,
+    "symbols": [
+      "MonthlyReport",
+      "getMonthlyReport"
+    ]
+  },
+  {
+    "path": "frontend/src/api/savingsGoals.ts",
+    "bytes": 1313,
+    "sha256": "c4f56990cf7e9bc9112e01f437f9f72a776bf055d94bb5fbe38ced3caa07e7b3",
+    "purpose": "Typed API calls and, where implemented, refresh events: savings Goals.",
+    "lines": 46,
+    "symbols": [
+      "SAVINGS_GOALS_UPDATED_EVENT",
+      "SavingsGoal",
+      "SavingsGoalPayload",
+      "getSavingsGoals",
+      "createSavingsGoal",
+      "updateSavingsGoal",
+      "deleteSavingsGoal"
+    ]
+  },
+  {
+    "path": "frontend/src/api/splitBills.ts",
+    "bytes": 1309,
+    "sha256": "5dfa1b83a0e79e0551016dc88927c0d5b6efa857ee9d2ab1a1e1e1dabc52f993",
+    "purpose": "Typed API calls and, where implemented, refresh events: split Bills.",
+    "lines": 16,
+    "symbols": [
+      "Friend",
+      "SplitBill",
+      "getSplitBills",
+      "getFriends",
+      "addFriend",
+      "saveSplitBill",
+      "paySplitBill",
+      "recordRepayment"
+    ]
+  },
+  {
+    "path": "frontend/src/api/transactions.ts",
+    "bytes": 1719,
+    "sha256": "585b36ebfc43c141963568c8b25e8a5a1fc1ee800140087f05e0ef048ada528f",
+    "purpose": "Typed API calls and, where implemented, refresh events: transactions.",
+    "lines": 46,
+    "symbols": [
+      "TRANSACTIONS_UPDATED_EVENT",
+      "TransactionPayload",
+      "getTransactions",
+      "createTransactions",
+      "createTransaction",
+      "updateTransaction",
+      "deleteTransaction"
+    ]
+  },
+  {
+    "path": "frontend/src/api/transfers.ts",
+    "bytes": 577,
+    "sha256": "4f87a9e02f0da7823fa4c68c3c8564143e479c365dd9dea506cd717d45bfb1cf",
+    "purpose": "Typed API calls and, where implemented, refresh events: transfers.",
+    "lines": 23,
+    "symbols": [
+      "Transfer",
+      "moveFunds"
+    ]
+  },
+  {
+    "path": "frontend/src/api/types.ts",
+    "bytes": 1022,
+    "sha256": "e8cbf7ec6db955e10704f9a6df07b52da3cd1e1eed78e7594750b50086341fe7",
+    "purpose": "Shared TypeScript finance data contracts.",
+    "lines": 49,
+    "symbols": [
+      "TransactionType",
+      "Account",
+      "Transaction",
+      "ReceiptItem",
+      "ReceiptMetadata",
+      "Budget"
+    ]
+  },
+  {
+    "path": "frontend/src/components/AppChromeContext.tsx",
+    "bytes": 396,
+    "sha256": "b63ec5b7ded1c36b3feea764ec52d01d59fbc9212ab6ca0696b44b7a73fbe2cb",
+    "purpose": "Reusable presentation component: App Chrome Context.",
+    "lines": 16,
+    "symbols": [
+      "AppChromeProvider",
+      "useAppChrome"
+    ]
+  },
+  {
+    "path": "frontend/src/components/AppShell.tsx",
+    "bytes": 5785,
+    "sha256": "a239d107912c57cf70fb5fff31c912a425b1d17c4a48de21a1c160de944537b0",
+    "purpose": "Reusable presentation component: App Shell.",
+    "lines": 146,
+    "symbols": [
+      "AppShell"
+    ]
+  },
+  {
+    "path": "frontend/src/components/BankSelector.tsx",
+    "bytes": 1172,
+    "sha256": "8a25c3d1caac1cc866092f43a060ac183b861b36e79a147eade006fea7ad94ca",
+    "purpose": "Reusable presentation component: Bank Selector.",
+    "lines": 42,
+    "symbols": [
+      "BankSelector"
+    ]
+  },
+  {
+    "path": "frontend/src/components/BottomNav.tsx",
+    "bytes": 1290,
+    "sha256": "2fe7a64137d79aeb7462f816cec8a8bac75e161fa5fa8de5934cebc482e9fbe4",
+    "purpose": "Reusable presentation component: Bottom Nav.",
+    "lines": 45,
+    "symbols": [
+      "BottomNav"
+    ]
+  },
+  {
+    "path": "frontend/src/components/IncomeExpenseDonut.tsx",
+    "bytes": 5890,
+    "sha256": "2461f0adce9bb5e300356b31e8b10f0434a007ba693e95a3d5fb89ad2d9ff630",
+    "purpose": "Reusable presentation component: Income Expense Donut.",
+    "lines": 160,
+    "symbols": [
+      "IncomeExpenseDonut"
+    ]
+  },
+  {
+    "path": "frontend/src/components/MoneyCard.tsx",
+    "bytes": 379,
+    "sha256": "18e9968046846195066864cfa3d884484a3b48d3bfd6593407057d0a69e15b83",
+    "purpose": "Reusable presentation component: Money Card.",
+    "lines": 16,
+    "symbols": [
+      "MoneyCard"
+    ]
+  },
+  {
+    "path": "frontend/src/components/MoveFunds.tsx",
+    "bytes": 4162,
+    "sha256": "fc3093b92fce22d391501510a28a257ccd6f4a5e619df5396819e5dc62b21062",
+    "purpose": "Reusable presentation component: Move Funds.",
+    "lines": 84,
+    "symbols": [
+      "MoveFunds"
+    ]
+  },
+  {
+    "path": "frontend/src/components/NavigationDrawer.tsx",
+    "bytes": 2831,
+    "sha256": "ddc46f2367705c3d873d047cbe9f5cb0f29e582478911bd64015d0b8a2241976",
+    "purpose": "Reusable presentation component: Navigation Drawer.",
+    "lines": 100,
+    "symbols": [
+      "NavigationDrawer"
+    ]
+  },
+  {
+    "path": "frontend/src/components/NotificationsPanel.tsx",
+    "bytes": 3749,
+    "sha256": "a31076f1c455dcc3c0bcaff0cc31129fd05eed01d1705e6cbf31e57d7bd9d8cd",
+    "purpose": "Reusable presentation component: Notifications Panel.",
+    "lines": 136,
+    "symbols": [
+      "NotificationItem",
+      "NotificationsPanel"
+    ]
+  },
+  {
+    "path": "frontend/src/components/PhoneNumberField.tsx",
+    "bytes": 1228,
+    "sha256": "51259050b9c11b133a29f117fa9276dfa96e66bc4e30234b752ca1d152ef234d",
+    "purpose": "Reusable presentation component: Phone Number Field.",
+    "lines": 36,
+    "symbols": [
+      "PhoneNumberField"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ProgressBar.tsx",
+    "bytes": 650,
+    "sha256": "49b4090ed699fceb0eb00295a7cfd3349626507f9f63556283cbe4a599fc43f1",
+    "purpose": "Reusable presentation component: Progress Bar.",
+    "lines": 22,
+    "symbols": [
+      "ProgressBar"
+    ]
+  },
+  {
+    "path": "frontend/src/components/TopBar.tsx",
+    "bytes": 883,
+    "sha256": "eec8485fe8cc51e902ea15049faff5065f9ab42767b2dca6bf29badd276cc04e",
+    "purpose": "Reusable presentation component: Top Bar.",
+    "lines": 33,
+    "symbols": [
+      "TopBar"
+    ]
+  },
+  {
+    "path": "frontend/src/components/TransactionImportPanel.tsx",
+    "bytes": 30522,
+    "sha256": "742a8c96189a88f01a6df266a82e57a73911a6f90e205ff8403cbcdd358fab2a",
+    "purpose": "Reusable presentation component: Transaction Import Panel.",
+    "lines": 456,
+    "symbols": [
+      "TransactionImportPanel"
+    ]
+  },
+  {
+    "path": "frontend/src/components/TransactionItem.tsx",
+    "bytes": 962,
+    "sha256": "f9ada0231e4964ac4ed1fd9c2cc05a937fc8bbc473fcbfe3d69276cfacd05ada",
+    "purpose": "Reusable presentation component: Transaction Item.",
+    "lines": 28,
+    "symbols": [
+      "TransactionItem"
+    ]
+  },
+  {
+    "path": "frontend/src/components/auth/AuthHeader.tsx",
+    "bytes": 490,
+    "sha256": "f1492da137e09128f41fa444dc3a21a194dc752680288e98ded31c8f77e6f50f",
+    "purpose": "Reusable presentation component: Auth Header.",
+    "lines": 22,
+    "symbols": [
+      "AuthHeader"
+    ]
+  },
+  {
+    "path": "frontend/src/components/auth/AuthLayout.tsx",
+    "bytes": 358,
+    "sha256": "62ccfbf84207c386d7effb9d8615c2a0b85a7028ceb0dc945cec24de64afb52f",
+    "purpose": "Reusable presentation component: Auth Layout.",
+    "lines": 16,
+    "symbols": [
+      "AuthLayout"
+    ]
+  },
+  {
+    "path": "frontend/src/components/auth/PasswordInput.tsx",
+    "bytes": 1010,
+    "sha256": "428bc86c296d9bc9ecc3a0f1c514b805cf1bbfafe7d830b6d2e9daad4587202d",
+    "purpose": "Reusable presentation component: Password Input.",
+    "lines": 38,
+    "symbols": [
+      "PasswordInput"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/Button.tsx",
+    "bytes": 453,
+    "sha256": "a9a458af9f8d9b3acd6fa89753b5367fd0dae4f4f7e8dacbbce6798037693a72",
+    "purpose": "Reusable presentation component: Button.",
+    "lines": 15,
+    "symbols": [
+      "Button"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/CategorySelect.tsx",
+    "bytes": 737,
+    "sha256": "c775ed6e97cc847f0050bab404d4d65d7b99dfda145b25f2f05e42d38a2f8248",
+    "purpose": "Reusable presentation component: Category Select.",
+    "lines": 25,
+    "symbols": [
+      "CategorySelect"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/DatePicker.tsx",
+    "bytes": 7432,
+    "sha256": "fb1583a4b7ae1c09c0e35aa11946f679bd33bd64df213da1eb068a4eeb9a201e",
+    "purpose": "Reusable presentation component: Date Picker.",
+    "lines": 226,
+    "symbols": [
+      "DatePicker"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/GlassCard.tsx",
+    "bytes": 488,
+    "sha256": "07b5bdf2dc0c0b21d5b2a5b96e4ecca1cf60ed98e038c3e48ffbb63043271ffe",
+    "purpose": "Reusable presentation component: Glass Card.",
+    "lines": 16,
+    "symbols": [
+      "GlassCard"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/GlassSelect.tsx",
+    "bytes": 10070,
+    "sha256": "af997431118677c270baf7ee4fa4f56a6ddb5862c054f2eb3a485d6330bfe5d1",
+    "purpose": "Reusable presentation component: Glass Select.",
+    "lines": 252,
+    "symbols": [
+      "GlassSelectOption",
+      "GlassSelect"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/IconButton.tsx",
+    "bytes": 380,
+    "sha256": "0704a6610cfc9cc16d27ffb2d1c32b208ba08f0738cb73e9af8811ec6f59f792",
+    "purpose": "Reusable presentation component: Icon Button.",
+    "lines": 14,
+    "symbols": [
+      "IconButton"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/Modal.tsx",
+    "bytes": 2882,
+    "sha256": "e1a501921e6a4dd20b908efda6507bd7de36573ee595789e84ad573b2c75be69",
+    "purpose": "Reusable presentation component: Modal.",
+    "lines": 75,
+    "symbols": [
+      "Modal"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/TextField.tsx",
+    "bytes": 499,
+    "sha256": "5d7f799c107640c43d5bfaacf6e8e5e26042963b85aea3bd4b8e2048c6ecf272",
+    "purpose": "Reusable presentation component: Text Field.",
+    "lines": 21,
+    "symbols": [
+      "TextField"
+    ]
+  },
+  {
+    "path": "frontend/src/components/ui/index.ts",
+    "bytes": 388,
+    "sha256": "4d1c5b336a0d8b785b6abdec25ce0659f9babb069bedd9563433d31edd777e74",
+    "purpose": "Reusable presentation component: index.",
+    "lines": 9,
+    "symbols": []
+  },
+  {
+    "path": "frontend/src/domain/banks.ts",
+    "bytes": 868,
+    "sha256": "7f4900f1bac5c54792b359cce319910d1500707fa6d51d173e33f878dbd0939f",
+    "purpose": "Supported bank-name options for user-entered accounts; no bank integration.",
+    "lines": 16,
+    "symbols": [
+      "BankOption",
+      "BANK_OPTIONS"
+    ]
+  },
+  {
+    "path": "frontend/src/domain/budgeting.ts",
+    "bytes": 11324,
+    "sha256": "8df2ab13334d0864ce0235fcbe68dd6d4633336d7c302c4a6e778d443e034a89",
+    "purpose": "Monthly budget aggregation, classification, preferences, and spending projection.",
+    "lines": 284,
+    "symbols": [
+      "BudgetGroup",
+      "BudgetTargets",
+      "CategoryGroups",
+      "BudgetHealth",
+      "DEFAULT_BUDGET_TARGETS",
+      "DEFAULT_CATEGORY_GROUPS",
+      "loadBudgetPreferences",
+      "saveBudgetPreferences",
+      "getBudgetGroup",
+      "getBudgetHealth",
+      "getBudgetHealthLabel",
+      "getBudgetAlertMessage",
+      "calculateSpendingPlanProgress",
+      "calculateBudgetMonth"
+    ]
+  },
+  {
+    "path": "frontend/src/domain/merchantIntelligence.ts",
+    "bytes": 7054,
+    "sha256": "e38a86be9e4fc3f009bdfbec5c16d5c46410917f5614909c0736e05a6970bef8",
+    "purpose": "Merchant/category and subscription suggestions using local rules.",
+    "lines": 143,
+    "symbols": [
+      "MerchantSuggestion",
+      "SubscriptionSuggestion",
+      "suggestMerchantCategory",
+      "cleanMerchantName",
+      "inferReceiptFromFileName",
+      "detectSubscription",
+      "buildSubscriptionSuggestions"
+    ]
+  },
+  {
+    "path": "frontend/src/domain/purchaseAnalysis.ts",
+    "bytes": 8713,
+    "sha256": "c1f85f8d150afbd1f901e153d0a57b42d8358580e80134fa62ac3204ac92410b",
+    "purpose": "Cash, loan, and lease decision-support calculations and financial snapshots.",
+    "lines": 205,
+    "symbols": [
+      "FinancialSnapshot",
+      "buildFinancialSnapshot",
+      "calculateLoan",
+      "formatMoney",
+      "safetyBuffer",
+      "getCashStatus",
+      "getMonthlyPaymentStatus"
+    ]
+  },
+  {
+    "path": "frontend/src/domain/recurringBills.ts",
+    "bytes": 2942,
+    "sha256": "0f8785baa592ac4e348c30ccd0b10d218fd65e2c4cb3cdb491a575d3a4e01fda",
+    "purpose": "Due-date status, upcoming bills, and reminder notification construction.",
+    "lines": 61,
+    "symbols": [
+      "BillStatus",
+      "parseLocalDate",
+      "daysUntilDue",
+      "getBillStatus",
+      "getBillDisplayName",
+      "getUpcomingBills",
+      "buildBillNotifications"
+    ]
+  },
+  {
+    "path": "frontend/src/domain/splitBill.ts",
+    "bytes": 2469,
+    "sha256": "3926810f8360753738c836868e090dd786064f91efc7456853aaac33306a7275",
+    "purpose": "Client item allocation and proportional tax/tip calculation using integer cents.",
+    "lines": 47,
+    "symbols": [
+      "BillPerson",
+      "BillItem",
+      "BillDraft",
+      "toCents",
+      "allocate",
+      "calculateBill"
+    ]
+  },
+  {
+    "path": "frontend/src/domain/transactionCategories.ts",
+    "bytes": 1662,
+    "sha256": "332b886d06b834958542de313a2f7a47eed683d2d4f65d2385e08e2cb2ed30a4",
+    "purpose": "Fixed income and expense category option catalogs.",
+    "lines": 47,
+    "symbols": [
+      "TransactionCategory",
+      "TRANSACTION_CATEGORIES",
+      "getCategoriesForType",
+      "getDefaultCategory"
+    ]
+  },
+  {
+    "path": "frontend/src/main.tsx",
+    "bytes": 356,
+    "sha256": "ce0fc0b11778546e51610230a650ed3c10f743360f7e9ccf46a6e95ca5b7eecc",
+    "purpose": "React root mounting and shared stylesheet imports.",
+    "lines": 14,
+    "symbols": []
+  },
+  {
+    "path": "frontend/src/pages/AccountSettingsPage.tsx",
+    "bytes": 15668,
+    "sha256": "542fcbbd03656a7047501ed3db5f350bfc1829ba73a38c9c2ccb35f96c74b11b",
+    "purpose": "Screen implementation: Account Settings Page.",
+    "lines": 399,
+    "symbols": [
+      "AccountSettingsPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/AccountsPage.tsx",
+    "bytes": 6275,
+    "sha256": "6bdffd537801cb424f85267b80860d6b5439440e5bc58f2c237416660d56eee7",
+    "purpose": "Screen implementation: Accounts Page.",
+    "lines": 157,
+    "symbols": [
+      "AccountsPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/AddTransactionPage.tsx",
+    "bytes": 4175,
+    "sha256": "7de565d2a4e257cfb4a3364e70d411dd790db14ff751705af6e8fdac6f5f315b",
+    "purpose": "Screen implementation: Add Transaction Page.",
+    "lines": 99,
+    "symbols": [
+      "AddTransactionPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/AffordabilityPage.tsx",
+    "bytes": 26647,
+    "sha256": "3f9eeeded01a2b1e4c494e992b97e4e64aa86086dc1a4a6b01a43899a4ba5e45",
+    "purpose": "Screen implementation: Affordability Page.",
+    "lines": 402,
+    "symbols": [
+      "AffordabilityPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/BudgetsPage.tsx",
+    "bytes": 27769,
+    "sha256": "19a2628b8d03b9ee0b5c173cfb0b1af1a4788a8626675c2e4a0666b500219cab",
+    "purpose": "Screen implementation: Budgets Page.",
+    "lines": 436,
+    "symbols": [
+      "BudgetsPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/DashboardPage.tsx",
+    "bytes": 7256,
+    "sha256": "75b92bb524a0bcd7fc55bce861c1cdf4cf37c59260b09958d117e31ce7605044",
+    "purpose": "Screen implementation: Dashboard Page.",
+    "lines": 166,
+    "symbols": [
+      "DashboardPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/HelpPage.tsx",
+    "bytes": 18369,
+    "sha256": "cab9f64b148d6366298786ef952ad6462030a9192bb903a1b23c8124ce964a08",
+    "purpose": "Screen implementation: Help Page.",
+    "lines": 315,
+    "symbols": [
+      "HelpPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/LoginPage.tsx",
+    "bytes": 2472,
+    "sha256": "9cb55dec5e9de5c56f7e53db06d5544b920c8bfb0f1e7ea2ba1533c7d7aab823",
+    "purpose": "Screen implementation: Login Page.",
+    "lines": 78,
+    "symbols": [
+      "LoginPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/OnboardingPage.tsx",
+    "bytes": 25948,
+    "sha256": "1a3f1efcdcda1a89beb40da44841d6235ec0577688f29eb59f498056e79763d3",
+    "purpose": "Screen implementation: Onboarding Page.",
+    "lines": 458,
+    "symbols": [
+      "hasCompletedOnboarding",
+      "markOnboardingComplete",
+      "OnboardingPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/PlaceholderPage.tsx",
+    "bytes": 650,
+    "sha256": "37bf2bb2a69c082edf8284f411993c5e9eefb26fdac81116de08aad53dde57dd",
+    "purpose": "Placeholder presentation component; not selected by current App navigation.",
+    "lines": 24,
+    "symbols": [
+      "PlaceholderPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/RecurringTransactionsPage.tsx",
+    "bytes": 9706,
+    "sha256": "9592bb680d79178c12ad814b2eef6acb9fbaa396089ec48f86783e8cb9f68351",
+    "purpose": "Screen implementation: Recurring Transactions Page.",
+    "lines": 207,
+    "symbols": [
+      "RecurringTransactionsPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/RegisterPage.tsx",
+    "bytes": 4100,
+    "sha256": "e01b3aa38d85b75916204071bae756324dd1763be645cabe9095755e9b46fd58",
+    "purpose": "Screen implementation: Register Page.",
+    "lines": 115,
+    "symbols": [
+      "RegisterPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/ReportsPage.tsx",
+    "bytes": 2759,
+    "sha256": "cd2753b6383bb70a86b95c9aa01ac83a238fc7ed3d4fa21dbd8c7fed39df6645",
+    "purpose": "Screen implementation: Reports Page.",
+    "lines": 82,
+    "symbols": [
+      "ReportsPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/SavingsGoalsPage.tsx",
+    "bytes": 15969,
+    "sha256": "5f71771b4b8a6ce63e2044ac3e00c8877dcc9dac0cf68d97cbf0c9345fc6ea6b",
+    "purpose": "Screen implementation: Savings Goals Page.",
+    "lines": 360,
+    "symbols": [
+      "SavingsGoalsPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/SplitBillPage.css",
+    "bytes": 10341,
+    "sha256": "d69461f0fa6ef43ba0235c46aa516e0119e0174cb12a0b51042ed7a230bdc9d8",
+    "purpose": "Styling: SplitBillPage; theme/layout/presentation rules, not business logic.",
+    "lines": 100
+  },
+  {
+    "path": "frontend/src/pages/SplitBillPage.tsx",
+    "bytes": 27415,
+    "sha256": "981e92a49ed712eee43c668cd55e5dba09e80d5e181b820659c759672148e160",
+    "purpose": "Screen implementation: Split Bill Page.",
+    "lines": 243,
+    "symbols": [
+      "SplitBillPage"
+    ]
+  },
+  {
+    "path": "frontend/src/pages/TransactionsPage.tsx",
+    "bytes": 11965,
+    "sha256": "a0b9102ef80376bf4acc9e20e0d7cd32f6e9c038ebeba7142c2a5e63065cb3db",
+    "purpose": "Screen implementation: Transactions Page.",
+    "lines": 271,
+    "symbols": [
+      "TransactionsPage"
+    ]
+  },
+  {
+    "path": "frontend/src/services/receiptExtraction.ts",
+    "bytes": 1106,
+    "sha256": "7cb859f8669df4c2039cda80d431c5ef8b51c491a56c1ab58af71ed99bbf03b0",
+    "purpose": "Unconfigured extraction interfaces for general receipt and PDF imports.",
+    "lines": 38,
+    "symbols": [
+      "ExtractionStatus",
+      "ReceiptExtractionResult",
+      "BankStatementExtractionResult",
+      "extractReceipt",
+      "extractBankStatement"
+    ]
+  },
+  {
+    "path": "frontend/src/services/splitReceipt.ts",
+    "bytes": 2815,
+    "sha256": "8bf3bc0277119882695469d7d1a66f9e061a8ba4d58c22a4d851fa188b094d85",
+    "purpose": "Split Bill image OCR, timeout/error handling, and receipt-text parsing.",
+    "lines": 46,
+    "symbols": [
+      "parseReceiptText",
+      "scanSplitReceipt"
+    ]
+  },
+  {
+    "path": "frontend/src/styles/base.css",
+    "bytes": 563,
+    "sha256": "ae2cd34ab49bd9780e3a0cbc40c342d9cacf2eda225de439ac60474d9498d3bf",
+    "purpose": "Styling: base; theme/layout/presentation rules, not business logic.",
+    "lines": 41
+  },
+  {
+    "path": "frontend/src/styles/components.css",
+    "bytes": 78487,
+    "sha256": "b46c08b26695a3d050abcc3010e2124a0d9d526da7601f2b6d18b976059cdff9",
+    "purpose": "Styling: components; theme/layout/presentation rules, not business logic.",
+    "lines": 4113
+  },
+  {
+    "path": "frontend/src/styles/layout.css",
+    "bytes": 2477,
+    "sha256": "6f6743e8f73fd38e5a4a20cf3a18c7e2b95dcd5b959404715003da1152c4afa7",
+    "purpose": "Styling: layout; theme/layout/presentation rules, not business logic.",
+    "lines": 117
+  },
+  {
+    "path": "frontend/src/styles/ui.css",
+    "bytes": 12119,
+    "sha256": "2566c4b8c29b8eeec78a6cebbc46c3862e7a1c29e33def1bdee2a80b149f5228",
+    "purpose": "Styling: ui; theme/layout/presentation rules, not business logic.",
+    "lines": 601
+  },
+  {
+    "path": "frontend/src/theme/theme.ts",
+    "bytes": 85,
+    "sha256": "f35dff28a198baa10356fda5a2dd1b43481fff47804da3b05c42241523d296a9",
+    "purpose": "Theme constants and types.",
+    "lines": 3,
+    "symbols": [
+      "Theme",
+      "THEME_STORAGE_KEY"
+    ]
+  },
+  {
+    "path": "frontend/src/theme/tokens.css",
+    "bytes": 5122,
+    "sha256": "50708659a6c44cb8a1e77b1a5ff3c1d9acf76cd21e17c6501fa807e5fab7f64d",
+    "purpose": "Styling: tokens; theme/layout/presentation rules, not business logic.",
+    "lines": 143
+  },
+  {
+    "path": "frontend/src/utils/format.ts",
+    "bytes": 419,
+    "sha256": "0219921acd66f7b0abf7af20a45e69b8a45a87882cc206ee66c437d8d661d0dc",
+    "purpose": "Formatting/input helper: format.",
+    "lines": 16,
+    "symbols": [
+      "formatCurrency",
+      "formatDate"
+    ]
+  },
+  {
+    "path": "frontend/src/utils/phoneNumber.ts",
+    "bytes": 530,
+    "sha256": "5af5d91a3e6c9d35cc1d5c115cbb6cfa87d1b2029c0a1c442b5e91a0171700e8",
+    "purpose": "Formatting/input helper: phone Number.",
+    "lines": 12,
+    "symbols": [
+      "formatUsPhoneNumber",
+      "isValidUsPhoneNumber"
+    ]
+  },
+  {
+    "path": "frontend/tests/authSession.test.mjs",
+    "bytes": 4889,
+    "sha256": "9280bfe0e50b2bb52607bf4d613bfbcf807224988b6b27fdd89d6c9964f9e212",
+    "purpose": "Automated verification: auth Session.test.",
+    "lines": 92,
+    "symbols": []
+  },
+  {
+    "path": "frontend/tests/splitBill.test.mjs",
+    "bytes": 2887,
+    "sha256": "b1247f9b511d704d13d924086222bcb71726322e55ed8160ca2da695a0a1cac7",
+    "purpose": "Automated verification: split Bill.test.",
+    "lines": 49,
+    "symbols": []
+  },
+  {
+    "path": "frontend/tsconfig.json",
+    "bytes": 525,
+    "sha256": "89e39bba357837189f0e2f08c16a4d19b7e1b75f44409d2f4face6ea33f71873",
+    "purpose": "TypeScript compiler options.",
+    "lines": 22
+  },
+  {
+    "path": "frontend/vite.config.ts",
+    "bytes": 170,
+    "sha256": "951721d88cd80d4e21936b2447808e0233dcb10476d277ed4d7284ae65630fd2",
+    "purpose": "Vite development/build configuration.",
+    "lines": 10,
+    "symbols": []
+  }
+]

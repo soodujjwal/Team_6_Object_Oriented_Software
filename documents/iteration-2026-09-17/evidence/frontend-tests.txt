@@ -1,0 +1,21 @@
+✔ restore requires both a valid cached profile and an unexpired token (6.2467ms)
+✔ missing token and corrupt storage return Login without crashing (0.9589ms)
+✔ expired sessions stop all protected request methods before fetching (1.0941ms)
+✔ backend 401 clears an apparently current session once (75.3129ms)
+✔ failed login is reported without expiring a session (3.5641ms)
+✔ an old in-flight 401 cannot log out a newly signed-in user (0.9273ms)
+✔ network errors and forbidden requests preserve a valid session (1.0972ms)
+✔ successful requests retain the existing JSON and DELETE behavior (1.1837ms)
+✔ example assigns shared pizza and proportional tax and tip (5.1379ms)
+✔ odd cents and large allocations reconcile exactly (1.1591ms)
+✔ unassigned items and receipt mismatch prevent reconciliation (0.2769ms)
+✔ receipt parsing separates items, tax and totals without counting tender twice (1.4132ms)
+✔ receipt quantity text preserves the printed line total for review (0.6172ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 968.9391

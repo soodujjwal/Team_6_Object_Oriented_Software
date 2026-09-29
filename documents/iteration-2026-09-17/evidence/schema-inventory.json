@@ -1,0 +1,523 @@
+[
+  {
+    "table": "accounts",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "bank_name",
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "starting_balance",
+        "type": "NUMERIC(12, 2)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "account_type",
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  },
+  {
+    "table": "budgets",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "category",
+        "type": "VARCHAR(80)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "monthly_limit",
+        "type": "NUMERIC(12, 2)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "month",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "year",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  },
+  {
+    "table": "savings_goals",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "target_amount",
+        "type": "NUMERIC(12, 2)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "current_amount",
+        "type": "NUMERIC(12, 2)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "monthly_income",
+        "type": "NUMERIC(12, 2)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "target_date",
+        "type": "DATE",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  },
+  {
+    "table": "users",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "email",
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": true,
+        "foreign_keys": []
+      },
+      {
+        "name": "phone_number",
+        "type": "VARCHAR(14)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "occupation",
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "password_hash",
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  },
+  {
+    "table": "friends",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "user_id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": [
+          "users.id"
+        ]
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  },
+  {
+    "table": "recurring_transactions",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR(120)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "account_id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": [
+          "accounts.id"
+        ]
+      },
+      {
+        "name": "amount",
+        "type": "NUMERIC(12, 2)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "category",
+        "type": "VARCHAR(80)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "transaction_type",
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "frequency",
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "next_due_date",
+        "type": "DATE",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "note",
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "auto_pay_status",
+        "type": "BOOLEAN",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "reminder_settings",
+        "type": "JSON",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "last_paid_date",
+        "type": "DATE",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "last_matched_transaction_id",
+        "type": "INTEGER",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  },
+  {
+    "table": "split_bills",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "user_id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": [
+          "users.id"
+        ]
+      },
+      {
+        "name": "data",
+        "type": "JSON",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "payment_transaction_id",
+        "type": "INTEGER",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "repayments",
+        "type": "JSON",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  },
+  {
+    "table": "transactions",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "account_id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": [
+          "accounts.id"
+        ]
+      },
+      {
+        "name": "amount",
+        "type": "NUMERIC(12, 2)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "category",
+        "type": "VARCHAR(80)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "transaction_type",
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "transaction_date",
+        "type": "DATE",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "note",
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "receipt_items",
+        "type": "JSON",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "receipt_metadata",
+        "type": "JSON",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  },
+  {
+    "table": "transfers",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "from_account_id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": [
+          "accounts.id"
+        ]
+      },
+      {
+        "name": "to_account_id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": [
+          "accounts.id"
+        ]
+      },
+      {
+        "name": "amount",
+        "type": "NUMERIC(12, 2)",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "transfer_date",
+        "type": "DATE",
+        "nullable": false,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      },
+      {
+        "name": "note",
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "primary_key": false,
+        "unique": false,
+        "foreign_keys": []
+      }
+    ]
+  }
+]

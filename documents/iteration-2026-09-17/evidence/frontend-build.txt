@@ -1,0 +1,21 @@
+Command: npm run build
+Working directory: frontend
+Date: 2026-09-17
+Exit code: 0
+Context: rerun outside the sandbox after the initial sandboxed invocation could not read Vite configuration. See frontend-build-sandbox.txt for that environmental failure.
+
+> personal-finance-manager-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+1768 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.86 kB | gzip:   0.45 kB
+dist/assets/index-BWqQcPMl.css   92.30 kB | gzip:  14.95 kB
+dist/assets/index-C6xHUsg2.js    15.83 kB | gzip:   6.83 kB
+dist/assets/index-BTJTX8TW.js   440.92 kB | gzip: 132.59 kB
+built in 4.60s
+
+This text consolidates the two output chunks from the successful build command; decorative console glyphs are normalized.

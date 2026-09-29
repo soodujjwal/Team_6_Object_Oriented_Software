@@ -1,0 +1,23 @@
+
+> personal-finance-manager-frontend@0.1.0 build
+> tsc -b && vite build
+
+X [ERROR] Cannot read directory "../../../../..": Access is denied.
+
+X [ERROR] Could not resolve "C:\\Users\\Owner\\OneDrive - UT Arlington\\Desktop\\CSE 3311 - Software Object Oriented\\Team_6_Object_Oriented_Software\\frontend\\vite.config.ts"
+
+failed to load config from C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\vite.config.ts
+error during build:
+Error: Build failed with 2 errors:
+error: Cannot read directory "../../../../..": Access is denied.
+error: Could not resolve "C:\\Users\\Owner\\OneDrive - UT Arlington\\Desktop\\CSE 3311 - Software Object Oriented\\Team_6_Object_Oriented_Software\\frontend\\vite.config.ts"
+    at failureErrorWithLog (C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\node_modules\esbuild\lib\main.js:1752:15)
+    at C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\node_modules\esbuild\lib\main.js:1211:25
+    at runOnEndCallbacks (C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\node_modules\esbuild\lib\main.js:1592:45)
+    at buildResponseToResult (C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\node_modules\esbuild\lib\main.js:1209:7)
+    at C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\node_modules\esbuild\lib\main.js:1236:16
+    at responseCallbacks.<computed> (C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\node_modules\esbuild\lib\main.js:886:9)
+    at handleIncomingPacket (C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\node_modules\esbuild\lib\main.js:941:12)
+    at Socket.readFromStdout (C:\Users\Owner\OneDrive - UT Arlington\Desktop\CSE 3311 - Software Object Oriented\Team_6_Object_Oriented_Software\frontend\node_modules\esbuild\lib\main.js:864:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:563:12)

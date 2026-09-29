@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "./components/AppShell";
-import { AUTH_TOKEN_KEY } from "./api/client";
+import { AUTH_TOKEN_KEY, AUTH_USER_KEY, isTokenCurrent, readStoredSession, SESSION_EXPIRED_EVENT, SESSION_EXPIRED_MESSAGE } from "./api/client";
 import type { User } from "./api/auth";
 import { AddTransactionPage } from "./pages/AddTransactionPage";
 import { AffordabilityPage } from "./pages/AffordabilityPage";
@@ -33,7 +33,7 @@ export type Page =
   | "help"
   | "split";
 
-const USER_KEY = "pfm_user";
+const USER_KEY = AUTH_USER_KEY;
 type AuthRoute = "/login" | "/register";
 
 function getInitialTheme(): Theme {
@@ -54,14 +54,27 @@ export default function App() {
   const [authRoute, setAuthRoute] = useState<AuthRoute>(() =>
     window.location.pathname === "/register" ? "/register" : "/login",
   );
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem(USER_KEY);
-    return stored ? (JSON.parse(stored) as User) : null;
-  });
-  const [onboardingComplete, setOnboardingComplete] = useState(() => {
-    const stored = localStorage.getItem(USER_KEY);
-    return stored ? hasCompletedOnboarding(JSON.parse(stored) as User) : false;
-  });
+  const [initialSession] = useState(readStoredSession);
+  const [user, setUser] = useState<User | null>(initialSession.user);
+  const [sessionNotice, setSessionNotice] = useState(initialSession.expired ? SESSION_EXPIRED_MESSAGE : "");
+  const [onboardingComplete, setOnboardingComplete] = useState(() =>
+    initialSession.user ? hasCompletedOnboarding(initialSession.user) : false,
+  );
+
+  useEffect(() => {
+    function onExpired() {
+      setUser(null);
+      setOnboardingComplete(false);
+      setPage("dashboard");
+      setSessionNotice(SESSION_EXPIRED_MESSAGE);
+      setAuthRoute("/login");
+      window.history.replaceState(null, "", "/login");
+    }
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    // Catch expiry detected by child effects before this listener was installed.
+    if (user && !isTokenCurrent(localStorage.getItem(AUTH_TOKEN_KEY))) onExpired();
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [user]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -92,6 +105,7 @@ export default function App() {
   }
 
   function handleAuth(accessToken: string, nextUser: User) {
+    setSessionNotice("");
     localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     setUser(nextUser);
@@ -101,6 +115,7 @@ export default function App() {
   }
 
   function handleLogout() {
+    setSessionNotice("");
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setUser(null);
@@ -118,7 +133,7 @@ export default function App() {
     return authRoute === "/register" ? (
       <RegisterPage onRegister={handleAuth} onShowLogin={() => navigateAuth("/login")} />
     ) : (
-      <LoginPage onLogin={handleAuth} onShowRegister={() => navigateAuth("/register")} />
+      <LoginPage notice={sessionNotice} onLogin={handleAuth} onShowRegister={() => navigateAuth("/register")} />
     );
   }
 

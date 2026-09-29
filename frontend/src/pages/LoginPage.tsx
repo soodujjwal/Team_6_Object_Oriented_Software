@@ -8,11 +8,12 @@ import { PasswordInput } from "../components/auth/PasswordInput";
 import { Button, GlassCard, TextField } from "../components/ui";
 
 type LoginPageProps = {
+  notice?: string;
   onLogin: (accessToken: string, user: User) => void;
   onShowRegister: () => void;
 };
 
-export function LoginPage({ onLogin, onShowRegister }: LoginPageProps) {
+export function LoginPage({ notice, onLogin, onShowRegister }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -35,7 +36,8 @@ export function LoginPage({ onLogin, onShowRegister }: LoginPageProps) {
           title="Welcome back"
           subtitle="Take control of your money. Build your future."
         />
-        {status && <p className="notice">{status}</p>}
+        {notice && !status && <p className="notice" role="status">{notice}</p>}
+        {status && <p className="notice" role="alert">{status}</p>}
         <form className="auth-web-form" onSubmit={handleSubmit}>
           <TextField
             autoFocus

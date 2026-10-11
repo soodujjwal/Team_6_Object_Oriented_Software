@@ -11,6 +11,8 @@
   --color-surface: rgba(255, 255, 255, 0.68);
   --color-surface-strong: rgba(255, 255, 255, 0.86);
   --color-surface-subtle: rgba(255, 255, 255, 0.48);
+  --color-surface-hover: rgba(224, 242, 232, 0.82);
+  --color-glass-effect: rgba(255, 255, 255, 0.38);
   --color-glass-control: rgba(255, 255, 255, 0.58);
   --color-glass-control-border: rgba(255, 255, 255, 0.76);
   --color-input: rgba(255, 255, 255, 0.88);
@@ -24,6 +26,8 @@
   --color-primary-tint: rgba(23, 69, 47, 0.1);
   --color-primary-tint-strong: rgba(23, 69, 47, 0.14);
   --color-positive: #1f7a4b;
+  --color-success: #1f7a4b;
+  --color-expense: #a54b43;
   --color-warning: #936112;
   --color-error: #a54b43;
   --color-error-border: rgba(165, 75, 67, 0.42);
@@ -31,6 +35,9 @@
   --color-success-border: rgba(47, 108, 72, 0.28);
   --color-warning-surface: rgba(255, 248, 231, 0.9);
   --color-warning-border: rgba(234, 215, 164, 0.8);
+  --color-empty-surface: rgba(255, 255, 255, 0.68);
+  --color-empty-border: rgba(35, 72, 49, 0.1);
+  --color-empty-icon: #1f7a4b;
   --color-danger-surface: #fff1ef;
   --color-danger-border: #e2b8b4;
   --color-danger-text: #9a3e38;
@@ -42,6 +49,9 @@
   --color-report-track: #d8e6df;
   --color-overlay: rgba(12, 31, 21, 0.2);
   --color-focus-ring: rgba(45, 106, 72, 0.36);
+  --color-disabled-surface: rgba(223, 242, 232, 0.48);
+  --color-disabled-text: #7c8b82;
+  --color-scrollbar: rgba(45, 106, 72, 0.42);
   --ambient-1: rgba(151, 206, 172, 0.42);
   --ambient-2: rgba(216, 242, 225, 0.8);
   --ambient-3: rgba(187, 223, 200, 0.5);
@@ -49,58 +59,70 @@
   --shadow-input: 0 3px 10px rgba(29, 62, 43, 0.045);
   --shadow-elevated: 0 22px 60px rgba(22, 50, 34, 0.16);
   --shadow-button: 0 14px 28px rgba(23, 69, 47, 0.24);
+  --shadow-nav: 0 -10px 30px rgba(29, 62, 43, 0.08);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-primary: #8bc9a2;
-  --color-primary-strong: #b2dfc1;
-  --color-primary-soft: #a3d7b5;
-  --color-secondary: #20392a;
-  --color-secondary-strong: #315940;
-  --color-bg: #111a15;
-  --color-bg-2: #17231b;
-  --color-surface: rgba(31, 45, 37, 0.84);
-  --color-surface-strong: rgba(39, 56, 46, 0.95);
-  --color-surface-subtle: rgba(35, 52, 42, 0.64);
-  --color-glass-control: rgba(42, 60, 49, 0.84);
-  --color-glass-control-border: rgba(185, 220, 196, 0.17);
-  --color-input: rgba(24, 37, 29, 0.94);
-  --color-input-border: rgba(185, 220, 196, 0.18);
-  --color-input-focus: #1c2c22;
-  --color-border: rgba(192, 224, 202, 0.16);
-  --color-border-muted: rgba(192, 224, 202, 0.12);
-  --color-text: #edf5ef;
-  --color-text-secondary: #b4c3b8;
-  --color-text-muted: #93a699;
-  --color-primary-tint: rgba(139, 201, 162, 0.13);
-  --color-primary-tint-strong: rgba(139, 201, 162, 0.2);
-  --color-positive: #8fd2a6;
-  --color-warning: #e7bd71;
-  --color-error: #e08e84;
-  --color-error-border: rgba(224, 142, 132, 0.5);
-  --color-error-ring: rgba(224, 142, 132, 0.12);
-  --color-success-border: rgba(143, 210, 166, 0.38);
-  --color-warning-surface: rgba(76, 60, 31, 0.78);
-  --color-warning-border: rgba(198, 157, 84, 0.28);
-  --color-danger-surface: rgba(91, 49, 45, 0.48);
-  --color-danger-border: rgba(224, 142, 132, 0.3);
-  --color-danger-text: #f0aaa1;
-  --color-avatar-surface: rgba(64, 100, 75, 0.56);
-  --color-logo-surface: #f5f7f4;
-  --color-logo-border: rgba(255, 255, 255, 0.82);
-  --color-option-hover: rgba(139, 201, 162, 0.13);
-  --color-drawer-item: rgba(255, 255, 255, 0.035);
-  --color-report-track: #344b3b;
-  --color-overlay: rgba(3, 10, 6, 0.58);
-  --color-focus-ring: rgba(139, 201, 162, 0.54);
-  --ambient-1: rgba(42, 94, 60, 0.32);
-  --ambient-2: rgba(57, 101, 68, 0.22);
-  --ambient-3: rgba(29, 75, 45, 0.26);
+  --color-primary: #2ecc71;
+  --color-primary-strong: #24b36b;
+  --color-primary-soft: #7ed8a6;
+  --color-secondary: #13261e;
+  --color-secondary-strong: #1a3326;
+  --color-bg: #0b1a14;
+  --color-bg-2: #0b1a14;
+  --color-surface: #13261e;
+  --color-surface-strong: #13261e;
+  --color-surface-subtle: rgba(255, 255, 255, 0.05);
+  --color-surface-hover: #1a3326;
+  --color-glass-effect: rgba(255, 255, 255, 0.05);
+  --color-glass-control: #13261e;
+  --color-glass-control-border: #284238;
+  --color-input: #13261e;
+  --color-input-border: #284238;
+  --color-input-focus: #1a3326;
+  --color-border: #284238;
+  --color-border-muted: rgba(40, 66, 56, 0.72);
+  --color-text: #eaf7f0;
+  --color-text-secondary: #a7c7b7;
+  --color-text-muted: #7fa493;
+  --color-primary-tint: rgba(46, 204, 113, 0.12);
+  --color-primary-tint-strong: rgba(46, 204, 113, 0.18);
+  --color-positive: #7ed8a6;
+  --color-success: #7ed8a6;
+  --color-expense: #ff6b6b;
+  --color-warning: #f6c85f;
+  --color-error: #ff6b6b;
+  --color-error-border: rgba(255, 107, 107, 0.52);
+  --color-error-ring: rgba(255, 107, 107, 0.14);
+  --color-success-border: rgba(126, 216, 166, 0.42);
+  --color-warning-surface: rgba(246, 200, 95, 0.1);
+  --color-warning-border: rgba(246, 200, 95, 0.38);
+  --color-empty-surface: #13261e;
+  --color-empty-border: #284238;
+  --color-empty-icon: #7ed8a6;
+  --color-danger-surface: rgba(255, 107, 107, 0.1);
+  --color-danger-border: rgba(255, 107, 107, 0.4);
+  --color-danger-text: #ff8b8b;
+  --color-avatar-surface: rgba(126, 216, 166, 0.13);
+  --color-logo-surface: #13261e;
+  --color-logo-border: #284238;
+  --color-option-hover: #1a3326;
+  --color-drawer-item: rgba(255, 255, 255, 0.05);
+  --color-report-track: #284238;
+  --color-overlay: rgba(3, 12, 8, 0.76);
+  --color-focus-ring: rgba(46, 204, 113, 0.42);
+  --color-disabled-surface: rgba(19, 38, 30, 0.64);
+  --color-disabled-text: #7fa493;
+  --color-scrollbar: #284238;
+  --ambient-1: rgba(46, 204, 113, 0.1);
+  --ambient-2: rgba(126, 216, 166, 0.07);
+  --ambient-3: rgba(36, 179, 107, 0.08);
   --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.22);
   --shadow-input: 0 4px 14px rgba(0, 0, 0, 0.16);
   --shadow-elevated: 0 22px 60px rgba(0, 0, 0, 0.38);
   --shadow-button: 0 12px 26px rgba(0, 0, 0, 0.3);
+  --shadow-nav: 0 -10px 30px rgba(0, 0, 0, 0.12);
 }
 
 :root {
@@ -138,6 +160,6 @@
 }
 
 :root[data-theme="dark"] {
-  --color-button-primary: #28603e;
-  --color-on-primary: #f4fbf6;
+  --color-button-primary: #2ecc71;
+  --color-on-primary: #0b1a14;
 }

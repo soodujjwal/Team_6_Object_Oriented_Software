@@ -33,7 +33,7 @@ export type ReceiptMetadata = {
   tax?: string;
   tip?: string;
   currency?: string;
-  source?: "receipt" | "csv" | "pdf";
+  source?: "receipt" | "csv" | "pdf" | "plaid";
   original_filename?: string;
 };
 

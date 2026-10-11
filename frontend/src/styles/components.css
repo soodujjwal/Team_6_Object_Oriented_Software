@@ -71,7 +71,7 @@
 
 .money-card.expense strong,
 .negative {
-  color: var(--color-error);
+  color: var(--color-expense);
 }
 
 .section-stack {
@@ -126,8 +126,24 @@
   font-size: 0.78rem;
 }
 
-.notice,
-.empty-state {
+.notice {
+  background: var(--color-surface);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 var(--color-glass-effect);
+  color: var(--color-text-secondary);
+  padding: 10px 12px;
+}
+
+.notice[role="alert"] {
+  background: var(--color-danger-surface);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger-text);
+}
+
+.notice.warning {
   background: var(--color-warning-surface);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -135,6 +151,23 @@
   border-radius: var(--radius-md);
   color: var(--color-warning);
   padding: 10px 12px;
+}
+
+.notice.success {
+  background: var(--color-primary-tint);
+  border-color: var(--color-success-border);
+  color: var(--color-positive);
+}
+
+.empty-state {
+  background: var(--color-empty-surface);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--color-empty-border);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 var(--color-glass-effect);
+  color: var(--color-text-secondary);
+  padding: 12px 14px;
 }
 
 .form-stack {
@@ -174,7 +207,7 @@
   color: var(--color-success);
 }
 
-.account-row input {
+.account-row > input {
   background: var(--color-input);
   border: 1px solid var(--color-input-border);
   border-radius: var(--radius-md);
@@ -185,7 +218,7 @@
   width: 100%;
 }
 
-.account-row input:focus {
+.account-row > input:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-tint);
   outline: 0;
@@ -268,6 +301,44 @@
 
 .settings-panel h2 {
   font-size: 1rem;
+}
+
+.plaid-heading,
+.plaid-connection,
+.plaid-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.plaid-heading p,
+.plaid-connection span {
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
+}
+
+.plaid-connection {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.plaid-connection > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.plaid-actions {
+  justify-content: flex-start;
+}
+
+@media (max-width: 560px) {
+  .plaid-heading,
+  .plaid-connection,
+  .plaid-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .appearance-heading p {
@@ -610,8 +681,8 @@
 .donut-segment.expenses,
 .donut-legend-item.expenses .donut-legend-dot,
 .donut-tooltip.expenses .donut-tooltip-dot {
-  stroke: var(--color-error);
-  background: var(--color-error);
+  stroke: var(--color-expense);
+  background: var(--color-expense);
 }
 
 .donut-segment.active {
@@ -942,7 +1013,7 @@
   -webkit-backdrop-filter: blur(22px);
   border: var(--glass-border);
   border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
-  box-shadow: var(--shadow-elevated);
+  box-shadow: inset 0 1px 0 var(--color-glass-effect), var(--shadow-elevated);
   display: grid;
   gap: var(--space-5);
   height: calc(100vh - 32px);
@@ -1017,6 +1088,11 @@
   transform: scale(0.98);
 }
 
+.drawer-nav button:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border);
+}
+
 .drawer-nav svg {
   color: var(--color-primary);
 }
@@ -1036,7 +1112,7 @@
   -webkit-backdrop-filter: blur(22px);
   border: var(--glass-border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-elevated);
+  box-shadow: inset 0 1px 0 var(--color-glass-effect), var(--shadow-elevated);
   display: grid;
   gap: var(--space-4);
   max-height: min(680px, calc(100vh - 112px));
@@ -1132,6 +1208,9 @@
 
 .notifications-empty {
   align-items: center;
+  background: var(--color-empty-surface);
+  border: 1px solid var(--color-empty-border);
+  border-radius: var(--radius-lg);
   display: grid;
   gap: var(--space-2);
   justify-items: center;
@@ -1140,7 +1219,7 @@
 }
 
 .notifications-empty svg {
-  color: var(--color-primary);
+  color: var(--color-empty-icon);
 }
 
 .notifications-close {
@@ -2592,6 +2671,9 @@
 
 .import-processing {
   align-items: center;
+  background: var(--color-empty-surface);
+  border: 1px solid var(--color-empty-border);
+  border-radius: var(--radius-lg);
   display: grid;
   gap: 8px;
   justify-items: center;
@@ -2825,11 +2907,29 @@
 }
 
 .import-message {
-  background: var(--color-primary-tint);
+  background: var(--color-surface);
   border: 1px solid var(--color-border-muted);
   border-radius: var(--radius-md);
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   padding: 10px 12px;
+}
+
+.import-message.success {
+  background: var(--color-primary-tint);
+  border-color: var(--color-success-border);
+  color: var(--color-positive);
+}
+
+.import-message.error {
+  background: var(--color-danger-surface);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger-text);
+}
+
+.import-message.warning {
+  background: var(--color-warning-surface);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
 }
 
 .bill-row,
@@ -3187,6 +3287,104 @@
   align-items: flex-start;
 }
 
+.bank-subscription-summary {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 18px;
+}
+
+.bank-subscription-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.bank-subscription-heading h2 {
+  color: var(--color-text);
+  font-size: var(--font-section-title);
+  margin: 0;
+}
+
+.bank-subscription-heading p,
+.bank-subscription-list small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  margin: 2px 0 0;
+}
+
+.bank-subscription-metrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bank-subscription-metrics > div {
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-muted);
+  border-radius: 14px;
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+
+.bank-subscription-metrics span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption);
+}
+
+.bank-subscription-metrics strong {
+  color: var(--color-text);
+  font-size: var(--font-page-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.bank-subscription-list {
+  border-top: 1px solid var(--color-border-muted);
+  display: grid;
+}
+
+.bank-subscription-list > div {
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-muted);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 12px 2px;
+}
+
+.bank-subscription-list > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.bank-subscription-list span {
+  display: grid;
+  min-width: 0;
+}
+
+.bank-subscription-list strong {
+  color: var(--color-text);
+}
+
+.bank-subscription-list > div > strong {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .bank-subscription-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .bank-subscription-list > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
 .bill-card {
   flex-wrap: wrap;
   padding: 15px;
@@ -3297,6 +3495,9 @@
 
 .pdf-import-state {
   align-items: center;
+  background: var(--color-empty-surface);
+  border: 1px solid var(--color-empty-border);
+  border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
   display: grid;
   gap: 8px;
@@ -3306,7 +3507,7 @@
 }
 
 .pdf-import-state svg {
-  color: var(--color-primary);
+  color: var(--color-empty-icon);
 }
 
 .pdf-import-state strong {
@@ -3864,6 +4065,10 @@
 
 .budget-empty-state {
   align-items: center;
+  background: var(--color-empty-surface);
+  border: 1px solid var(--color-empty-border);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 var(--color-glass-effect);
   display: grid;
   gap: 10px;
   justify-items: center;
@@ -3887,7 +4092,7 @@
   align-items: center;
   background: var(--color-primary-tint);
   border-radius: 15px;
-  color: var(--color-primary);
+  color: var(--color-empty-icon);
   display: inline-flex;
   height: 44px;
   justify-content: center;
@@ -3948,6 +4153,7 @@
   overflow-y: auto;
   padding: 20px;
   width: 100%;
+  box-shadow: inset 0 1px 0 var(--color-glass-effect), var(--shadow-elevated);
 }
 
 .modal-header {

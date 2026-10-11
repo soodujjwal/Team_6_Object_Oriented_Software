@@ -21,5 +21,10 @@ class AccountUpdate(ORMModel):
 
 
 class AccountRead(AccountCreate):
+    # Plaid reconciliation derives this baseline from the institution's current
+    # balance and the imported transaction history. That derived value can be
+    # negative even though users may not create an account with a negative
+    # opening balance.
+    starting_balance: Decimal = Field(max_digits=12, decimal_places=2)
     id: int
     current_balance: Decimal | None = None

@@ -25,7 +25,7 @@
 .split-simple .sb-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--color-avatar-surface); color: var(--color-primary); display: inline-grid; place-items: center; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
 .split-simple .sb-add-person { border-radius: 999px; min-height: 44px; font-size: .83rem; }
 .sb-hint { color: var(--color-text-secondary); font-size: .82rem; line-height: 1.55; margin: 0; }
-.split-simple .sb-empty { display: grid; justify-items: center; padding: 20px; gap: 10px; color: var(--color-text-muted); }
+.split-simple .sb-empty { display: grid; justify-items: center; padding: 20px; gap: 10px; color: var(--color-text-secondary); background: var(--color-empty-surface); border: 1px solid var(--color-empty-border); border-radius: var(--radius-lg); }
 .split-simple .sb-empty p { margin: 0; }
 .split-simple .sb-item { padding: 18px 0; border-bottom: 1px solid var(--color-border-muted); }
 .split-simple .sb-item:first-child { padding-top: 0; }

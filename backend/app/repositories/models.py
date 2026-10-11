@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import JSON, Boolean, Date, ForeignKey, Integer, Numeric, String
@@ -115,3 +115,39 @@ class RecurringTransactionModel(Base):
     reminder_settings: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
     last_paid_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     last_matched_transaction_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class PlaidItemModel(Base):
+    __tablename__ = "plaid_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    access_token: Mapped[str] = mapped_column(String(500), nullable=False)
+    item_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    institution_id: Mapped[str | None] = mapped_column(String(100))
+    institution_name: Mapped[str] = mapped_column(String(150), nullable=False, default="Connected bank")
+    cursor: Mapped[str | None] = mapped_column(String(500))
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="active")
+    last_synced_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+    )
+
+
+class PlaidAccountLinkModel(Base):
+    __tablename__ = "plaid_account_links"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    plaid_item_id: Mapped[int] = mapped_column(ForeignKey("plaid_items.id", ondelete="CASCADE"), nullable=False, index=True)
+    plaid_account_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, unique=True)
+
+
+class PlaidTransactionLinkModel(Base):
+    __tablename__ = "plaid_transaction_links"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    plaid_item_id: Mapped[int] = mapped_column(ForeignKey("plaid_items.id", ondelete="CASCADE"), nullable=False, index=True)
+    plaid_transaction_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False, unique=True)

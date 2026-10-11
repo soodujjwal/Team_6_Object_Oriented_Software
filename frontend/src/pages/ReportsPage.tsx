@@ -58,7 +58,7 @@ export function ReportsPage() {
   return (
     <section className="page">
       <TopBar title="Monthly Report" />
-      {error && <p className="notice">{error}</p>}
+      {error && <p className="notice" role="alert">{error}</p>}
       <h2 className="month-title">{monthLabel}</h2>
       {report && (
         <>

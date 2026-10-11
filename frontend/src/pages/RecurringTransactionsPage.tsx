@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarClock, CheckCircle2, Landmark, Pencil, Plus, Trash2 } from "lucide-react";
 import { getAccounts } from "../api/accounts";
+import { getPlaidStatus } from "../api/plaid";
 import {
   createRecurringTransaction,
   deleteRecurringTransaction,
@@ -9,11 +10,13 @@ import {
   type RecurringTransaction,
   type RecurringTransactionPayload,
 } from "../api/recurringTransactions";
-import type { Account } from "../api/types";
+import { getTransactions, TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
+import type { Account, Transaction } from "../api/types";
 import { TopBar } from "../components/TopBar";
 import { Button, DatePicker, GlassCard, GlassSelect, IconButton, Modal, TextField } from "../components/ui";
 import { getCategoriesForType } from "../domain/transactionCategories";
 import { getBillDisplayName, getBillStatus, getUpcomingBills } from "../domain/recurringBills";
+import { summarizeBankSubscriptions } from "../domain/subscriptionInsights";
 import { formatCurrency, formatDate } from "../utils/format";
 
 type Draft = {
@@ -51,6 +54,8 @@ const defaultDraft: Draft = {
 export function RecurringTransactionsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [items, setItems] = useState<RecurringTransaction[]>([]);
+  const [bankTransactions, setBankTransactions] = useState<Transaction[]>([]);
+  const [bankConnected, setBankConnected] = useState<boolean | null>(null);
   const [modalItem, setModalItem] = useState<RecurringTransaction | null | "create">(null);
   const [draft, setDraft] = useState<Draft>(defaultDraft);
   const [error, setError] = useState("");
@@ -58,9 +63,16 @@ export function RecurringTransactionsPage() {
 
   async function loadData() {
     try {
-      const [accountData, recurringData] = await Promise.all([getAccounts(), getRecurringTransactions()]);
+      const [accountData, recurringData, transactionData, plaidStatus] = await Promise.all([
+        getAccounts(),
+        getRecurringTransactions(),
+        getTransactions(),
+        getPlaidStatus(),
+      ]);
       setAccounts(accountData);
       setItems(recurringData);
+      setBankTransactions(transactionData);
+      setBankConnected(plaidStatus.connections.length > 0);
       setError("");
     } catch {
       setError("Start the backend server to manage recurring bills.");
@@ -70,10 +82,15 @@ export function RecurringTransactionsPage() {
   useEffect(() => {
     void loadData();
     window.addEventListener("focus", loadData);
-    return () => window.removeEventListener("focus", loadData);
+    window.addEventListener(TRANSACTIONS_UPDATED_EVENT, loadData);
+    return () => {
+      window.removeEventListener("focus", loadData);
+      window.removeEventListener(TRANSACTIONS_UPDATED_EVENT, loadData);
+    };
   }, []);
 
   const upcoming = useMemo(() => getUpcomingBills(items, new Date(), 45), [items]);
+  const subscriptionSummary = useMemo(() => summarizeBankSubscriptions(bankTransactions), [bankTransactions]);
   const accountOptions = accounts.map((account) => ({ value: String(account.id), label: `${account.name} · ${account.bank_name}` }));
   const categoryOptions = getCategoriesForType("expense").map((category) => ({ value: category.label, label: category.label }));
 
@@ -161,6 +178,52 @@ export function RecurringTransactionsPage() {
         </div>
         <Button onClick={openCreate}><Plus size={17} /> Add Bill</Button>
       </div>
+
+      <GlassCard className="bank-subscription-summary">
+        <div className="bank-subscription-heading">
+          <span className="bill-icon"><Landmark aria-hidden="true" size={19} /></span>
+          <div>
+            <h2>Connected Bank Subscriptions</h2>
+            <p>Estimated from subscription charges imported through Plaid.</p>
+          </div>
+        </div>
+        {bankConnected === null ? (
+          <p className="caption-text">Checking connected banks...</p>
+        ) : bankConnected ? (
+          <>
+            <div className="bank-subscription-metrics">
+              <div>
+                <span>Subscriptions</span>
+                <strong>{subscriptionSummary.subscriptions.length}</strong>
+              </div>
+              <div>
+                <span>Estimated monthly cost</span>
+                <strong>{formatCurrency(subscriptionSummary.monthlyTotal)}</strong>
+              </div>
+            </div>
+            {subscriptionSummary.subscriptions.length ? (
+              <div className="bank-subscription-list">
+                {subscriptionSummary.subscriptions.map((subscription) => {
+                  const account = accounts.find((item) => item.id === subscription.account_id);
+                  return (
+                    <div key={`${subscription.account_id}-${subscription.name}`}>
+                      <span>
+                        <strong>{subscription.name}</strong>
+                        <small>{account?.name ?? "Connected account"} · Last charged {formatDate(subscription.last_charge_date)}</small>
+                      </span>
+                      <strong>{formatCurrency(subscription.amount)} / month</strong>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="empty-state">No subscription charges detected in synced bank transactions yet.</p>
+            )}
+          </>
+        ) : (
+          <p className="empty-state">Connect a bank in Settings to see your subscription count and estimated monthly cost.</p>
+        )}
+      </GlassCard>
 
       <section className="section-stack">
         <h2 className="section-title">Upcoming</h2>

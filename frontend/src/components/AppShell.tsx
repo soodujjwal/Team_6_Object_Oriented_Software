@@ -18,37 +18,10 @@ type AppShellProps = {
   onNavigate: (page: Page) => void;
 };
 
-const MOCK_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: "emergency-fund",
-    description: "You're 75% toward your Emergency Fund goal.",
-    read: false,
-    time: "2 days ago",
-    title: "Savings Goal",
-    type: "goal",
-  },
-  {
-    id: "spending-insight",
-    description: "Your spending this month is higher than last month.",
-    read: true,
-    time: "This week",
-    title: "Spending Insight",
-    type: "insight",
-  },
-  {
-    id: "account-sync",
-    description: "Your financial account needs to be synced.",
-    read: true,
-    time: "Last week",
-    title: "Account Sync",
-    type: "sync",
-  },
-];
-
 export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -67,21 +40,19 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
           .filter((entry): entry is { budget: (typeof budgets)[number]; message: string } => Boolean(entry.message));
         const billAlerts = buildBillNotifications(recurring, accounts, today);
         setNotifications((current) => {
-          const previousBudgetAlerts = new Map(current.filter((item) => item.type === "budget").map((item) => [item.id, item]));
-          const previousBillAlerts = new Map(current.filter((item) => item.type === "payment").map((item) => [item.id, item]));
+          const previousAlerts = new Map(current.map((item) => [item.id, item]));
           return [
-            ...current.filter((item) => item.type !== "budget" && item.type !== "payment"),
             ...alerts.map(({ budget, message }) => ({
               id: `budget-${budget.id}`,
               description: message,
-              read: previousBudgetAlerts.get(`budget-${budget.id}`)?.read ?? false,
+              read: previousAlerts.get(`budget-${budget.id}`)?.read ?? false,
               time: "This month",
               title: "Budget Alert",
               type: "budget" as const,
             })),
             ...billAlerts.map((alert) => ({
               ...alert,
-              read: previousBillAlerts.get(alert.id)?.read ?? false,
+              read: previousAlerts.get(alert.id)?.read ?? false,
             })),
           ];
         });

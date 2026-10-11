@@ -1,6 +1,9 @@
 import type { TransactionType } from "../api/types";
 import type { Transaction } from "../api/types";
 import { getCategoriesForType, getDefaultCategory } from "./transactionCategories";
+import { detectSubscription } from "./subscriptionInsights";
+
+export { detectSubscription } from "./subscriptionInsights";
 
 export type MerchantSuggestion = {
   merchant: string;
@@ -32,19 +35,6 @@ const MERCHANT_RULES: { keywords: string[]; merchant: string; category: string }
   { keywords: ["rent", "mortgage"], merchant: "Housing Payment", category: "Housing" },
   { keywords: ["payroll", "salary", "direct deposit"], merchant: "Payroll", category: "Salary" },
   { keywords: ["refund"], merchant: "Refund", category: "Refund" },
-];
-
-const SUBSCRIPTION_RULES: { keywords: string[]; name: string; category: string }[] = [
-  { keywords: ["netflix"], name: "Netflix", category: "Subscriptions" },
-  { keywords: ["spotify"], name: "Spotify", category: "Subscriptions" },
-  { keywords: ["adobe"], name: "Adobe", category: "Subscriptions" },
-  { keywords: ["hulu"], name: "Hulu", category: "Subscriptions" },
-  { keywords: ["disney"], name: "Disney+", category: "Subscriptions" },
-  { keywords: ["apple.com/bill", "icloud"], name: "Apple", category: "Subscriptions" },
-  { keywords: ["youtube premium", "google youtube"], name: "YouTube Premium", category: "Subscriptions" },
-  { keywords: ["microsoft", "xbox"], name: "Microsoft", category: "Subscriptions" },
-  { keywords: ["prime video", "amazon prime"], name: "Amazon Prime", category: "Subscriptions" },
-  { keywords: ["gym", "fitness", "planet fitness"], name: "Fitness Membership", category: "Subscriptions" },
 ];
 
 function normalize(value: string) {
@@ -85,11 +75,6 @@ export function inferReceiptFromFileName(fileName: string) {
     date: date ? `${date[1]}-${date[2].padStart(2, "0")}-${date[3].padStart(2, "0")}` : "",
     total: amount ? amount[1].replace(",", ".") : "",
   };
-}
-
-export function detectSubscription(description: string) {
-  const value = normalize(description);
-  return SUBSCRIPTION_RULES.find((item) => item.keywords.some((keyword) => value.includes(keyword)));
 }
 
 export function buildSubscriptionSuggestions(

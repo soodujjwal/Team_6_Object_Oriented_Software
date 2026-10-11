@@ -448,9 +448,23 @@ export function TransactionImportPanel({ accounts, existingTransactions, onSaved
 
       {mode === "bank" && source === "pdf" && !importRows.length && <div className="pdf-import-state"><FileText size={28} /><strong>Statement staged for parser review</strong><p>{file?.name}</p><small>PDF extraction is not configured in this project yet. No transactions were created. Connect the private statement-parser service here before enabling extraction.</small><Button onClick={resetImport} variant="secondary">Choose another file</Button></div>}
 
-      {message && <p className="import-message" role="status">{message}</p>}
+      {message && (
+        <p
+          className={`import-message ${getImportMessageTone(message)}`}
+          role={getImportMessageTone(message) === "error" ? "alert" : "status"}
+        >
+          {message}
+        </p>
+      )}
     </GlassCard>
   );
+}
+
+function getImportMessageTone(message: string) {
+  if (/saved|imported|created/i.test(message)) return "success";
+  if (/could not|couldn't|cannot|check the backend/i.test(message)) return "error";
+  if (/choose|select at least|accepts|not configured|before review/i.test(message)) return "warning";
+  return "neutral";
 }
 
 function AlertIcon({ size = 16 }: { size?: number }) { return <AlertTriangle size={size} />; }

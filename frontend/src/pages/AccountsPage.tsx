@@ -52,7 +52,7 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
     <section className="page accounts-page">
       <TopBar title="Accounts" />
 
-      {status && <p className="notice">{status}</p>}
+      {status && <p className="notice" role="alert">{status}</p>}
 
       <div className="accounts-page-heading">
         <div>

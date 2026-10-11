@@ -63,7 +63,7 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
       <TopBar title="Add Transaction" />
       <Button variant="ghost" onClick={onDone}>Back to Dashboard</Button>
 
-      {status && <p className="notice">{status}</p>}
+      {status && <p className="notice warning">{status}</p>}
 
       <GlassCard>
         <form className="form-stack" onSubmit={handleSubmit}>

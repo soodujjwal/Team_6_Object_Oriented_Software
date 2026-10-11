@@ -8,6 +8,7 @@ from app.api import (
     budgets,
     recurring_transactions,
     reports,
+    plaid,
     savings_goals,
     transactions,
     transfers,
@@ -36,6 +37,8 @@ def create_app() -> FastAPI:
     )
     protected = [Depends(get_current_user)]
     app.include_router(auth.router)
+    app.include_router(plaid.webhook_router)
+    app.include_router(plaid.router)
     app.include_router(accounts.router, dependencies=protected)
     app.include_router(transactions.router, dependencies=protected)
     app.include_router(transfers.router, dependencies=protected)

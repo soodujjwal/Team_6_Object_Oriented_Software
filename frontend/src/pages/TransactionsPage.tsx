@@ -8,7 +8,7 @@ import { Button, CategorySelect, DatePicker, GlassCard, GlassSelect, Modal, Text
 import { getDefaultCategory } from "../domain/transactionCategories";
 import { formatCurrency, formatDate } from "../utils/format";
 
-type SourceFilter = "all" | "receipt" | "csv" | "pdf" | "manual";
+type SourceFilter = "all" | "receipt" | "csv" | "pdf" | "plaid" | "manual";
 type TypeFilter = "all" | TransactionType;
 
 type EditDraft = {
@@ -25,6 +25,7 @@ const SOURCE_OPTIONS: { label: string; value: SourceFilter }[] = [
   { label: "Receipt", value: "receipt" },
   { label: "Bank CSV", value: "csv" },
   { label: "Bank PDF", value: "pdf" },
+  { label: "Connected Bank", value: "plaid" },
   { label: "Manual", value: "manual" },
 ];
 
@@ -145,7 +146,7 @@ export function TransactionsPage() {
     <section className="page transactions-page">
       <TopBar title="Transactions" />
 
-      {status && <p className="notice">{status}</p>}
+      {status && <p className="notice" role="alert">{status}</p>}
 
       <GlassCard className="transactions-toolbar">
         <TextField
@@ -261,6 +262,7 @@ function getTransactionSource(transaction: Transaction): Exclude<SourceFilter, "
 function getSourceLabel(source: Exclude<SourceFilter, "all">) {
   if (source === "csv") return "Bank CSV";
   if (source === "pdf") return "Bank PDF";
+  if (source === "plaid") return "Connected Bank";
   if (source === "receipt") return "Receipt";
   return "Manual";
 }

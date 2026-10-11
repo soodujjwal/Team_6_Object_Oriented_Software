@@ -100,3 +100,20 @@ npm run dev
 The frontend will be available at `http://127.0.0.1:5173`.
 
 The frontend now has separate Login and Create Account screens. After login, it stores the JWT locally and sends it with API requests.
+
+## Plaid Bank Sync
+
+Plaid connections are available in **Account Settings → Bank Sync**. The backend exchanges Link's short-lived public token, stores the access token server-side, maps Plaid accounts to local accounts, and incrementally imports added, modified, and removed transactions without duplicates.
+
+Copy the single root environment template and enter your keys there:
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+cd backend
+python -m uvicorn app.main:app --reload
+```
+
+The backend loads `PROJECT_ROOT/.env` automatically. Plaid credentials and access tokens never enter the frontend: credentials remain in `.env`, while exchanged access tokens are encrypted in the backend database. Switch `PLAID_ENV` between `sandbox`, `development`, and `production`; use the matching Plaid secret for that environment.
+
+The webhook URL must be public HTTPS; localhost cannot receive Plaid webhooks without a tunnel. The app verifies Plaid webhook signatures, syncs available changes immediately after a `SYNC_UPDATES_AVAILABLE` webhook, and polls connection status in the UI every 15 seconds. **Sync available** imports anything Plaid has already discovered. **Request bank refresh** asks Plaid to check the institution, which may require an eligible Plaid plan and still depends on the institution's update timing.

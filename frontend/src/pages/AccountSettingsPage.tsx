@@ -6,6 +6,7 @@ import { changePassword, deleteCurrentUser, updateProfile, type User } from "../
 import type { Account } from "../api/types";
 import { BankSelector } from "../components/BankSelector";
 import { MoveFunds } from "../components/MoveFunds";
+import { PlaidConnection } from "../components/PlaidConnection";
 import { TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
 import { TopBar } from "../components/TopBar";
 import { Button, GlassCard, GlassSelect, Modal, TextField } from "../components/ui";
@@ -177,7 +178,7 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
   return (
     <section className="page">
       <TopBar title="Account Settings" />
-      {status && <p className="notice">{status}</p>}
+      {status && <p className="notice" role="alert">{status}</p>}
 
       <GlassCard className="settings-panel">
         <h2>Profile</h2>
@@ -254,6 +255,8 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
           </Button>
         </form>
       </GlassCard>
+
+      <PlaidConnection onAccountsChanged={loadAccounts} />
 
       <MoveFunds accounts={accounts} />
 
@@ -385,7 +388,14 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
             </div>
           </section>
 
-          {profileMessage && <p className="notice" role="status">{profileMessage}</p>}
+          {profileMessage && (
+            <p
+              className={`notice${profileMessage === "Profile updated." || profileMessage === "Password changed." ? " success" : ""}`}
+              role={profileMessage === "Profile updated." || profileMessage === "Password changed." ? "status" : "alert"}
+            >
+              {profileMessage}
+            </p>
+          )}
         </div>
       </Modal>
     </section>

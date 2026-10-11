@@ -11,7 +11,7 @@ export type TransactionPayload = {
   transaction_date: string;
   note?: string;
   receipt_items?: { name: string; quantity: number; price: string }[];
-  receipt_metadata?: { merchant?: string; subtotal?: string; tax?: string; tip?: string; currency?: string; source?: "receipt" | "csv" | "pdf"; original_filename?: string };
+  receipt_metadata?: { merchant?: string; subtotal?: string; tax?: string; tip?: string; currency?: string; source?: "receipt" | "csv" | "pdf" | "plaid"; original_filename?: string };
 };
 
 export function getTransactions() {

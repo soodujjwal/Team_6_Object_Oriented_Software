@@ -64,13 +64,13 @@ export function MoveFunds({ accounts }: { accounts: Account[] }) {
         <h2>Move Funds</h2>
         <p>Transfer money from Savings to Checking.</p>
         <Button onClick={showForm} variant="secondary">Move Funds</Button>
-        {success && <p className="notice" role="status">{success}</p>}
+        {success && <p className="notice success" role="status">{success}</p>}
       </GlassCard>
       <Modal isOpen={open} onClose={() => !submitting.current && setOpen(false)} title="Move Funds">
         <form className="form-stack" onSubmit={submit}>
           <GlassSelect disabled={saving} label="From account" onChange={setFrom} options={options(savings)} placeholder="Select Savings account" value={from} />
           <GlassSelect disabled={saving || !checking.length} label="To account" onChange={setTo} options={options(checking)} placeholder="Select Checking account" value={to} />
-          {!checking.length && <p className="notice">Create a Checking account in Settings to move funds.</p>}
+          {!checking.length && <p className="notice warning">Create a Checking account in Settings to move funds.</p>}
           {source && <p className="caption-text">Available Savings balance: {formatCurrency(balance)}</p>}
           <TextField disabled={saving} label="Amount" min="0.01" max={balance} step="0.01" type="number" required value={amount} onChange={(event) => setAmount(event.target.value)} />
           {exceedsBalance && <p className="notice" role="alert">Amount exceeds the available Savings balance.</p>}

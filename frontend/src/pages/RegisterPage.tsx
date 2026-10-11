@@ -51,7 +51,7 @@ export function RegisterPage({ onRegister, onShowLogin }: RegisterPageProps) {
           title="Create your account"
           subtitle="Start managing your finances today."
         />
-        {status && <p className="notice">{status}</p>}
+        {status && <p className="notice" role="alert">{status}</p>}
         <form className="auth-web-form" onSubmit={handleSubmit}>
           <TextField
             autoFocus

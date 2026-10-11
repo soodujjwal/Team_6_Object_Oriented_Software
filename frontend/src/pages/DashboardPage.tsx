@@ -75,7 +75,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
     <section className="page">
       <TopBar title="Dashboard" />
       <p className="welcome-line">Welcome, {userName}</p>
-      {error && <p className="notice">{error}</p>}
+      {error && <p className="notice" role="alert">{error}</p>}
 
       <GlassCard className="balance-panel" variant="elevated">
         <p className="section-label">Available Balance</p>

@@ -133,7 +133,7 @@ export function SavingsGoalsPage() {
   return (
     <section className="page savings-goals-page">
       <TopBar title="Savings Goals" />
-      {error && <p className="notice">{error}</p>}
+      {error && <p className="notice" role="alert">{error}</p>}
 
       <div className="savings-page-heading">
         <div>

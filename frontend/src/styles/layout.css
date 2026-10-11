@@ -84,6 +84,7 @@
   position: sticky;
   bottom: 0;
   z-index: var(--z-sticky-nav);
+  box-shadow: inset 0 1px 0 var(--color-glass-effect), var(--shadow-nav);
 }
 
 .nav-button {
@@ -108,6 +109,11 @@
 .nav-button.active {
   background: var(--color-primary-tint);
   color: var(--color-primary);
+}
+
+.nav-button:hover:not(.active) {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
 }
 
 @media (max-width: 520px) {

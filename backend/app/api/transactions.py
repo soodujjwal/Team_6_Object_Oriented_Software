@@ -1,11 +1,28 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.schemas.transaction_schema import TransactionBulkCreate, TransactionCreate, TransactionRead, TransactionUpdate
 from app.services.transaction_service import TransactionService
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
+
+
+class MatchRequest(BaseModel):
+    bank_transaction_id: int = Field(gt=0)
+
+
+@router.get("/matches")
+def match_suggestions(db: Session = Depends(get_db)):
+    from app.services.transaction_matching import suggestions
+    return suggestions(db)
+
+
+@router.post("/{transaction_id}/match", response_model=TransactionRead)
+def match_transaction(transaction_id: int, payload: MatchRequest, db: Session = Depends(get_db)):
+    from app.services.transaction_matching import merge
+    return merge(db, transaction_id, payload.bank_transaction_id)
 
 
 @router.get("", response_model=list[TransactionRead])

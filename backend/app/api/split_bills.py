@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.repositories.models import FriendModel
-from app.schemas.split_bill_schema import FriendCreate, FriendRead, RepaymentUpdate, SplitBillDraft
+from app.schemas.split_bill_schema import FriendCreate, FriendRead, RepaymentUpdate, SplitBillDraft, PaymentLink, RepaymentCreate
 from app.services.split_bill_service import SplitBillService
 
 router = APIRouter(prefix="/split-bills", tags=["split bills"])
@@ -50,8 +50,28 @@ def update_bill(bill_id: int, payload: SplitBillDraft, svc=Depends(service)):
 
 
 @router.post("/{bill_id}/pay")
-def pay_bill(bill_id: int, svc=Depends(service)):
-    return svc.pay(bill_id)
+def pay_bill(bill_id: int, payload: PaymentLink | None = None, svc=Depends(service)):
+    return svc.pay(bill_id, payload.transaction_id if payload else None)
+
+
+@router.get("/{bill_id}/candidates")
+def candidates(bill_id: int, person_id: str | None = None, svc=Depends(service)):
+    return svc.candidates(bill_id, person_id)
+
+
+@router.delete("/{bill_id}/payment")
+def unlink_payment(bill_id: int, svc=Depends(service)):
+    return svc.unlink_payment(bill_id)
+
+
+@router.post("/{bill_id}/repayments/{person_id}")
+def add_repayment(bill_id: int, person_id: str, payload: RepaymentCreate, svc=Depends(service)):
+    return svc.add_repayment(bill_id, person_id, payload)
+
+
+@router.delete("/{bill_id}/repayments/{person_id}/{payment_id}")
+def remove_repayment(bill_id: int, person_id: str, payment_id: str, svc=Depends(service)):
+    return svc.remove_repayment(bill_id, person_id, payment_id)
 
 
 @router.put("/{bill_id}/repayments/{person_id}")

@@ -5,7 +5,7 @@ import { createTransaction, getTransactions } from "../api/transactions";
 import type { Account, TransactionType } from "../api/types";
 import { TopBar } from "../components/TopBar";
 import { TransactionImportPanel } from "../components/TransactionImportPanel";
-import { Button, CategorySelect, DatePicker, GlassCard, TextField } from "../components/ui";
+import { Button, CategorySelect, DatePicker, GlassCard, GlassSelect, TextField } from "../components/ui";
 import { getDefaultCategory } from "../domain/transactionCategories";
 
 type AddTransactionPageProps = {
@@ -26,6 +26,9 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [kind, setKind] = useState("standard");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     Promise.all([getAccounts(), getTransactions()])
@@ -42,12 +45,15 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const account = accounts[0];
+    const account = accounts.find((entry) => String(entry.id) === accountId) ?? accounts[0];
     if (!account) {
       setStatus("Create an account in the API docs before adding transactions.");
       return;
     }
-    await createTransaction({
+    if (saving) return;
+    setSaving(true);
+    try { await createTransaction({
+      financial_kind: kind as "standard" | "reimbursement" | "transfer",
       account_id: account.id,
       amount,
       category,
@@ -56,6 +62,8 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
       note: note || category,
     });
     onDone();
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Could not save transaction."); }
+    finally { setSaving(false); }
   }
 
   return (
@@ -67,6 +75,8 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
 
       <GlassCard>
         <form className="form-stack" onSubmit={handleSubmit}>
+        <GlassSelect label="Account" value={accountId || String(accounts[0]?.id ?? "")} options={accounts.map((account) => ({ value: String(account.id), label: `${account.name} · ${account.bank_name}` }))} onChange={setAccountId} />
+        <GlassSelect label="Financial purpose" value={kind} options={[{ value: "standard", label: "Regular expense or income" }, { value: "reimbursement", label: "Reimbursement (excluded from regular income/spending)" }, { value: "transfer", label: "Transfer between own accounts (excluded from reports)" }]} onChange={setKind} />
         <label className="ui-field">
           Select Type
           <div className="segmented-control">
@@ -90,7 +100,7 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
 
         <TextField icon={<FileText size={18} />} label="Note" onChange={(event) => setNote(event.target.value)} placeholder="Grocery Store" value={note} />
 
-        <Button type="submit">{submitLabel}</Button>
+        <Button disabled={saving || !accounts.length} type="submit">{saving ? "Saving…" : submitLabel}</Button>
         </form>
       </GlassCard>
       <TransactionImportPanel accounts={accounts} existingTransactions={transactions} onSaved={() => { void Promise.all([getAccounts(), getTransactions()]).then(([accountData, transactionData]) => { setAccounts(accountData); setTransactions(transactionData); }); }} />

@@ -43,7 +43,7 @@ def test_transfer_moves_only_selected_balances_and_preserves_reports_and_budgets
     db.add(TransactionModel(account_id=savings.id, amount=Decimal("15.00"), category="Food",
                             transaction_type="expense", transaction_date=today))
     db.commit()
-    budget = BudgetService(db).create_budget(BudgetCreate(category="Food", monthly_limit="60", month=today.month, year=today.year))
+    budget = BudgetService(db, user_id=1).create_budget(BudgetCreate(category="Food", monthly_limit="60", month=today.month, year=today.year))
     before_report = ReportService(db).monthly_report(today.month, today.year)
     before_total = total_available_balance(db)
 
@@ -54,12 +54,13 @@ def test_transfer_moves_only_selected_balances_and_preserves_reports_and_budgets
     assert transfer.transaction_type == "transfer"
     assert transfer.note == "Rent money"
     assert db.query(TransferModel).count() == 1
-    assert db.query(TransactionModel).count() == 1
+    assert db.query(TransactionModel).count() == 3  # original purchase plus two transfer legs
+    assert sum(t.reporting_amount for t in db.query(TransactionModel)) == Decimal("15.00")
     balances = {item.id: item.current_balance for item in AccountService(db).list_accounts()}
     assert balances == {savings.id: Decimal("0"), checking.id: Decimal("105"), untouched.id: Decimal("50"), other_checking.id: Decimal("10")}
     assert total_available_balance(db) == before_total
     assert ReportService(db).monthly_report(today.month, today.year) == before_report
-    assert BudgetService(db).get_budget(budget.id) == budget
+    assert BudgetService(db, user_id=1).get_budget(budget.id) == budget
 
 
 @pytest.mark.parametrize("amount", ["0", "-1", "0.001", "NaN", "Infinity", "10000000000"])

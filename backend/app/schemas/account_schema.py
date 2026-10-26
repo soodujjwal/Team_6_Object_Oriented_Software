@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import datetime
 from typing import Literal
 
 from pydantic import Field
@@ -21,6 +22,11 @@ class AccountUpdate(ORMModel):
 
 
 class AccountRead(AccountCreate):
+    bank_current_balance: Decimal | None = None
+    bank_available_balance: Decimal | None = None
+    balance_synced_at: datetime | None = None
+    unmatched_movement: Decimal = Decimal("0")
+    estimated_balance: Decimal | None = None
     # Plaid reconciliation derives this baseline from the institution's current
     # balance and the imported transaction history. That derived value can be
     # negative even though users may not create an account with a negative

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Page } from "../App";
 import { getAccounts } from "../api/accounts";
+import { getPlaidStatus } from "../api/plaid";
+import { reportingAmount, isReportable } from "../domain/financialTracking";
 import { getBudgets, BUDGETS_UPDATED_EVENT } from "../api/budgets";
-import { TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
+import { getTransactions, TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
 import { getRecurringTransactions, RECURRING_TRANSACTIONS_UPDATED_EVENT } from "../api/recurringTransactions";
-import { getBudgetAlertMessage } from "../domain/budgeting";
+import { getBudgetAlertMessage, getEffectiveBudgets } from "../domain/budgeting";
 import { buildBillNotifications } from "../domain/recurringBills";
 import { BottomNav } from "./BottomNav";
 import { AppChromeProvider } from "./AppChromeContext";
@@ -25,18 +27,49 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
 
   useEffect(() => {
     let active = true;
+    let previous: string | undefined;
+    let pending = false;
+    async function checkBankUpdates() {
+      if (pending) return;
+      pending = true;
+      try {
+        const status = await getPlaidStatus();
+        const signature = JSON.stringify(status.connections.map((item) => [item.id, item.last_synced_at, item.status]));
+        if (active && previous !== undefined && previous !== signature) window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT));
+        if (active) previous = signature;
+      } catch { /* The next poll retries transient connection failures. */ }
+      finally { pending = false; }
+    }
+    void checkBankUpdates();
+    const timer = window.setInterval(() => void checkBankUpdates(), 15_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
     async function refreshBudgetNotifications() {
       const today = new Date();
       try {
-        const [budgets, recurring, accounts] = await Promise.all([
+        const [budgets, recurring, accounts, transactions] = await Promise.all([
           getBudgets(),
           getRecurringTransactions(),
           getAccounts(),
+          getTransactions(),
         ]);
         if (!active) return;
-        const alerts = budgets
-          .filter((budget) => budget.month === today.getMonth() + 1 && budget.year === today.getFullYear())
-          .map((budget) => ({ budget, message: getBudgetAlertMessage(budget.category, Number(budget.usage_percent ?? 0)) }))
+        const currentExpenses = transactions.filter((transaction) => {
+          const [year, month] = transaction.transaction_date.slice(0, 10).split("-").map(Number);
+          return transaction.transaction_type === "expense" && isReportable(transaction) && year === today.getFullYear() && month === today.getMonth() + 1;
+        });
+        const alerts = getEffectiveBudgets(budgets, today.getMonth() + 1, today.getFullYear())
+          .map((budget) => {
+            const spent = currentExpenses
+              .filter((transaction) => transaction.category.toLocaleLowerCase() === budget.category.toLocaleLowerCase())
+              .reduce((total, transaction) => total + reportingAmount(transaction), 0);
+            const limit = Number(budget.monthly_limit);
+            const percent = limit > 0 ? spent / limit * 100 : spent > 0 ? 100 : 0;
+            return { budget, message: getBudgetAlertMessage(budget.category, percent) };
+          })
           .filter((entry): entry is { budget: (typeof budgets)[number]; message: string } => Boolean(entry.message));
         const billAlerts = buildBillNotifications(recurring, accounts, today);
         setNotifications((current) => {

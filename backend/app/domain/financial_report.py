@@ -20,7 +20,7 @@ class FinancialReportBuilder:
         selected = [
             transaction
             for transaction in transactions
-            if transaction.transaction_date.month == month and transaction.transaction_date.year == year
+            if transaction.transaction_date.month == month and transaction.transaction_date.year == year and transaction.amount > 0
         ]
         income = money(sum(t.amount for t in selected if t.transaction_type == TransactionType.INCOME))
         expenses = money(sum(t.amount for t in selected if t.transaction_type == TransactionType.EXPENSE))

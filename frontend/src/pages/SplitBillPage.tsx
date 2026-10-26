@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Camera, Check, CheckCircle2, History, Pencil, Plus, ReceiptText, Trash2, Upload } from "lucide-react";
 import { getAccounts } from "../api/accounts";
-import type { Account } from "../api/types";
-import { addFriend, getFriends, getSplitBills, paySplitBill, recordRepayment, saveSplitBill, type Friend, type SplitBill } from "../api/splitBills";
-import { TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
+import type { Account, Transaction } from "../api/types";
+import { addFriend, getFriends, getSplitBills, getBillCandidates, addRepayment, removeRepayment, paySplitBill, unlinkBillPayment, saveSplitBill, type Friend, type SplitBill } from "../api/splitBills";
+import { getTransactions, TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
 import { calculateBill, toCents, type BillDraft, type BillItem } from "../domain/splitBill";
 import { scanSplitReceipt } from "../services/splitReceipt";
 import { TopBar } from "../components/TopBar";
@@ -39,7 +39,10 @@ export function SplitBillPage({ userName }: { userName: string }) {
   const [editingItem, setEditingItem] = useState<BillItem | null>(null);
   const [totalsEdit, setTotalsEdit] = useState({ tax: "", tip: "", total: "" });
   const [paymentSettings, setPaymentSettings] = useState({ account_id: "", tip_method: "bank", category: "Food & Dining", bill_date: "" });
-  const [repayment, setRepayment] = useState<{ person: string; undo: boolean; amount: string } | null>(null);
+  const [repayment, setRepayment] = useState<{ person: string; amount: string; transactionId: string; accountId: string; paymentDate: string; requestId: string } | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [repaymentCandidates, setRepaymentCandidates] = useState<Transaction[]>([]);
+  const [existingPayment, setExistingPayment] = useState("");
   const actionLock = useRef(false);
   const cameraInput = useRef<HTMLInputElement>(null);
   const uploadInput = useRef<HTMLInputElement>(null);
@@ -56,7 +59,10 @@ export function SplitBillPage({ userName }: { userName: string }) {
     Promise.all([getFriends(), getSplitBills()]).then(([nextFriends, nextBills]) => {
       if (active) { setFriends(nextFriends); setBills(nextBills); }
     }).catch((reason) => { if (active) setError(reason.message); }).finally(() => { if (active) setLoading(false); });
-    const refresh = () => { getAccounts().then((next) => { if (active) setAccounts(next); }).catch(() => {}); };
+    const refresh = () => { Promise.all([getAccounts(), getTransactions(), getSplitBills()]).then(([next, rows, nextBills]) => {
+      if (active) { setAccounts(next); setTransactions(rows); setBills(nextBills);
+        setSaved((current) => current ? nextBills.find((bill) => bill.id === current.id) ?? current : null); }
+    }).catch((reason) => { if (active) setError(reason.message); }); };
     refresh();
     window.addEventListener(TRANSACTIONS_UPDATED_EVENT, refresh);
     return () => { active = false; window.removeEventListener(TRANSACTIONS_UPDATED_EVENT, refresh); };
@@ -117,12 +123,16 @@ export function SplitBillPage({ userName }: { userName: string }) {
   }
   function openTotals() { setTotalsEdit({ tax: draft.tax, tip: draft.tip, total: draft.receipt_total ?? "" }); setDialog("totals"); }
   function openPayments() {
+    setExistingPayment("");
     setPaymentSettings({ account_id: draft.account_id ? String(draft.account_id) : "", tip_method: draft.tip_method, category: draft.category, bill_date: draft.bill_date }); setDialog("payments");
   }
-  function openRepayment(person: string, undo = false) {
+  function openRepayment(person: string) {
     setDialog(null);
     const total = calculation.people.find((entry) => entry.id === person)?.total ?? 0;
-    setRepayment({ person, undo, amount: saved?.repayments[person]?.amount ?? (total / 100).toFixed(2) });
+    setRepaymentCandidates([]);
+    if (saved) void getBillCandidates(saved.id, person).then(setRepaymentCandidates).catch((reason) => setError(reason.message));
+    setRepayment({ person, amount: Math.max(0, total / 100 - Number(saved?.repayments[person]?.amount ?? 0)).toFixed(2),
+      transactionId: "", accountId: String(draft.account_id ?? ""), paymentDate: new Date().toISOString().slice(0, 10), requestId: crypto.randomUUID() });
   }
   const reconciliation = !draft.items.length ? "Add a receipt to get started."
     : unassignedCount ? `Choose who ordered ${unassignedCount} remaining item${unassignedCount === 1 ? "" : "s"}.`
@@ -219,23 +229,61 @@ export function SplitBillPage({ userName }: { userName: string }) {
       <Modal isOpen={dialog === "payments"} onClose={() => !busy && setDialog(null)} title="Payment & repayments">
         <div className="form-stack">
           {error && <p className="notice" role="alert">{error}</p>}
-          {!saved?.paid ? <form className="form-stack" onSubmit={(event) => { event.preventDefault(); void action(async () => { if (!saved || !paymentSettings.account_id) return; const bill = await saveSplitBill({ ...draft, ...paymentSettings, account_id: Number(paymentSettings.account_id), tip_method: paymentSettings.tip_method as "bank" | "cash" }, saved.id); acceptSaved(bill); acceptSaved(await paySplitBill(bill.id)); setMessage("Payment recorded. You can track repayments below."); }); }}>
+          {saved?.needs_review && <p className="notice" role="alert">A linked bank transaction was changed or removed. Review this bill and its repayment history.</p>}
+          {!saved?.paid ? <form className="form-stack" onSubmit={(event) => { event.preventDefault(); void action(async () => { if (!saved || !paymentSettings.account_id) return; const bill = await saveSplitBill({ ...draft, ...paymentSettings, account_id: Number(paymentSettings.account_id), tip_method: paymentSettings.tip_method as "bank" | "cash" }, saved.id); acceptSaved(bill); acceptSaved(await paySplitBill(bill.id, existingPayment ? Number(existingPayment) : undefined)); setMessage("Payment recorded. You can track repayments below."); }); }}>
             <GlassSelect disabled={busy} label="Account that paid" value={paymentSettings.account_id} options={accounts.map((account) => ({ value: String(account.id), label: `${account.name} · ${account.bank_name} · ${formatCurrency(account.current_balance ?? "0")}` }))} onChange={(value) => setPaymentSettings({ ...paymentSettings, account_id: value })} />
             <GlassSelect disabled={busy} label="How was the tip paid?" value={paymentSettings.tip_method} options={[{ value: "bank", label: "Same bank account" }, { value: "cash", label: "Cash" }]} onChange={(value) => setPaymentSettings({ ...paymentSettings, tip_method: value })} />
             <details><summary>More details</summary><div className="form-stack"><CategorySelect type="expense" value={paymentSettings.category} onChange={(value) => setPaymentSettings({ ...paymentSettings, category: value })} /><DatePicker label="Payment date" value={paymentSettings.bill_date} onChange={(value) => setPaymentSettings({ ...paymentSettings, bill_date: value })} /></div></details>
             <p>Bank charge: <strong>{money(calculation.subtotal + calculation.tax + (paymentSettings.tip_method === "bank" ? calculation.tip : 0))}</strong></p>
-            <p className="sb-hint">Record this only if this receipt hasn't already been added to your transactions.</p>
+            <GlassSelect label="Payment transaction" disabled={busy} value={existingPayment} onChange={setExistingPayment} options={[
+              { value: "", label: "Create a manual payment (awaiting bank match)" },
+              ...transactions.filter((transaction) => transaction.account_id === Number(paymentSettings.account_id)
+                && transaction.transaction_type === "expense" && transaction.financial_kind !== "transfer"
+                && !transaction.receipt_metadata?.pending && !transaction.receipt_metadata?.bank_removed
+                && toCents(transaction.amount) === calculation.subtotal + calculation.tax + (paymentSettings.tip_method === "bank" ? calculation.tip : 0)
+                && !bills.some((bill) => bill.payment_transaction_id === transaction.id))
+                .map((transaction) => ({ value: String(transaction.id), label: `${transaction.note || transaction.category} · ${transaction.transaction_date} · ${formatCurrency(transaction.amount)}` }))
+            ]} />
+            <p className="sb-hint">Select an existing charge to avoid creating a second expense. This records a payment; it does not move money.</p>
             <Button disabled={busy || !paymentSettings.account_id} type="submit">{busy ? "Recording…" : "Record bank payment"}</Button>
             {!accounts.length && <p>Add an account in Settings to record payment.</p>}
-          </form> : <><p className="sb-check is-ready"><CheckCircle2 size={18} />Payment recorded.</p>{calculation.people.filter((person) => person.id !== draft.self_id).map((person) => { const received = saved.repayments[person.id]; const difference = person.total - toCents(received?.amount ?? "0"); return <div className="sb-repayment-row" key={person.id}><label><input type="checkbox" disabled={busy || person.total === 0 && !received} checked={Boolean(received)} onChange={(event) => openRepayment(person.id, !event.target.checked)} />{person.name}<strong>{money(person.total)}</strong></label>{received && <small>{money(toCents(received.amount))} received · {difference > 0 ? `${money(difference)} remaining` : difference < 0 ? `${money(-difference)} overpaid` : "Paid back"}</small>}<Button variant="ghost" disabled={busy} onClick={() => openRepayment(person.id)}>{received ? "Edit received amount" : "Enter actual amount"}</Button></div>; })}</>}
+          </form> : <><p className="sb-check is-ready"><CheckCircle2 size={18} />Payment recorded.</p>{calculation.people.filter((person) => person.id !== draft.self_id).map((person) => {
+            const received = saved.repayments[person.id]; const difference = person.total - toCents(received?.amount ?? "0");
+            return <div className="sb-repayment-row" key={person.id}>
+              <strong>{person.name} · owes {money(person.total)}</strong>
+              <small>{money(toCents(received?.amount ?? "0"))} received · {difference > 0 ? `${money(difference)} remaining` : difference < 0 ? `${money(-difference)} overpaid` : "Paid back"}</small>
+              {received?.payments?.map((payment) => <div key={payment.id}>
+                <span>{formatCurrency(payment.amount)} · {payment.payment_date || "Previously recorded"}{payment.needs_review ? " · Needs review" : ""}</span>
+                <Button variant="ghost" disabled={busy} onClick={() => {
+                  if (!window.confirm("Remove this repayment link? Imported bank transactions will remain in your history.")) return;
+                  void action(async () => { await removeRepayment(saved.id, person.id, payment.id); const next = (await getSplitBills()).find((bill) => bill.id === saved.id); if (next) acceptSaved(next); });
+                }}>Remove</Button>
+              </div>)}
+              <Button variant="secondary" disabled={busy} onClick={() => openRepayment(person.id)}>Add payment / match incoming transaction</Button>
+            </div>;
+          })}<Button variant="ghost" disabled={busy || Object.keys(saved.repayments).length > 0} onClick={() => {
+            if (!window.confirm("Unlink this bill payment? Bank imports will stay in Transactions. A payment created only for this bill will be undone.")) return;
+            void action(async () => { await unlinkBillPayment(saved.id); const next = (await getSplitBills()).find((bill) => bill.id === saved.id); if (next) acceptSaved(next); });
+          }}>Unlink bill payment</Button>{Object.keys(saved.repayments).length > 0 && <small>Remove repayment links first to unlink the bill payment.</small>}</>}
         </div>
       </Modal>
-      <Modal isOpen={Boolean(repayment)} onClose={() => { if (!busy) { setRepayment(null); setDialog("payments"); } }} title={repayment?.undo ? "Undo repayment" : "Record repayment"}>
-        {repayment && <form className="form-stack" onSubmit={(event) => { event.preventDefault(); void action(async () => { if (!saved) return; acceptSaved(await recordRepayment(saved.id, repayment.person, !repayment.undo, repayment.undo ? undefined : repayment.amount)); setRepayment(null); setDialog("payments"); }); }}>
+      <Modal isOpen={Boolean(repayment)} onClose={() => { if (!busy) { setRepayment(null); setDialog("payments"); } }} title="Record or match repayment">
+        {repayment && <form className="form-stack" onSubmit={(event) => { event.preventDefault(); void action(async () => { if (!saved) return; acceptSaved(await addRepayment(saved.id, repayment.person, {
+          amount: repayment.amount, transaction_id: repayment.transactionId ? Number(repayment.transactionId) : undefined,
+          account_id: repayment.accountId ? Number(repayment.accountId) : undefined, payment_date: repayment.paymentDate, request_id: repayment.requestId,
+        })); setRepayment(null); setDialog("payments"); }); }}>
           {error && <p className="notice" role="alert">{error}</p>}
-          <p>{repayment.undo ? "Reverse this repayment's bank credit?" : "Enter the total actually received. This replaces any previous amount."}</p>
-          {!repayment.undo && <TextField label="Amount received" type="number" required min="0.01" step="0.01" disabled={busy} value={repayment.amount} onChange={(event) => setRepayment({ ...repayment, amount: event.target.value })} />}
-          <Button disabled={busy} type="submit">{busy ? "Saving…" : repayment.undo ? "Undo repayment" : "Save repayment"}</Button>
+          <p>Add one payment at a time. Confirm which incoming transaction belongs to this friend; each transaction can be used once.</p>
+          <GlassSelect label="Incoming transaction" value={repayment.transactionId} disabled={busy} options={[
+            { value: "", label: "Record a manual repayment" },
+            ...repaymentCandidates.map((transaction) => ({ value: String(transaction.id), label: `${transaction.note || transaction.category} · ${transaction.transaction_date} · ${formatCurrency(transaction.amount)}${transaction.note?.toLowerCase().includes(draft.people.find((person) => person.id === repayment.person)?.name.toLowerCase() || "\u0000") ? " · Name matches" : ""}` }))
+          ]} onChange={(value) => setRepayment({ ...repayment, transactionId: value, amount: repaymentCandidates.find((transaction) => String(transaction.id) === value)?.amount ?? repayment.amount })} />
+          {!repayment.transactionId && <>
+            <GlassSelect label="Receiving account" value={repayment.accountId} onChange={(value) => setRepayment({ ...repayment, accountId: value })} options={accounts.map((account) => ({ value: String(account.id), label: account.name }))} />
+            <DatePicker label="Date received" value={repayment.paymentDate} onChange={(value) => setRepayment({ ...repayment, paymentDate: value })} />
+          </>}
+          <TextField label="Amount of this payment" type="number" required min="0.01" step="0.01" disabled={busy || Boolean(repayment.transactionId)} value={repayment.amount} onChange={(event) => setRepayment({ ...repayment, amount: event.target.value })} />
+          <Button disabled={busy} type="submit">{busy ? "Saving…" : repayment.transactionId ? "Confirm repayment match" : "Add repayment"}</Button>
         </form>}
       </Modal>
     </section>

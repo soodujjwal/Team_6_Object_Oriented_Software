@@ -1,4 +1,5 @@
 import type { Budget, Transaction } from "../api/types";
+import { reportingAmount, isReportable } from "./financialTracking";
 import type { RecurringTransaction } from "../api/recurringTransactions";
 
 export type BudgetGroup = "needs" | "wants" | "savingsDebt";
@@ -105,6 +106,25 @@ export function calculateSpendingPlanProgress(actualPercentage: number, targetPe
   return round(actualPercentage / targetPercentage * 100);
 }
 
+export function getEffectiveBudgets(budgets: Budget[], month: number, year: number) {
+  const targetPeriod = year * 12 + month;
+  const effectiveByCategory = new Map<string, Budget>();
+
+  for (const budget of budgets) {
+    const budgetPeriod = budget.year * 12 + budget.month;
+    if (budgetPeriod > targetPeriod) continue;
+
+    const categoryKey = budget.category.trim().toLocaleLowerCase();
+    const current = effectiveByCategory.get(categoryKey);
+    const currentPeriod = current ? current.year * 12 + current.month : -1;
+    if (!current || budgetPeriod > currentPeriod || (budgetPeriod === currentPeriod && budget.id > current.id)) {
+      effectiveByCategory.set(categoryKey, budget);
+    }
+  }
+
+  return [...effectiveByCategory.values()].sort((left, right) => left.category.localeCompare(right.category));
+}
+
 export function calculateBudgetMonth(
   transactions: Transaction[],
   budgets: Budget[],
@@ -117,20 +137,20 @@ export function calculateBudgetMonth(
 ) {
   const inMonth = transactions.filter((transaction) => {
     const [transactionYear, transactionMonth] = transaction.transaction_date.slice(0, 10).split("-").map(Number);
-    return transactionYear === year && transactionMonth === month;
+    return transactionYear === year && transactionMonth === month && isReportable(transaction);
   });
   const expenses = inMonth.filter((transaction) => transaction.transaction_type === "expense");
   const income = round(inMonth
     .filter((transaction) => transaction.transaction_type === "income")
-    .reduce((sum, transaction) => sum + safeNumber(transaction.amount), 0));
-  const spent = round(expenses.reduce((sum, transaction) => sum + safeNumber(transaction.amount), 0));
-  const budgeted = round(budgets
-    .filter((budget) => budget.month === month && budget.year === year)
+    .reduce((sum, transaction) => sum + reportingAmount(transaction), 0));
+  const spent = round(expenses.reduce((sum, transaction) => sum + reportingAmount(transaction), 0));
+  const selectedBudgets = getEffectiveBudgets(budgets, month, year);
+  const budgeted = round(selectedBudgets
     .reduce((sum, budget) => sum + safeNumber(budget.monthly_limit), 0));
   const categorySpent: Record<string, number> = {};
   const groupAmounts: Record<BudgetGroup, number> = { needs: 0, wants: 0, savingsDebt: 0 };
   for (const transaction of expenses) {
-    const amount = safeNumber(transaction.amount);
+    const amount = reportingAmount(transaction);
     categorySpent[transaction.category] = round((categorySpent[transaction.category] ?? 0) + amount);
     const group = getBudgetGroup(transaction.category, categoryGroups);
     groupAmounts[group] = round(groupAmounts[group] + amount);
@@ -147,7 +167,6 @@ export function calculateBudgetMonth(
     wants: calculateSpendingPlanProgress(groupPercentages.wants, targets.wants),
     savingsDebt: calculateSpendingPlanProgress(groupPercentages.savingsDebt, targets.savingsDebt),
   };
-  const selectedBudgets = budgets.filter((budget) => budget.month === month && budget.year === year);
   const plannedByCategory: Record<string, number> = {};
   for (const budget of selectedBudgets) {
     plannedByCategory[budget.category] = round((plannedByCategory[budget.category] ?? 0) + safeNumber(budget.monthly_limit));
@@ -254,7 +273,7 @@ function sumRecordedRecurring(expenses: Transaction[], recurring: RecurringTrans
   }
   return round(expenses
     .filter((transaction) => matched.has(transaction.id))
-    .reduce((sum, transaction) => sum + safeNumber(transaction.amount), 0));
+    .reduce((sum, transaction) => sum + reportingAmount(transaction), 0));
 }
 
 function advanceDueDate(date: Date, frequency: RecurringTransaction["frequency"]) {

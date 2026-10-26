@@ -3106,6 +3106,61 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.onboarding-account-methods {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-account-methods button {
+  align-items: flex-start;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.onboarding-account-methods button:hover {
+  border-color: var(--color-primary-soft);
+  transform: translateY(-1px);
+}
+
+.onboarding-account-methods button.selected {
+  background: var(--color-primary-tint);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.onboarding-account-methods button > svg {
+  color: var(--color-primary);
+  flex: 0 0 auto;
+}
+
+.onboarding-account-methods button > span {
+  display: grid;
+  gap: 5px;
+}
+
+.onboarding-account-methods small {
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.onboarding-plaid {
+  display: grid;
+  gap: 10px;
+}
+
+.onboarding-plaid .plaid-panel {
+  background: var(--color-surface-subtle);
+}
+
 .segmented-control {
   background: var(--color-surface-subtle);
   border: 1px solid var(--color-border-muted);
@@ -3233,6 +3288,7 @@
   .goal-card-grid,
   .budget-preview-grid,
   .onboarding-form-grid,
+  .onboarding-account-methods,
   .onboarding-bill-card,
   .setup-summary-grid {
     grid-template-columns: 1fr;

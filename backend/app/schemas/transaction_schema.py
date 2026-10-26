@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import Field
 
@@ -8,6 +9,7 @@ from app.schemas.common import ORMModel, money_field
 
 
 class TransactionCreate(ORMModel):
+    financial_kind: Literal["standard", "reimbursement", "transfer"] = "standard"
     account_id: int
     amount: Decimal = money_field()
     category: str = Field(min_length=1, max_length=80)
@@ -19,6 +21,7 @@ class TransactionCreate(ORMModel):
 
 
 class TransactionUpdate(ORMModel):
+    financial_kind: Literal["standard", "reimbursement", "transfer"] | None = None
     account_id: int | None = None
     amount: Decimal | None = Field(default=None, ge=Decimal("0"), max_digits=12, decimal_places=2)
     category: str | None = Field(default=None, min_length=1, max_length=80)
@@ -31,6 +34,8 @@ class TransactionUpdate(ORMModel):
 
 class TransactionRead(TransactionCreate):
     id: int
+    reporting_amount: Decimal = Decimal("0")
+    personal_amount: Decimal | None = None
 
 
 class TransactionBulkCreate(ORMModel):

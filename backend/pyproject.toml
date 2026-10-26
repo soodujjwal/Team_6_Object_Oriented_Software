@@ -10,12 +10,15 @@ dependencies = [
   "pydantic>=2.8.0",
   "python-dotenv>=1.0.0",
   "sqlalchemy>=2.0.30",
+  "pymongo>=4.10,<5",
+  "dnspython>=2.6,<3",
   "uvicorn[standard]>=0.30.0",
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8.2.0",
+  "mongomock>=4.3,<5",
 ]
 
 [tool.pytest.ini_options]

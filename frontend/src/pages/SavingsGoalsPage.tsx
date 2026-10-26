@@ -317,7 +317,8 @@ function buildGoalPlan(goal: SavingsGoal, transactions: Transaction[], completed
 }
 
 function isSavingsContribution(transaction: Transaction, goal: SavingsGoal) {
-  if (transaction.transaction_type !== "expense") return false;
+  if (transaction.transaction_type !== "expense" || transaction.financial_kind === "reimbursement"
+      || transaction.financial_kind === "transfer" || transaction.receipt_metadata?.pending || transaction.receipt_metadata?.bank_removed) return false;
   const note = (transaction.note ?? "").toLowerCase();
   const goalName = goal.name.toLowerCase();
   if (note.includes(goalName)) return true;

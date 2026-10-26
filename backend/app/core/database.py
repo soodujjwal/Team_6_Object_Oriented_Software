@@ -1,94 +1,112 @@
-from collections.abc import Generator
+"""Online MongoDB connection and request-scoped units of work.
 
-from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+The legacy exports exist only for SQLite regression tests and backup tooling.
+Application requests always use MongoDB; missing credentials never fall back to
+the old local database.
+"""
+from collections.abc import Generator
+from functools import lru_cache
+import re
+
+from fastapi import HTTPException
+from pymongo import MongoClient, IndexModel, ASCENDING
+from pymongo.errors import BulkWriteError, DuplicateKeyError, OperationFailure, PyMongoError
 
 from app.core.config import get_settings
+from app.core.legacy_database import Base, engine, migrate_database  # Legacy test compatibility.
+from app.core.mongo_store import MongoSession
 
 
-class Base(DeclarativeBase):
-    pass
+def mongodb_configured() -> bool:
+    uri = get_settings().mongodb_uri
+    return bool(uri and "<" not in uri and ">" not in uri and uri.startswith(("mongodb+srv://", "mongodb://")))
 
 
-engine = create_engine(
-    get_settings().database_url,
-    connect_args={"check_same_thread": False},
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+@lru_cache
+def get_mongo_client():
+    if not mongodb_configured():
+        raise HTTPException(503, "MongoDB is not configured. Set MONGODB_URI in the project root .env with the actual database password.")
+    try:
+        return MongoClient(get_settings().mongodb_uri, appname="Team6FinanceBuilder", serverSelectionTimeoutMS=5000,
+                           connectTimeoutMS=5000, socketTimeoutMS=15000, maxPoolSize=20, retryWrites=True)
+    except (PyMongoError, ValueError):
+        raise HTTPException(503, "The MongoDB connection string is invalid. Check MONGODB_URI and percent-encode special characters in its password.") from None
 
 
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
+def get_mongo_database():
+    name = get_settings().mongodb_database
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,63}", name):
+        raise HTTPException(503, "MONGODB_DATABASE must contain only letters, digits, underscores or hyphens.")
+    return get_mongo_client()[name]
+
+
+def ensure_indexes(database):
+    from app.repositories import models  # noqa: F401
+    collections = {mapper.local_table.name for mapper in Base.registry.mappers} | {"_counters", "_allocations"}
+    existing = set(database.list_collection_names())
+    for name in collections - existing:
+        database.create_collection(name)
+    indexes = {
+        "users": [IndexModel([("email", ASCENDING)], unique=True)],
+        "accounts": [IndexModel([("user_id", ASCENDING)])],
+        "transactions": [IndexModel([("account_id", ASCENDING), ("transaction_date", ASCENDING)])],
+        "budgets": [IndexModel([("user_id", ASCENDING), ("category", ASCENDING), ("month", ASCENDING), ("year", ASCENDING)], unique=True)],
+        "friends": [IndexModel([("user_id", ASCENDING), ("name", ASCENDING)], unique=True)],
+        "split_bills": [IndexModel([("user_id", ASCENDING)])],
+        "savings_goals": [IndexModel([("user_id", ASCENDING)])],
+        "transfers": [IndexModel([("from_account_id", ASCENDING), ("to_account_id", ASCENDING)])],
+        "recurring_transactions": [IndexModel([("account_id", ASCENDING), ("next_due_date", ASCENDING)])],
+        "plaid_items": [IndexModel([("item_id", ASCENDING)], unique=True), IndexModel([("user_id", ASCENDING)])],
+        "plaid_account_links": [IndexModel([("plaid_account_id", ASCENDING)], unique=True), IndexModel([("account_id", ASCENDING)], unique=True)],
+        "plaid_transaction_links": [IndexModel([("plaid_transaction_id", ASCENDING)], unique=True), IndexModel([("transaction_id", ASCENDING)], unique=True)],
+        "_allocations": [IndexModel([("user_id", ASCENDING)]), IndexModel([("bill_id", ASCENDING)])],
+    }
+    for name, definitions in indexes.items():
+        database[name].create_indexes(definitions)
+
+
+def create_database() -> None:
+    if not mongodb_configured():
+        return
+    try:
+        database = get_mongo_database()
+        database.command("ping")
+        ensure_indexes(database)
+    except PyMongoError:
+        raise RuntimeError("MongoDB initialization failed. Check the database password, Atlas IP access list, and network connectivity.") from None
+
+
+def get_db() -> Generator[MongoSession, None, None]:
+    db = MongoSession(get_mongo_database())
     try:
         yield db
+    except DuplicateKeyError:
+        db.rollback()
+        raise HTTPException(409, "This record or payment link already exists. Refresh before retrying.") from None
+    except BulkWriteError as error:
+        db.rollback()
+        if any(item.get("code") == 11000 for item in error.details.get("writeErrors", [])):
+            raise HTTPException(409, "The batch contains a duplicate record. Refresh before retrying.") from None
+        raise HTTPException(503, "MongoDB could not save this batch. Refresh before retrying.") from None
+    except OperationFailure as error:
+        db.rollback()
+        if error.has_error_label("TransientTransactionError"):
+            raise HTTPException(409, "Another request changed these records. Refresh and retry.") from None
+        if error.has_error_label("UnknownTransactionCommitResult"):
+            raise HTTPException(503, "Database confirmation is unavailable. Refresh transaction history before retrying.") from None
+        raise HTTPException(503, "MongoDB could not complete this operation. Check database access and try again.") from None
+    except PyMongoError:
+        db.rollback()
+        raise HTTPException(503, "MongoDB is unavailable. Check Atlas network access and refresh before retrying.") from None
     finally:
         db.close()
 
 
-def create_database() -> None:
-    from app.repositories import models  # noqa: F401
-
-    Base.metadata.create_all(bind=engine)
-    migrate_database()
-
-
-def migrate_database(database_engine=engine) -> None:
-    inspector = inspect(database_engine)
-    tables = set(inspector.get_table_names())
-    if "users" in tables:
-        user_columns = {column["name"] for column in inspector.get_columns("users")}
-        if "phone_number" not in user_columns:
-            with database_engine.begin() as connection:
-                connection.execute(
-                    text("ALTER TABLE users ADD COLUMN phone_number VARCHAR(14) NOT NULL DEFAULT ''")
-                )
-        if "occupation" not in user_columns:
-            with database_engine.begin() as connection:
-                connection.execute(
-                    text("ALTER TABLE users ADD COLUMN occupation VARCHAR(100) NOT NULL DEFAULT ''")
-                )
-
-    if "accounts" in tables:
-        account_columns = {column["name"] for column in inspector.get_columns("accounts")}
-        if "account_type" not in account_columns:
-            with database_engine.begin() as connection:
-                connection.execute(text("ALTER TABLE accounts ADD COLUMN account_type VARCHAR(20) NOT NULL DEFAULT 'other'"))
-                connection.execute(text("UPDATE accounts SET account_type = CASE WHEN LOWER(name) LIKE '%savings%' THEN 'savings' WHEN LOWER(name) LIKE '%checking%' THEN 'checking' ELSE 'other' END"))
-        if "bank_name" not in account_columns:
-            with database_engine.begin() as connection:
-                connection.execute(
-                    text("ALTER TABLE accounts ADD COLUMN bank_name VARCHAR(100) NOT NULL DEFAULT 'Other'")
-                )
-        if "phone_number" in account_columns and database_engine.dialect.name == "sqlite":
-            with database_engine.begin() as connection:
-                connection.execute(text("ALTER TABLE accounts DROP COLUMN phone_number"))
-
-    if "transactions" in tables:
-        transaction_columns = {column["name"] for column in inspector.get_columns("transactions")}
-        with database_engine.begin() as connection:
-            if "receipt_items" not in transaction_columns:
-                connection.execute(text("ALTER TABLE transactions ADD COLUMN receipt_items JSON"))
-            if "receipt_metadata" not in transaction_columns:
-                connection.execute(text("ALTER TABLE transactions ADD COLUMN receipt_metadata JSON"))
-
-    if "recurring_transactions" in tables:
-        recurring_columns = {column["name"] for column in inspector.get_columns("recurring_transactions")}
-        with database_engine.begin() as connection:
-            if "name" not in recurring_columns:
-                connection.execute(text("ALTER TABLE recurring_transactions ADD COLUMN name VARCHAR(120) NOT NULL DEFAULT ''"))
-            if "auto_pay_status" not in recurring_columns:
-                connection.execute(text("ALTER TABLE recurring_transactions ADD COLUMN auto_pay_status BOOLEAN NOT NULL DEFAULT 0"))
-            if "reminder_settings" not in recurring_columns:
-                connection.execute(text("ALTER TABLE recurring_transactions ADD COLUMN reminder_settings JSON"))
-            if "last_paid_date" not in recurring_columns:
-                connection.execute(text("ALTER TABLE recurring_transactions ADD COLUMN last_paid_date DATE"))
-            if "last_matched_transaction_id" not in recurring_columns:
-                connection.execute(text("ALTER TABLE recurring_transactions ADD COLUMN last_matched_transaction_id INTEGER"))
-
-    if "savings_goals" in tables:
-        savings_goal_columns = {column["name"] for column in inspector.get_columns("savings_goals")}
-        if "monthly_income" not in savings_goal_columns:
-            with database_engine.begin() as connection:
-                connection.execute(
-                    text("ALTER TABLE savings_goals ADD COLUMN monthly_income NUMERIC(12, 2) NOT NULL DEFAULT 0")
-                )
+def database_health():
+    if not mongodb_configured():
+        return {"status": "not_configured", "engine": "mongodb"}
+    try:
+        get_mongo_database().command("ping")
+        return {"status": "ok", "engine": "mongodb"}
+    except (PyMongoError, HTTPException):
+        return {"status": "unavailable", "engine": "mongodb"}

@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
-from app.repositories.models import AccountModel, TransferModel
+from app.repositories.models import AccountModel, TransferModel, TransactionModel
 from app.schemas.transfer_schema import TransferCreate, TransferRead
 from app.services.account_service import AccountService
 
@@ -31,6 +31,11 @@ class TransferService:
             transfer = TransferModel(**payload.model_dump())
             self.db.add(transfer)
             self.db.flush()
+            for account_id, direction in [(source.id, "expense"), (destination.id, "income")]:
+                self.db.add(TransactionModel(account_id=account_id, amount=payload.amount, category="Transfer",
+                    transaction_type=direction, transaction_date=transfer.transfer_date,
+                    note=payload.note or "Transfer between own accounts", financial_kind="transfer",
+                    receipt_metadata={"transfer_id": transfer.id}))
             result = TransferRead.model_validate(transfer)
             self.db.commit()
             return result

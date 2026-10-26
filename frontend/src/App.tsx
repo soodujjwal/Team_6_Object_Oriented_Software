@@ -7,6 +7,8 @@ import { AffordabilityPage } from "./pages/AffordabilityPage";
 import { BudgetsPage } from "./pages/BudgetsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { LandingPage } from "./pages/LandingPage";
+import { readRoute, resolveRoute, type AppRoute } from "./domain/navigation";
 import { RegisterPage } from "./pages/RegisterPage";
 import { AccountSettingsPage } from "./pages/AccountSettingsPage";
 import { AccountsPage } from "./pages/AccountsPage";
@@ -34,7 +36,6 @@ export type Page =
   | "split";
 
 const USER_KEY = AUTH_USER_KEY;
-type AuthRoute = "/login" | "/register";
 
 function getInitialTheme(): Theme {
   try {
@@ -51,9 +52,7 @@ function getInitialTheme(): Theme {
 export default function App() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [page, setPage] = useState<Page>("dashboard");
-  const [authRoute, setAuthRoute] = useState<AuthRoute>(() =>
-    window.location.pathname === "/register" ? "/register" : "/login",
-  );
+  const [route, setRoute] = useState<AppRoute>(() => readRoute(window.location.pathname));
   const [initialSession] = useState(readStoredSession);
   const [user, setUser] = useState<User | null>(initialSession.user);
   const [sessionNotice, setSessionNotice] = useState(initialSession.expired ? SESSION_EXPIRED_MESSAGE : "");
@@ -67,7 +66,7 @@ export default function App() {
       setOnboardingComplete(false);
       setPage("dashboard");
       setSessionNotice(SESSION_EXPIRED_MESSAGE);
-      setAuthRoute("/login");
+      setRoute("/login");
       window.history.replaceState(null, "", "/login");
     }
     window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
@@ -86,22 +85,27 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (!user && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
-      window.history.replaceState(null, "", "/login");
-      setAuthRoute("/login");
-    }
-
     function handlePopState() {
-      setAuthRoute(window.location.pathname === "/register" ? "/register" : "/login");
+      setRoute(readRoute(window.location.pathname));
     }
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [user]);
+  }, []);
 
-  function navigateAuth(route: AuthRoute) {
+  useEffect(() => {
+    const destination = resolveRoute(route, Boolean(user));
+    if (window.location.pathname !== destination) window.history.replaceState(null, "", destination);
+    if (destination !== route) setRoute(destination);
+    document.title = destination === "/" ? "Finance Builder | Your money, all connected"
+      : destination === "/login" ? "Log in | Finance Builder"
+      : destination === "/register" ? "Create an account | Finance Builder" : "Finance Builder";
+  }, [route, user]);
+
+  function navigateAuth(route: AppRoute) {
     window.history.pushState(null, "", route);
-    setAuthRoute(route);
+    setRoute(route);
+    window.scrollTo(0, 0);
   }
 
   function handleAuth(accessToken: string, nextUser: User) {
@@ -111,7 +115,8 @@ export default function App() {
     setUser(nextUser);
     setOnboardingComplete(hasCompletedOnboarding(nextUser));
     setPage("dashboard");
-    window.history.replaceState(null, "", "/");
+    window.history.replaceState(null, "", "/app");
+    setRoute("/app");
   }
 
   function handleLogout() {
@@ -121,6 +126,8 @@ export default function App() {
     setUser(null);
     setOnboardingComplete(false);
     setPage("dashboard");
+    window.history.replaceState(null, "", "/");
+    setRoute("/");
   }
 
   function handleUserUpdate(nextUser: User, accessToken?: string) {
@@ -129,11 +136,13 @@ export default function App() {
     setUser(nextUser);
   }
 
+  if (route === "/") return <LandingPage signedIn={Boolean(user)} />;
+
   if (!user) {
-    return authRoute === "/register" ? (
-      <RegisterPage onRegister={handleAuth} onShowLogin={() => navigateAuth("/login")} />
+    return route === "/register" ? (
+      <RegisterPage onRegister={handleAuth} onShowHome={() => navigateAuth("/")} onShowLogin={() => navigateAuth("/login")} />
     ) : (
-      <LoginPage notice={sessionNotice} onLogin={handleAuth} onShowRegister={() => navigateAuth("/register")} />
+      <LoginPage notice={sessionNotice} onLogin={handleAuth} onShowHome={() => navigateAuth("/")} onShowRegister={() => navigateAuth("/register")} />
     );
   }
 

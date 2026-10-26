@@ -55,7 +55,8 @@ export function summarizeBankSubscriptions(transactions: Transaction[]): Subscri
   const bankExpenses = transactions.filter((transaction) => (
     transaction.transaction_type === "expense"
     && transaction.receipt_metadata?.source === "plaid"
-    && Number(transaction.amount) > 0
+    && Number(transaction.amount) > 0 && transaction.financial_kind !== "transfer"
+    && !transaction.receipt_metadata?.pending && !transaction.receipt_metadata?.bank_removed
   ));
   const groups = new Map<string, { displayName: string; known: boolean; transactions: Transaction[] }>();
 

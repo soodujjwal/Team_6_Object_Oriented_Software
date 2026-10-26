@@ -9,33 +9,34 @@ from app.services.converters import to_domain_transaction
 
 
 class BudgetService:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, user_id: int):
+        self.user_id = user_id
         self.budgets = BudgetRepository(db)
         self.transactions = TransactionRepository(db)
 
     def list_budgets(self) -> list[BudgetRead]:
-        return [self._read(budget) for budget in self.budgets.list()]
+        return [self._read(budget) for budget in self.budgets.list_for_user(self.user_id)]
 
     def get_budget(self, budget_id: int) -> BudgetRead:
-        budget = self.budgets.get(budget_id)
+        budget = self.budgets.get_for_user(budget_id, self.user_id)
         if budget is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "budget not found")
         return self._read(budget)
 
     def create_budget(self, payload: BudgetCreate) -> BudgetRead:
-        duplicate = self.budgets.find_duplicate(payload.category, payload.month, payload.year)
+        duplicate = self.budgets.find_duplicate(self.user_id, payload.category, payload.month, payload.year)
         if duplicate is not None:
             raise HTTPException(status.HTTP_409_CONFLICT, "budget already exists for category and month")
-        return self._read(self.budgets.create(payload.model_dump()))
+        return self._read(self.budgets.create({**payload.model_dump(), "user_id": self.user_id}))
 
     def update_budget(self, budget_id: int, payload: BudgetUpdate) -> BudgetRead:
-        budget = self.budgets.get(budget_id)
+        budget = self.budgets.get_for_user(budget_id, self.user_id)
         if budget is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "budget not found")
         return self._read(self.budgets.update(budget, payload.model_dump(exclude_unset=True)))
 
     def delete_budget(self, budget_id: int) -> None:
-        budget = self.budgets.get(budget_id)
+        budget = self.budgets.get_for_user(budget_id, self.user_id)
         if budget is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "budget not found")
         self.budgets.delete(budget)

@@ -53,6 +53,17 @@ class RepaymentUpdate(ORMModel):
     amount: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
 
 
+class PaymentLink(ORMModel):
+    transaction_id: int | None = Field(default=None, gt=0)
+
+
+class RepaymentCreate(PaymentLink):
+    amount: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    account_id: int | None = Field(default=None, gt=0)
+    payment_date: date = Field(default_factory=date.today)
+    request_id: str = Field(min_length=1, max_length=100)
+
+
 class FriendCreate(ORMModel):
     name: str = Field(min_length=1, max_length=100)
 

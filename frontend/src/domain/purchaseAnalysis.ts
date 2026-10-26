@@ -1,6 +1,8 @@
 import type { Account, Budget, Transaction } from "../api/types";
 import type { SavingsGoal } from "../api/savingsGoals";
 import type { RecurringTransaction } from "../api/recurringTransactions";
+import { getEffectiveBudgets } from "./budgeting";
+import { reportingAmount, isReportable } from "./financialTracking";
 
 export type FinancialSnapshot = {
   currentSavings: number | null;
@@ -81,16 +83,16 @@ export function buildFinancialSnapshot(
     }),
   );
   const recentTransactions = transactions.filter((transaction) =>
-    trailingMonthKeys.has(monthKey(transaction.transaction_date)),
+    trailingMonthKeys.has(monthKey(transaction.transaction_date)) && isReportable(transaction),
   );
   const activeMonths = new Set(recentTransactions.map((transaction) => monthKey(transaction.transaction_date)));
   const transactionMonths = activeMonths.size;
   const incomeTotal = recentTransactions
     .filter((transaction) => transaction.transaction_type === "income")
-    .reduce((total, transaction) => total + amountOf(transaction.amount), 0);
+    .reduce((total, transaction) => total + reportingAmount(transaction), 0);
   const expenseTotal = recentTransactions
     .filter((transaction) => transaction.transaction_type === "expense")
-    .reduce((total, transaction) => total + amountOf(transaction.amount), 0);
+    .reduce((total, transaction) => total + reportingAmount(transaction), 0);
   const loggedMonthlyIncome = transactionMonths ? incomeTotal / transactionMonths : null;
   const monthlyExpenses = transactionMonths ? expenseTotal / transactionMonths : null;
 
@@ -122,10 +124,18 @@ export function buildFinancialSnapshot(
     return total + Math.max(0, amountOf(goal.target_amount) - amountOf(goal.current_amount)) / months;
   }, 0);
 
-  const hasCurrentBudgets = budgets.some((budget) => budget.month === today.getMonth() + 1 && budget.year === today.getFullYear());
-  const currentBudgets = budgets.filter((budget) => budget.month === today.getMonth() + 1 && budget.year === today.getFullYear());
-  const budgetHeadroom = hasCurrentBudgets && currentBudgets.every((budget) => budget.used_amount !== null)
-    ? currentBudgets.reduce((total, budget) => total + Math.max(0, amountOf(budget.monthly_limit) - amountOf(budget.used_amount)), 0)
+  const currentBudgets = getEffectiveBudgets(budgets, today.getMonth() + 1, today.getFullYear());
+  const currentExpenses = transactions.filter((transaction) => {
+    const [year, month] = transaction.transaction_date.slice(0, 10).split("-").map(Number);
+    return transaction.transaction_type === "expense" && isReportable(transaction) && year === today.getFullYear() && month === today.getMonth() + 1;
+  });
+  const budgetHeadroom = currentBudgets.length
+    ? currentBudgets.reduce((total, budget) => {
+        const used = currentExpenses
+          .filter((transaction) => transaction.category.toLocaleLowerCase() === budget.category.toLocaleLowerCase())
+          .reduce((spent, transaction) => spent + reportingAmount(transaction), 0);
+        return total + Math.max(0, amountOf(budget.monthly_limit) - used);
+      }, 0)
     : null;
 
   const upcomingRecurringExpenses = recurring

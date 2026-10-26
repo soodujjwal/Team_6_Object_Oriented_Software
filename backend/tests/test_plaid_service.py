@@ -58,7 +58,7 @@ def test_plaid_client_explains_environment_mismatched_keys(monkeypatch):
         PlaidClient().post("/link/token/create", {})
 
     assert raised.value.status_code == 503
-    assert "sandbox environment" in raised.value.detail
+    assert f"{PlaidClient().environment} environment" in raised.value.detail
     assert "restart the backend" in raised.value.detail
 
 

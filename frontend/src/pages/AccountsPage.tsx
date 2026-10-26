@@ -89,7 +89,7 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
                   <div>
                     <strong>{account.name}</strong>
                     <span>{account.bank_name || "Manual account"}</span>
-                    <small>Last updated today</small>
+                    <small>{account.balance_synced_at ? `Bank snapshot fetched ${new Date(`${account.balance_synced_at}Z`).toLocaleString()}` : "Manual account"}</small>
                   </div>
                   <div className="account-balance-block">
                     <strong className={balance < 0 ? "negative" : ""}>{formatCurrency(balance)}</strong>
@@ -119,18 +119,23 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
               <span>{selectedAccount.bank_name || "Manual account"}</span>
             </div>
             <div className="account-detail-balance">
-              <span>Current Balance</span>
+              <span>Estimated Balance</span>
               <strong className={getAccountBalance(selectedAccount) < 0 ? "negative" : ""}>
                 {formatCurrency(getAccountBalance(selectedAccount))}
               </strong>
             </div>
             <dl className="account-detail-list">
+              {selectedAccount.bank_current_balance != null && <>
+                <div><dt>Bank-reported balance</dt><dd>{formatCurrency(selectedAccount.bank_current_balance)}</dd></div>
+                <div><dt>Bank available balance</dt><dd>{selectedAccount.bank_available_balance == null ? "Not supplied by bank" : formatCurrency(selectedAccount.bank_available_balance)}</dd></div>
+                <div><dt>Unmatched manual movement</dt><dd>{formatCurrency(selectedAccount.unmatched_movement ?? "0")}</dd></div>
+              </>}
               <div>
                 <dt>Starting Balance</dt>
                 <dd>{formatCurrency(selectedAccount.starting_balance)}</dd>
               </div>
               <div>
-                <dt>Available Now</dt>
+                <dt>Estimated cash</dt>
                 <dd>{formatCurrency(Math.max(getAccountBalance(selectedAccount), 0))}</dd>
               </div>
               <div>

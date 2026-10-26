@@ -22,6 +22,10 @@ class AccountModel(Base):
     __tablename__ = "accounts"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True, nullable=True)
+    bank_current_balance: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    bank_available_balance: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    balance_synced_at: Mapped[datetime | None] = mapped_column(nullable=True)
     bank_name: Mapped[str] = mapped_column(String(100), nullable=False, default="Other")
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     starting_balance: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
@@ -56,6 +60,15 @@ class TransactionModel(Base):
     note: Mapped[str | None] = mapped_column(String(255))
     receipt_items: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     receipt_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    financial_kind: Mapped[str] = mapped_column(String(30), nullable=False, default="standard")
+    personal_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+
+    @property
+    def reporting_amount(self) -> Decimal:
+        metadata = self.receipt_metadata or {}
+        if self.financial_kind in {"reimbursement", "transfer"} or metadata.get("pending") or metadata.get("bank_removed"):
+            return Decimal("0")
+        return self.personal_amount if self.personal_amount is not None else self.amount
 
     account: Mapped[AccountModel] = relationship(back_populates="transactions")
 
@@ -82,6 +95,7 @@ class BudgetModel(Base):
     __tablename__ = "budgets"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     category: Mapped[str] = mapped_column(String(80), nullable=False)
     monthly_limit: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     month: Mapped[int] = mapped_column(nullable=False)
@@ -92,6 +106,7 @@ class SavingsGoalModel(Base):
     __tablename__ = "savings_goals"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True, nullable=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     target_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     current_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)

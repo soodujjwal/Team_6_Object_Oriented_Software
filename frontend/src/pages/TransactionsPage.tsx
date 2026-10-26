@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CalendarDays, FileText, Search, Tag, Wallet } from "lucide-react";
 import { getAccounts } from "../api/accounts";
-import { getTransactions, TRANSACTIONS_UPDATED_EVENT, updateTransaction } from "../api/transactions";
+import { getTransactions, getTransactionMatches, confirmTransactionMatch, type TransactionMatch, TRANSACTIONS_UPDATED_EVENT, updateTransaction } from "../api/transactions";
 import type { Account, Transaction, TransactionType } from "../api/types";
 import { TopBar } from "../components/TopBar";
 import { Button, CategorySelect, DatePicker, GlassCard, GlassSelect, Modal, TextField } from "../components/ui";
@@ -12,6 +12,7 @@ type SourceFilter = "all" | "receipt" | "csv" | "pdf" | "plaid" | "manual";
 type TypeFilter = "all" | TransactionType;
 
 type EditDraft = {
+  financial_kind: "standard" | "reimbursement" | "transfer";
   account_id: string;
   amount: string;
   category: string;
@@ -40,6 +41,7 @@ export function TransactionsPage() {
   const [draft, setDraft] = useState<EditDraft | null>(null);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [matches, setMatches] = useState<TransactionMatch[]>([]);
 
   useEffect(() => {
     loadData();
@@ -90,8 +92,9 @@ export function TransactionsPage() {
   }, [filteredTransactions]);
 
   function loadData() {
-    Promise.all([getAccounts(), getTransactions()])
-      .then(([accountData, transactionData]) => {
+    Promise.all([getAccounts(), getTransactions(), getTransactionMatches()])
+      .then(([accountData, transactionData, suggestions]) => {
+        setMatches(suggestions);
         setAccounts(accountData);
         setTransactions(transactionData);
         setStatus("");
@@ -102,6 +105,7 @@ export function TransactionsPage() {
   function openEditor(transaction: Transaction) {
     setEditing(transaction);
     setDraft({
+      financial_kind: transaction.financial_kind ?? "standard",
       account_id: String(transaction.account_id),
       amount: transaction.amount,
       category: transaction.category,
@@ -123,6 +127,7 @@ export function TransactionsPage() {
     setStatus("");
     try {
       await updateTransaction(editing.id, {
+        financial_kind: draft.financial_kind,
         account_id: Number(draft.account_id),
         amount: draft.amount,
         category: draft.category,
@@ -147,6 +152,19 @@ export function TransactionsPage() {
       <TopBar title="Transactions" />
 
       {status && <p className="notice" role="alert">{status}</p>}
+      {matches.length > 0 && <GlassCard className="form-stack">
+        <h2>Review possible duplicates</h2>
+        <p>Confirm that these entries describe the same payment. Matching keeps one transaction.</p>
+        {matches.map((match) => <div key={`${match.manual_id}-${match.bank_transaction_id}`}>
+          <p><strong>{match.manual_note || "Manual entry"}</strong> · {match.bank_note} · {formatCurrency(match.amount)} · {formatDate(match.date)}</p>
+          <small>{match.reason}</small>
+          <Button disabled={saving} variant="secondary" onClick={() => {
+            if (!window.confirm("Link these as the same payment? The manual record and its split bill links will be preserved.")) return;
+            setSaving(true);
+            void confirmTransactionMatch(match.manual_id, match.bank_transaction_id).catch((error) => setStatus(error.message)).finally(() => setSaving(false));
+          }}>Confirm match</Button>
+        </div>)}
+      </GlassCard>}
 
       <GlassCard className="transactions-toolbar">
         <TextField
@@ -195,6 +213,11 @@ export function TransactionsPage() {
                   <span className="transaction-history-main">
                     <strong>{getTransactionMerchant(transaction)}</strong>
                     <small>{transaction.category} · {formatDate(transaction.transaction_date)}</small>
+                    {transaction.financial_kind && transaction.financial_kind !== "standard" && <small>{transaction.financial_kind === "reimbursement" ? "Reimbursement · excluded from regular income" : "Own-account transfer · excluded from spending"}</small>}
+                    {transaction.receipt_metadata?.pending && <small>Pending · excluded from reports until posted</small>}
+                    {transaction.receipt_metadata?.matched_manual && <small>Matched to bank</small>}
+                    {transaction.receipt_metadata?.bank_removed && <small>Removed by bank · needs review</small>}
+                    {transaction.personal_amount != null && <small>Your spending share: {formatCurrency(transaction.personal_amount)}</small>}
                     <small>{accountById.get(transaction.account_id)?.name ?? "Account"} · {accountById.get(transaction.account_id)?.bank_name ?? "Manual account"}</small>
                   </span>
                   <span className={transaction.transaction_type === "income" ? "positive transaction-history-amount" : "negative transaction-history-amount"}>
@@ -217,9 +240,11 @@ export function TransactionsPage() {
         {editing && draft && (
           <form className="transaction-editor" onSubmit={saveEdit}>
             <TextField icon={<FileText aria-hidden="true" size={18} />} label="Merchant / Name" onChange={(event) => updateDraft({ note: event.target.value })} required value={draft.note} />
-            <TextField label="Amount" min="0" onChange={(event) => updateDraft({ amount: event.target.value })} required step="0.01" type="number" value={draft.amount} />
+            <TextField disabled={editing.receipt_metadata?.source === "plaid"} label="Amount" min="0" onChange={(event) => updateDraft({ amount: event.target.value })} required step="0.01" type="number" value={draft.amount} />
+            <GlassSelect label="Financial purpose" value={draft.financial_kind} onChange={(value) => updateDraft({ financial_kind: value as EditDraft["financial_kind"] })} options={[{ value: "standard", label: "Regular expense or income" }, { value: "reimbursement", label: "Reimbursement" }, { value: "transfer", label: "Own-account transfer" }]} />
             <GlassSelect
               label="Type"
+              disabled={editing.receipt_metadata?.source === "plaid"}
               onChange={(value) => {
                 const nextType = value as TransactionType;
                 updateDraft({ transaction_type: nextType, category: getDefaultCategory(nextType) });
@@ -232,6 +257,7 @@ export function TransactionsPage() {
             <GlassSelect
               icon={<Wallet aria-hidden="true" size={18} />}
               label="Account"
+              disabled={editing.receipt_metadata?.source === "plaid"}
               onChange={(accountId) => updateDraft({ account_id: accountId })}
               options={accounts.map((account) => ({ value: String(account.id), label: `${account.name} · ${account.bank_name}` }))}
               value={draft.account_id}
@@ -242,7 +268,9 @@ export function TransactionsPage() {
             </div>
             <div className="budget-modal-actions">
               <Button disabled={saving} onClick={() => { setEditing(null); setDraft(null); }} type="button" variant="secondary">Cancel</Button>
-              <Button disabled={saving} type="submit">{saving ? "Saving..." : "Save Changes"}</Button>
+              {editing.receipt_metadata?.split_bill_id || editing.receipt_metadata?.transfer_id
+                ? <p>Manage this entry through bank sync, Split Bill, or Transfers.</p>
+                : <Button disabled={saving} type="submit">{saving ? "Saving..." : "Save Changes"}</Button>}
             </div>
           </form>
         )}

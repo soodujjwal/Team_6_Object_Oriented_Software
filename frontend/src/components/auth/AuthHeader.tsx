@@ -12,7 +12,7 @@ export function AuthHeader({ title, subtitle }: AuthHeaderProps) {
         <PiggyBank size={42} strokeWidth={1.8} />
       </div>
       <div>
-        <p className="auth-brand">Personal Finance Manager</p>
+        <p className="auth-brand">Finance Builder</p>
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </div>

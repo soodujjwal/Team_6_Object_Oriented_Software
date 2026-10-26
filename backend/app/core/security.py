@@ -69,6 +69,7 @@ def get_current_user(
     user = UserRepository(db).get_by_email(email)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="user not found")
+    db.info["user_id"] = user.id
     return user
 
 

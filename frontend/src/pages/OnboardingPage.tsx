@@ -8,6 +8,7 @@ import { createTransaction, getTransactions } from "../api/transactions";
 import type { User } from "../api/auth";
 import type { Account } from "../api/types";
 import { BankSelector } from "../components/BankSelector";
+import { PlaidConnection } from "../components/PlaidConnection";
 import { Button, DatePicker, GlassCard, GlassSelect, TextField } from "../components/ui";
 import { getCategoriesForType } from "../domain/transactionCategories";
 import { formatCurrency } from "../utils/format";
@@ -19,6 +20,7 @@ type OnboardingPageProps = {
 
 type SetupDestination = "dashboard" | "accounts" | "goals" | "recurring";
 type BudgetMode = "template" | "custom";
+type AccountMethod = "plaid" | "manual";
 type BillDraft = {
   name: string;
   amount: string;
@@ -31,6 +33,7 @@ type BillDraft = {
 };
 type Draft = {
   goals: string[];
+  accountMethod: AccountMethod;
   bankName: string;
   accountName: string;
   startingBalance: string;
@@ -94,6 +97,7 @@ function defaultBill(accountId = ""): BillDraft {
 function defaultDraft(): Draft {
   return {
     goals: [],
+    accountMethod: "plaid",
     bankName: "",
     accountName: "",
     startingBalance: "",
@@ -259,6 +263,7 @@ export function OnboardingPage({ onComplete, user }: OnboardingPageProps) {
   }
 
   async function saveAccount() {
+    if (draft.accountMethod === "plaid") return;
     if (!draft.bankName && !draft.accountName && !draft.startingBalance) return;
     if (!draft.bankName || !draft.accountName || Number(draft.startingBalance) < 0) throw new Error("Choose a bank, account name, and valid starting balance.");
     const existing = await getAccounts();
@@ -382,7 +387,12 @@ export function OnboardingPage({ onComplete, user }: OnboardingPageProps) {
 
         {step === 0 && <WelcomeStep onOpenDestination={openSetupDestination} />}
         {step === 1 && <GoalsStep draft={draft} setDraft={setDraft} />}
-        {step === 2 && <AccountStep draft={draft} setDraft={setDraft} />}
+        {step === 2 && <AccountStep draft={draft} onAccountsChanged={() => {
+          void getAccounts().then((items) => {
+            setAccounts(items);
+            setSelectedAccountId(String(items[0]?.id ?? ""));
+          });
+        }} setDraft={setDraft} />}
         {step === 3 && <IncomeStep draft={draft} setDraft={setDraft} />}
         {step === 4 && <BudgetStep draft={draft} income={income} monthlyBudget={monthlyBudget} setDraft={setDraft} />}
         {step === 5 && <SavingsStep draft={draft} prominent={shouldHighlightSavings} setDraft={setDraft} />}
@@ -424,8 +434,8 @@ function GoalsStep({ draft, setDraft }: { draft: Draft; setDraft: Dispatch<SetSt
   return <section className="onboarding-step"><h2>What are your financial goals?</h2><p>Select every goal that applies. This helps the setup emphasize the right steps.</p><div className="goal-card-grid">{GOALS.map((goal) => { const selected = draft.goals.includes(goal); return <button className={`goal-choice ${selected ? "selected" : ""}`} key={goal} onClick={() => setDraft((current) => ({ ...current, goals: selected ? current.goals.filter((item) => item !== goal) : [...current.goals, goal] }))} type="button"><Sparkles size={18} /> {goal}</button>; })}</div></section>;
 }
 
-function AccountStep({ draft, setDraft }: { draft: Draft; setDraft: Dispatch<SetStateAction<Draft>> }) {
-  return <section className="onboarding-step"><h2>Connect your account</h2><p>Bank connection is not configured yet, so add an account manually now. You can still choose your institution for organization.</p><div className="onboarding-form-grid"><BankSelector onChange={(bankName) => setDraft((current) => ({ ...current, bankName }))} value={draft.bankName} /><TextField icon={<Landmark size={18} />} label="Account Name" onChange={(event) => setDraft((current) => ({ ...current, accountName: event.target.value }))} placeholder="Checking" value={draft.accountName} /><TextField icon={<span>$</span>} label="Starting Balance" min="0" onChange={(event) => setDraft((current) => ({ ...current, startingBalance: event.target.value }))} placeholder="0.00" step="0.01" type="number" value={draft.startingBalance} /></div><p className="caption-text">Add Account Manually is fully functional. Real bank-linking can be connected later.</p></section>;
+function AccountStep({ draft, onAccountsChanged, setDraft }: { draft: Draft; onAccountsChanged: () => void; setDraft: Dispatch<SetStateAction<Draft>> }) {
+  return <section className="onboarding-step"><h2>Connect your account</h2><p>Choose secure bank syncing through Plaid or enter an account yourself.</p><div aria-label="Account connection method" className="onboarding-account-methods" role="group"><button aria-pressed={draft.accountMethod === "plaid"} className={draft.accountMethod === "plaid" ? "selected" : ""} onClick={() => setDraft((current) => ({ ...current, accountMethod: "plaid" }))} type="button"><Landmark size={20} /><span><strong>Connect with Plaid</strong><small>Link a bank and import accounts and transactions automatically.</small></span></button><button aria-pressed={draft.accountMethod === "manual"} className={draft.accountMethod === "manual" ? "selected" : ""} onClick={() => setDraft((current) => ({ ...current, accountMethod: "manual" }))} type="button"><WalletCards size={20} /><span><strong>Enter manually</strong><small>Add the institution, account name, and starting balance yourself.</small></span></button></div>{draft.accountMethod === "plaid" ? <div className="onboarding-plaid"><PlaidConnection onAccountsChanged={onAccountsChanged} /><p className="caption-text">After Plaid confirms the connection, choose Continue to finish the rest of setup.</p></div> : <><div className="onboarding-form-grid"><BankSelector onChange={(bankName) => setDraft((current) => ({ ...current, bankName }))} value={draft.bankName} /><TextField icon={<Landmark size={18} />} label="Account Name" onChange={(event) => setDraft((current) => ({ ...current, accountName: event.target.value }))} placeholder="Checking" value={draft.accountName} /><TextField icon={<span>$</span>} label="Starting Balance" min="0" onChange={(event) => setDraft((current) => ({ ...current, startingBalance: event.target.value }))} placeholder="0.00" step="0.01" type="number" value={draft.startingBalance} /></div><p className="caption-text">Manual accounts can be edited or connected to bank syncing later from Account Settings.</p></>}</section>;
 }
 
 function IncomeStep({ draft, setDraft }: { draft: Draft; setDraft: Dispatch<SetStateAction<Draft>> }) {
@@ -450,7 +460,7 @@ function BillsStep({ accounts, draft, selectedAccountId, setDraft }: { accounts:
 }
 
 function SummaryStep({ draft, monthlyBudget }: { draft: Draft; monthlyBudget: Record<"needs" | "wants" | "savingsDebt", number> }) {
-  return <section className="onboarding-step"><h2>You’re all set!</h2><p>Your dashboard will use the real records saved during setup.</p><div className="setup-summary-grid"><SummaryItem label="Selected goals" value={draft.goals.length ? draft.goals.join(", ") : "Skipped"} /><SummaryItem label="Account" value={draft.accountName ? `${draft.accountName} · ${draft.bankName}` : "Not added"} /><SummaryItem label="Monthly income" value={draft.incomeAmount ? formatCurrency(draft.incomeAmount) : "Not added"} /><SummaryItem label="Budget" value={Number(draft.incomeAmount) > 0 ? `${formatCurrency(monthlyBudget.needs)} needs · ${formatCurrency(monthlyBudget.wants)} wants · ${formatCurrency(monthlyBudget.savingsDebt)} savings/debt` : "Not added"} /><SummaryItem label="Savings goal" value={draft.savingsTarget ? `${draft.savingsName}: ${formatCurrency(draft.savingsTarget)}` : "Skipped"} /><SummaryItem label="Recurring bills" value={draft.bills.filter((bill) => bill.name && bill.amount).length ? `${draft.bills.filter((bill) => bill.name && bill.amount).length} bill(s)` : "Skipped"} /></div></section>;
+  return <section className="onboarding-step"><h2>You’re all set!</h2><p>Your dashboard will use the real records saved during setup.</p><div className="setup-summary-grid"><SummaryItem label="Selected goals" value={draft.goals.length ? draft.goals.join(", ") : "Skipped"} /><SummaryItem label="Account" value={draft.accountMethod === "plaid" ? "Plaid bank connection" : draft.accountName ? `${draft.accountName} · ${draft.bankName}` : "Not added"} /><SummaryItem label="Monthly income" value={draft.incomeAmount ? formatCurrency(draft.incomeAmount) : "Not added"} /><SummaryItem label="Budget" value={Number(draft.incomeAmount) > 0 ? `${formatCurrency(monthlyBudget.needs)} needs · ${formatCurrency(monthlyBudget.wants)} wants · ${formatCurrency(monthlyBudget.savingsDebt)} savings/debt` : "Not added"} /><SummaryItem label="Savings goal" value={draft.savingsTarget ? `${draft.savingsName}: ${formatCurrency(draft.savingsTarget)}` : "Skipped"} /><SummaryItem label="Recurring bills" value={draft.bills.filter((bill) => bill.name && bill.amount).length ? `${draft.bills.filter((bill) => bill.name && bill.amount).length} bill(s)` : "Skipped"} /></div></section>;
 }
 
 function SummaryItem({ label, value }: { label: string; value: string }) {

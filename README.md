@@ -6,11 +6,15 @@ Backend-first implementation for Team 6's CSE 3311 Personal Finance Manager.
 
 - Python 3.11 or newer
 - FastAPI
-- SQLAlchemy
-- SQLite
+- MongoDB Atlas with PyMongo (online application data)
+- SQLAlchemy record metadata and legacy SQLite regression tests
 - pytest
 
 ## Run the Backend
+
+The application now uses **MongoDB Atlas**, including login records and all finance data. Set `MONGODB_URI` and `MONGODB_DATABASE=finance_builder` in the project root `.env`. The complete URI stays on the backend; never put it in frontend code. The existing SQLite file is retained only as a legacy backup and is not read by application requests. Start with a new app registration after switching databases.
+
+See [MongoDB setup and verification](documents/mongodb-setup.md) for configuration, storage behavior, and live test commands.
 
 From the course folder, first enter the project repo:
 
@@ -71,7 +75,7 @@ Settings shows **Move Funds** when at least one account has the Savings type. Se
 
 Transfers are recorded in a separate ledger (`GET /transfers`, `POST /transfers`) and included in account balances without changing income, expenses, budget usage, or report totals. Successful transfers refresh the financial views. Accounts referenced by transfers cannot be deleted, preserving the ledger and the other account's balance.
 
-On backend startup, existing names containing “Savings” or “Checking” are classified automatically. Other accounts keep the Other type; their type can be changed using Edit in Settings. Renaming an account preserves its type.
+New manual accounts infer their type from names containing “Savings” or “Checking” when no explicit type is supplied. Their type can be changed using Edit in Settings. Renaming an account preserves its type.
 
 ## Split Bill
 
@@ -83,7 +87,7 @@ Saving a draft does not change balances. **Record bill as paid** deducts the sub
 
 Friends' **Payment received** checkboxes open a confirmation with an editable actual amount. Repayments credit the original paying account as Refund income. Overrides replace the previous received amount, support partial repayments and overpayments, and do not duplicate credits. Unchecking reverses the credit. Editing a paid bill adjusts the original expense while preserving actual repayments. Linked transactions and paying accounts are protected from deletion that would break the bill's records.
 
-Bills and friends are persisted per signed-in user. Bank payments and repayments use existing transaction events to refresh accounts, the dashboard, budgets, and reports. Cash tips are tracked in the split but do not create a bank transaction. Reports show gross bank expenses and repayment income separately.
+Bills and friends are persisted per signed-in user. Bank payments and repayments refresh accounts, the dashboard, budgets, and reports. Cash tips are tracked in the split but do not create a bank transaction. Transactions retain full bank movements; personal spending reports use the user's own share and exclude reimbursements and own-account transfers. Repayments support partial payments, history, and confirmed incoming-transaction links.
 
 Run backend checks with `python -m pytest` and frontend calculation/parser checks with `npm run test:split-bill`.
 
@@ -103,12 +107,12 @@ The frontend now has separate Login and Create Account screens. After login, it 
 
 ## Plaid Bank Sync
 
-Plaid connections are available in **Account Settings → Bank Sync**. The backend exchanges Link's short-lived public token, stores the access token server-side, maps Plaid accounts to local accounts, and incrementally imports added, modified, and removed transactions without duplicates.
+Plaid connections are available in **Account Settings → Bank Sync**. The backend exchanges Link's short-lived public token, stores the encrypted access token server-side in MongoDB, maps Plaid accounts to app accounts, and incrementally imports added, modified, and removed transactions without duplicates.
 
 Copy the single root environment template and enter your keys there:
 
 ```powershell
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 notepad .env
 cd backend
 python -m uvicorn app.main:app --reload

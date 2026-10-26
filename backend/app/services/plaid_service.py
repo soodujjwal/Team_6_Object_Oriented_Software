@@ -146,6 +146,8 @@ class PlaidService:
 
     def sync_item(self, item: PlaidItemModel) -> dict:
         original_cursor = item.cursor
+        if hasattr(self.db, "release_read_transaction"):
+            self.db.release_read_transaction()
         cursor = original_cursor
         totals = {"added": 0, "modified": 0, "removed": 0}
         pages: list[dict] = []
@@ -164,6 +166,13 @@ class PlaidService:
             if not page.get("has_more"):
                 break
 
+        if hasattr(self.db, "release_read_transaction"):
+            from sqlalchemy import update
+            self.db.execute(update(PlaidItemModel).where(PlaidItemModel.id == item.id).values(cursor=PlaidItemModel.cursor))
+            if item.cursor != original_cursor:
+                self.db.rollback()
+                raise HTTPException(409, "This bank was synced by another request. Retry sync.")
+        self.db.flush()
         for page in pages:
             for plaid_transaction in page.get("added", []):
                 if self._upsert_transaction(item, plaid_transaction):
@@ -171,16 +180,33 @@ class PlaidService:
             for plaid_transaction in page.get("modified", []):
                 if self._upsert_transaction(item, plaid_transaction):
                     totals["modified"] += 1
+        # A posted transaction can replace a pending transaction from another page.
+        self.db.flush()
+        for page in pages:
             for removed in page.get("removed", []):
                 link = self.db.query(PlaidTransactionLinkModel).filter(
-                    PlaidTransactionLinkModel.plaid_transaction_id == removed.get("transaction_id")
+                    PlaidTransactionLinkModel.plaid_transaction_id == removed.get("transaction_id"),
+                    PlaidTransactionLinkModel.plaid_item_id == item.id,
                 ).first()
                 if link:
                     transaction = self.db.get(TransactionModel, link.transaction_id)
                     self.db.delete(link)
                     if transaction:
-                        self.db.delete(transaction)
+                        self._undo_recurring(transaction)
+                        from app.services.transaction_matching import allocated
+                        if allocated(self.db, transaction.id) or (transaction.receipt_metadata or {}).get("matched_manual"):
+                            transaction.receipt_metadata = {**(transaction.receipt_metadata or {}), "bank_removed": True}
+                        else:
+                            self.db.delete(transaction)
                     totals["removed"] += 1
+        self.db.flush()
+        from app.services.transaction_matching import auto_match
+        from app.services.transaction_service import TransactionService
+        auto_match(self.db)
+        imported_ids = [link.transaction_id for link in self.db.query(PlaidTransactionLinkModel).filter_by(plaid_item_id=item.id)]
+        matcher = TransactionService(self.db)
+        for transaction in self.db.query(TransactionModel).filter(TransactionModel.id.in_(imported_ids)):
+            matcher._mark_matching_recurring_paid(transaction, commit=False)
         item.cursor = cursor
         item.status = "active"
         item.last_synced_at = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -204,6 +230,25 @@ class PlaidService:
             self.client.post("/item/remove", {"access_token": _decrypt_token(item.access_token)})
         except HTTPException:
             pass
+        from app.services.account_service import AccountService
+        from app.repositories.models import TransferModel
+        for account_link in self.db.query(PlaidAccountLinkModel).filter_by(plaid_item_id=item.id):
+            account = self.db.get(AccountModel, account_link.account_id)
+            if not account:
+                continue
+            estimated = AccountService(self.db).get_account(account.id).current_balance
+            rows = self.db.query(TransactionModel).filter_by(account_id=account.id).all()
+            movement = sum((t.amount if t.transaction_type == "income" else -t.amount)
+                           for t in rows if not (t.receipt_metadata or {}).get("bank_removed"))
+            for transfer in self.db.query(TransferModel):
+                if account.id not in {transfer.from_account_id, transfer.to_account_id}:
+                    continue
+                if not any((t.receipt_metadata or {}).get("transfer_id") == transfer.id for t in rows):
+                    movement += transfer.amount if transfer.to_account_id == account.id else -transfer.amount
+            account.starting_balance = estimated - movement
+            account.bank_current_balance = None
+            account.bank_available_balance = None
+            account.balance_synced_at = None
         links = self.db.query(PlaidTransactionLinkModel).filter(PlaidTransactionLinkModel.plaid_item_id == item.id).all()
         for link in links:
             self.db.delete(link)
@@ -223,6 +268,7 @@ class PlaidService:
             balances = plaid_account.get("balances") or {}
             current = balances.get("current")
             account = AccountModel(
+                user_id=item.user_id,
                 bank_name=item.institution_name,
                 name=plaid_account.get("name") or plaid_account.get("official_name") or "Connected account",
                 starting_balance=Decimal(str(current if current is not None else 0)),
@@ -241,9 +287,17 @@ class PlaidService:
             return False
         plaid_id = value["transaction_id"]
         link = self.db.query(PlaidTransactionLinkModel).filter(
-            PlaidTransactionLinkModel.plaid_transaction_id == plaid_id
+            PlaidTransactionLinkModel.plaid_transaction_id == plaid_id,
+            PlaidTransactionLinkModel.plaid_item_id == item.id,
         ).first()
+        if link is None and value.get("pending_transaction_id"):
+            link = self.db.query(PlaidTransactionLinkModel).filter_by(
+                plaid_item_id=item.id, plaid_transaction_id=value["pending_transaction_id"]).first()
+            if link:
+                link.plaid_transaction_id = plaid_id
         transaction = self.db.get(TransactionModel, link.transaction_id) if link else None
+        if transaction is not None:
+            self._undo_recurring(transaction)
         if transaction is None:
             transaction = TransactionModel(
                 account_id=account_link.account_id,
@@ -258,10 +312,20 @@ class PlaidService:
         transaction.account_id = account_link.account_id
         transaction.amount = abs(amount)
         transaction.transaction_type = "expense" if amount >= 0 else "income"
-        transaction.category = CATEGORY_MAP.get(primary, "Other")
+        preserve = bool((transaction.receipt_metadata or {}).get("matched_manual") or (transaction.receipt_metadata or {}).get("user_categorized"))
+        from app.services.transaction_matching import allocated
+        preserve = preserve or allocated(self.db, transaction.id)
+        if not preserve:
+            transaction.category = CATEGORY_MAP.get(primary, "Other")
+            detail = ((value.get("personal_finance_category") or {}).get("detailed") or "").upper()
+            # Peer repayments can also be TRANSFER_IN; only classify account transfers here.
+            transaction.financial_kind = "transfer" if detail in {"TRANSFER_IN_ACCOUNT_TRANSFER", "TRANSFER_OUT_ACCOUNT_TRANSFER"} else "standard"
         transaction.transaction_date = date.fromisoformat(value.get("authorized_date") or value["date"])
-        transaction.note = (value.get("merchant_name") or value.get("name") or "Plaid transaction")[:255]
-        transaction.receipt_metadata = {"source": "plaid", "pending": bool(value.get("pending"))}
+        bank_name = (value.get("merchant_name") or value.get("name") or "Plaid transaction")[:255]
+        if not preserve:
+            transaction.note = bank_name
+        transaction.receipt_metadata = {**(transaction.receipt_metadata or {}), "source": "plaid",
+            "bank_description": bank_name, "pending": bool(value.get("pending")), "bank_removed": False}
         if link is None:
             self.db.flush()
             self.db.add(PlaidTransactionLinkModel(
@@ -281,15 +345,9 @@ class PlaidService:
             ).first()
             if not link:
                 continue
-            imported = (
-                self.db.query(TransactionModel)
-                .join(PlaidTransactionLinkModel, PlaidTransactionLinkModel.transaction_id == TransactionModel.id)
-                .filter(
-                    PlaidTransactionLinkModel.plaid_item_id == item.id,
-                    TransactionModel.account_id == link.account_id,
-                )
-                .all()
-            )
+            imported_ids = [row.transaction_id for row in self.db.query(PlaidTransactionLinkModel).filter_by(plaid_item_id=item.id)]
+            imported = self.db.query(TransactionModel).filter(
+                TransactionModel.id.in_(imported_ids), TransactionModel.account_id == link.account_id).all()
             movement = sum(
                 (transaction.amount if transaction.transaction_type == "income" else -transaction.amount)
                 for transaction in imported
@@ -297,6 +355,22 @@ class PlaidService:
             account = self.db.get(AccountModel, link.account_id)
             if account:
                 account.starting_balance = Decimal(str(current)) - movement
+                account.bank_current_balance = Decimal(str(current))
+                available = (plaid_account.get("balances") or {}).get("available")
+                account.bank_available_balance = Decimal(str(available)) if available is not None else None
+                account.balance_synced_at = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    def _undo_recurring(self, transaction):
+        from app.repositories.models import RecurringTransactionModel
+        previous = (transaction.receipt_metadata or {}).get("recurring_previous")
+        if not previous:
+            return
+        schedule = self.db.get(RecurringTransactionModel, previous["id"])
+        if schedule and schedule.last_matched_transaction_id == transaction.id:
+            schedule.next_due_date = date.fromisoformat(previous["next_due_date"])
+            schedule.last_paid_date = date.fromisoformat(previous["last_paid_date"]) if previous["last_paid_date"] else None
+            schedule.last_matched_transaction_id = previous["last_matched_transaction_id"]
+        transaction.receipt_metadata = {k: v for k, v in (transaction.receipt_metadata or {}).items() if k != "recurring_previous"}
 
     def _item_status(self, item: PlaidItemModel) -> dict:
         account_count = self.db.query(PlaidAccountLinkModel).filter(PlaidAccountLinkModel.plaid_item_id == item.id).count()

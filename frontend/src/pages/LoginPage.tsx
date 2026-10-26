@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { login } from "../api/auth";
 import type { User } from "../api/auth";
 import { AuthHeader } from "../components/auth/AuthHeader";
@@ -11,9 +11,10 @@ type LoginPageProps = {
   notice?: string;
   onLogin: (accessToken: string, user: User) => void;
   onShowRegister: () => void;
+  onShowHome?: () => void;
 };
 
-export function LoginPage({ notice, onLogin, onShowRegister }: LoginPageProps) {
+export function LoginPage({ notice, onLogin, onShowRegister, onShowHome }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -32,6 +33,7 @@ export function LoginPage({ notice, onLogin, onShowRegister }: LoginPageProps) {
   return (
     <AuthLayout>
       <GlassCard className="auth-web-card" variant="elevated">
+        {onShowHome && <button className="auth-back-link" type="button" onClick={onShowHome}><ArrowLeft size={18} /> Back to home</button>}
         <AuthHeader
           title="Welcome back"
           subtitle="Take control of your money. Build your future."

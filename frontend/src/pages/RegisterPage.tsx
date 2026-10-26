@@ -11,9 +11,10 @@ import { formatUsPhoneNumber, isValidUsPhoneNumber } from "../utils/phoneNumber"
 type RegisterPageProps = {
   onRegister: (accessToken: string, user: User) => void;
   onShowLogin: () => void;
+  onShowHome?: () => void;
 };
 
-export function RegisterPage({ onRegister, onShowLogin }: RegisterPageProps) {
+export function RegisterPage({ onRegister, onShowLogin, onShowHome }: RegisterPageProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -44,8 +45,8 @@ export function RegisterPage({ onRegister, onShowLogin }: RegisterPageProps) {
   return (
     <AuthLayout>
       <GlassCard className="auth-web-card" variant="elevated">
-        <button className="auth-back-link" type="button" onClick={onShowLogin}>
-          <ArrowLeft size={18} /> Log in
+        <button className="auth-back-link" type="button" onClick={onShowHome ?? onShowLogin}>
+          <ArrowLeft size={18} /> {onShowHome ? "Back to home" : "Log in"}
         </button>
         <AuthHeader
           title="Create your account"

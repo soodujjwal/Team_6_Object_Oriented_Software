@@ -60,6 +60,7 @@ export function ReportsPage() {
       <TopBar title="Monthly Report" />
       {error && <p className="notice" role="alert">{error}</p>}
       <h2 className="month-title">{monthLabel}</h2>
+      <p className="caption-text">Personal spending uses your share of split bills. Reimbursements, own-account transfers, and pending payments are excluded from regular income and spending. Bank movements remain in Transactions.</p>
       {report && (
         <>
           <GlassCard className="report-card">

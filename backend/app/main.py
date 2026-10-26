@@ -15,7 +15,7 @@ from app.api import (
     split_bills,
 )
 from app.core.config import get_settings
-from app.core.database import create_database
+from app.core.database import create_database, database_health
 from app.core.security import get_current_user
 
 
@@ -60,7 +60,8 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["system"])
     def health_check():
-        return {"status": "ok"}
+        database = database_health()
+        return {"status": "ok" if database["status"] == "ok" else "degraded", "database": database}
 
     return app
 

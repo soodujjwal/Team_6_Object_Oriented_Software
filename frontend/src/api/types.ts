@@ -1,6 +1,11 @@
 export type TransactionType = "income" | "expense";
 
 export type Account = {
+  bank_current_balance?: string | null;
+  bank_available_balance?: string | null;
+  balance_synced_at?: string | null;
+  estimated_balance?: string | null;
+  unmatched_movement?: string;
   account_type: "savings" | "checking" | "other";
   id: number;
   bank_name: string;
@@ -10,6 +15,9 @@ export type Account = {
 };
 
 export type Transaction = {
+  financial_kind?: "standard" | "reimbursement" | "transfer";
+  reporting_amount?: string;
+  personal_amount?: string | null;
   id: number;
   account_id: number;
   amount: string;
@@ -28,6 +36,12 @@ export type ReceiptItem = {
 };
 
 export type ReceiptMetadata = {
+  transfer_id?: number;
+  split_bill_id?: number;
+  pending?: boolean;
+  bank_removed?: boolean;
+  matched_manual?: boolean;
+  bank_description?: string;
   merchant?: string;
   subtotal?: string;
   tax?: string;

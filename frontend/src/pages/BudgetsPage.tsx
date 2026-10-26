@@ -12,6 +12,7 @@ import { getCategoriesForType } from "../domain/transactionCategories";
 import {
   calculateBudgetMonth,
   DEFAULT_BUDGET_TARGETS,
+  getEffectiveBudgets,
   getBudgetGroup,
   getBudgetHealthLabel,
   getBudgetAlertMessage,
@@ -119,7 +120,7 @@ export function BudgetsPage() {
 
   const { month, year } = monthFromKey(selectedMonth);
   const monthBudgets = useMemo(
-    () => budgets.filter((budget) => budget.month === month && budget.year === year),
+    () => getEffectiveBudgets(budgets, month, year),
     [budgets, month, year],
   );
   const calculation = useMemo(
@@ -203,7 +204,11 @@ export function BudgetsPage() {
     setModalError("");
     const payload = { category: draft.category, monthly_limit: amount.toFixed(2), month, year };
     try {
-      if (modal?.kind === "edit") await updateBudget(modal.budget.id, payload);
+      if (modal?.kind === "edit" && modal.budget.month === month && modal.budget.year === year) {
+        await updateBudget(modal.budget.id, payload);
+      } else if (modal?.kind === "edit") {
+        await createBudget(payload);
+      }
       else await createBudget(payload);
       const nextGroups = { ...categoryGroups, [draft.category]: draft.group };
       setCategoryGroups(nextGroups);
@@ -425,7 +430,7 @@ export function BudgetsPage() {
             <GlassSelect icon={<Target size={18} />} label="Category" onChange={(category) => setDraft((current) => ({ ...current, category, group: getBudgetGroup(category, categoryGroups) }))} options={[...new Set([...availableBudgetCategories, draft.category])].map((category) => ({ value: category, label: category }))} value={draft.category} />
             <TextField autoFocus icon={<span>$</span>} label="Monthly spending limit" min="0.01" onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))} placeholder="0.00" required step="0.01" type="number" value={draft.amount} />
             <GlassSelect label="Spending plan group" onChange={(value) => setDraft((current) => ({ ...current, group: value as BudgetGroup }))} options={GROUP_OPTIONS} value={draft.group} />
-            <p className="budget-period-note">Budget period: <strong>{formatMonth(month, year)}</strong></p>
+            <p className="budget-period-note">Starts <strong>{formatMonth(month, year)}</strong> and repeats each month until you change it.</p>
             {modalError && <p className="budget-form-error" role="alert">{modalError}</p>}
             <div className="budget-modal-actions"><Button disabled={saving} onClick={() => setModal(null)} variant="secondary">Cancel</Button><Button disabled={saving} type="submit">{saving ? "Saving..." : modal.kind === "edit" ? "Save changes" : "Create budget"}</Button></div>
           </form>

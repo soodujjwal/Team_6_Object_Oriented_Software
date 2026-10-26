@@ -105,7 +105,7 @@ def test_editing_paid_bill_adjusts_charge_and_preserves_actual_repayment(db):
     assert updated["repayments"]["friend"]["amount"] == "20"
     assert AccountService(db).get_account(bank.id).current_balance == Decimal("64.90")
     assert db.query(TransactionModel).count() == 2
-    assert ReportService(db).monthly_report(9, 2026).total_expenses == Decimal("55.10")
+    assert ReportService(db).monthly_report(9, 2026).total_expenses == svc.own_amount(draft(bank.id, tip="10", receipt_total="55.10"))
 
 
 @pytest.mark.parametrize("case", ["unassigned", "mismatch", "no_total", "no_account", "missing_account", "insufficient"])

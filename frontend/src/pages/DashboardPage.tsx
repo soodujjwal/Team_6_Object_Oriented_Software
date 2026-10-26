@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Page } from "../App";
 import { getAccounts } from "../api/accounts";
+import { getSplitBills, type SplitBill } from "../api/splitBills";
+import { reportingAmount } from "../domain/financialTracking";
 import { BUDGETS_UPDATED_EVENT, getBudgets } from "../api/budgets";
 import { getRecurringTransactions, RECURRING_TRANSACTIONS_UPDATED_EVENT, type RecurringTransaction } from "../api/recurringTransactions";
 import { getSavingsGoals, SAVINGS_GOALS_UPDATED_EVENT, type SavingsGoal } from "../api/savingsGoals";
@@ -12,6 +14,7 @@ import { TransactionItem } from "../components/TransactionItem";
 import { Button, GlassCard } from "../components/ui";
 import { ProgressBar } from "../components/ProgressBar";
 import { getBillDisplayName, getBillStatus, getUpcomingBills } from "../domain/recurringBills";
+import { getEffectiveBudgets } from "../domain/budgeting";
 import { formatCurrency } from "../utils/format";
 
 type DashboardPageProps = {
@@ -21,6 +24,7 @@ type DashboardPageProps = {
 
 export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [splitBills, setSplitBills] = useState<SplitBill[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
@@ -29,8 +33,9 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
 
   useEffect(() => {
     function loadDashboard() {
-      return Promise.all([getAccounts(), getTransactions(), getBudgets(), getRecurringTransactions(), getSavingsGoals()])
-      .then(([accountData, transactionData, budgetData, recurringData, goalData]) => {
+      return Promise.all([getAccounts(), getTransactions(), getBudgets(), getRecurringTransactions(), getSavingsGoals(), getSplitBills()])
+      .then(([accountData, transactionData, budgetData, recurringData, goalData, bills]) => {
+        setSplitBills(bills);
         setAccounts(accountData);
         setTransactions(transactionData);
         setBudgets(budgetData);
@@ -57,10 +62,10 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   const totals = useMemo(() => {
     const income = transactions
       .filter((transaction) => transaction.transaction_type === "income")
-      .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+      .reduce((sum, transaction) => sum + reportingAmount(transaction), 0);
     const spent = transactions
       .filter((transaction) => transaction.transaction_type === "expense")
-      .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+      .reduce((sum, transaction) => sum + reportingAmount(transaction), 0);
     const balance = accounts.reduce(
       (sum, account) => sum + Number(account.current_balance ?? account.starting_balance),
       0,
@@ -69,7 +74,13 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   }, [accounts, transactions]);
 
   const recent = transactions.slice(-3).reverse();
+  const owed = splitBills.filter((bill) => bill.paid && !bill.needs_review).reduce((sum, bill) => sum + bill.calculation.people
+    .filter((person) => person.id !== bill.data.self_id)
+    .reduce((total, person) => total + Math.max(0, person.total / 100 - Number(bill.repayments[person.id]?.amount ?? 0)), 0), 0);
+  const bankAccounts = accounts.filter((account) => account.bank_current_balance != null);
   const upcomingBills = getUpcomingBills(recurring).slice(0, 4);
+  const today = new Date();
+  const activeBudgets = getEffectiveBudgets(budgets, today.getMonth() + 1, today.getFullYear());
 
   return (
     <section className="page">
@@ -78,9 +89,13 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
       {error && <p className="notice" role="alert">{error}</p>}
 
       <GlassCard className="balance-panel" variant="elevated">
-        <p className="section-label">Available Balance</p>
+        <p className="section-label">Estimated Balance</p>
         <div className="balance-card">{formatCurrency(totals.balance)}</div>
         <p className="caption-text">{accounts.length} linked financial account{accounts.length === 1 ? "" : "s"}</p>
+        {bankAccounts.length > 0 && <p className="caption-text">Bank-reported total ({bankAccounts.length} connected accounts): {formatCurrency(bankAccounts.reduce((sum, account) => sum + Number(account.bank_current_balance), 0))}. Estimates include unmatched manual entries.</p>}
+        {bankAccounts.map((account) => <p className="caption-text" key={account.id}>{account.name} · snapshot fetched {account.balance_synced_at ? new Date(`${account.balance_synced_at}Z`).toLocaleString() : "not yet"}. Bank data may be delayed.</p>)}
+        <p className="caption-text">Friends owe you {formatCurrency(owed)} · excluded from your balance</p>
+        {splitBills.some((bill) => bill.needs_review) && <p className="notice">Some split bills need review after bank changes. Their outstanding amounts are excluded until reviewed.</p>}
       </GlassCard>
 
       <div className="money-grid">
@@ -112,7 +127,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
           </Button>
         </div>
         <GlassCard variant="subtle">
-          <p className="subtle">{budgets.length} monthly budgets active</p>
+          <p className="subtle">{activeBudgets.length} monthly budget{activeBudgets.length === 1 ? "" : "s"} active</p>
         </GlassCard>
       </section>
 

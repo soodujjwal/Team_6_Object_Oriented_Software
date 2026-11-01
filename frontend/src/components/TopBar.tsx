@@ -1,4 +1,4 @@
-import { Bell, Menu } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
 import { useAppChrome } from "./AppChromeContext";
 import { IconButton } from "./ui";
 
@@ -12,8 +12,8 @@ export function TopBar({ title, right = "bell" }: TopBarProps) {
 
   return (
     <header className="top-bar">
-      <IconButton aria-label="Open menu" onClick={chrome?.openDrawer} title="Menu">
-        <Menu size={22} />
+      <IconButton aria-label="Open settings" onClick={chrome?.openSettings} title="Settings">
+        <Settings size={22} />
       </IconButton>
       <h1>{title}</h1>
       {right === "bell" ? (

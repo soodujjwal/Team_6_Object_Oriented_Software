@@ -1,4 +1,4 @@
-import { BarChart3, Gauge, Home, PlusCircle, Settings, WalletCards } from "lucide-react";
+import { BarChart3, Gauge, Home, Menu, ReceiptText, WalletCards } from "lucide-react";
 import type { Page } from "../App";
 
 type NavItem = {
@@ -10,18 +10,18 @@ type NavItem = {
 const items: NavItem[] = [
   { page: "dashboard", label: "Home", icon: Home },
   { page: "budgets", label: "Budgets", icon: WalletCards },
-  { page: "add", label: "Add", icon: PlusCircle },
+  { page: "transactions", label: "Transactions", icon: ReceiptText },
   { page: "afford", label: "Afford", icon: Gauge },
   { page: "reports", label: "Report", icon: BarChart3 },
-  { page: "settings", label: "Settings", icon: Settings },
 ];
 
 type BottomNavProps = {
   page: Page;
   onNavigate: (page: Page) => void;
+  onOpenMenu: () => void;
 };
 
-export function BottomNav({ page, onNavigate }: BottomNavProps) {
+export function BottomNav({ page, onNavigate, onOpenMenu }: BottomNavProps) {
   return (
     <nav className="bottom-nav" aria-label="Primary navigation">
       {items.map((item) => {
@@ -40,6 +40,16 @@ export function BottomNav({ page, onNavigate }: BottomNavProps) {
           </button>
         );
       })}
+      <button
+        aria-label="Open menu"
+        className="nav-button"
+        onClick={onOpenMenu}
+        title="Menu"
+        type="button"
+      >
+        <Menu size={21} strokeWidth={2} />
+        <span>More</span>
+      </button>
     </nav>
   );
 }

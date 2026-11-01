@@ -69,7 +69,7 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
   return (
     <section className="page">
       <TopBar title="Add Transaction" />
-      <Button variant="ghost" onClick={onDone}>Back to Dashboard</Button>
+      <Button variant="ghost" onClick={onDone}>Back to Transactions</Button>
 
       {status && <p className="notice warning">{status}</p>}
 

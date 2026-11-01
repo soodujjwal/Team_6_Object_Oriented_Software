@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CalendarDays, FileText, Search, Tag, Wallet } from "lucide-react";
+import { CalendarClock, CalendarDays, FileText, Plus, Search, Tag, Wallet } from "lucide-react";
 import { getAccounts } from "../api/accounts";
 import { getTransactions, getTransactionMatches, confirmTransactionMatch, type TransactionMatch, TRANSACTIONS_UPDATED_EVENT, updateTransaction } from "../api/transactions";
 import type { Account, Transaction, TransactionType } from "../api/types";
@@ -22,7 +22,7 @@ type EditDraft = {
 };
 
 const SOURCE_OPTIONS: { label: string; value: SourceFilter }[] = [
-  { label: "All Sources", value: "all" },
+  { label: "All", value: "all" },
   { label: "Receipt", value: "receipt" },
   { label: "Bank CSV", value: "csv" },
   { label: "Bank PDF", value: "pdf" },
@@ -30,7 +30,12 @@ const SOURCE_OPTIONS: { label: string; value: SourceFilter }[] = [
   { label: "Manual", value: "manual" },
 ];
 
-export function TransactionsPage() {
+type TransactionsPageProps = {
+  onAddTransaction: () => void;
+  onManageBills: () => void;
+};
+
+export function TransactionsPage({ onAddTransaction, onManageBills }: TransactionsPageProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [query, setQuery] = useState("");
@@ -198,6 +203,15 @@ export function TransactionsPage() {
           value={monthFilter}
         />
       </GlassCard>
+
+      <div className="transactions-actions">
+        <Button onClick={onAddTransaction}>
+          <Plus aria-hidden="true" size={17} /> <span>Add transaction</span>
+        </Button>
+        <Button onClick={onManageBills}>
+          <CalendarClock aria-hidden="true" size={17} /> <span>Manage Bills</span>
+        </Button>
+      </div>
 
       <div className="transaction-history">
         {groupedTransactions.length ? groupedTransactions.map(([month, monthTransactions]) => (

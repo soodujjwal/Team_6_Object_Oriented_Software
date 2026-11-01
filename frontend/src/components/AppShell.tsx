@@ -111,10 +111,10 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
   const chromeValue = useMemo(
     () => ({
       hasUnreadNotifications,
-      openDrawer: () => setDrawerOpen(true),
+      openSettings: () => onNavigate("settings"),
       toggleNotifications: () => setNotificationsOpen((open) => !open),
     }),
-    [hasUnreadNotifications],
+    [hasUnreadNotifications, onNavigate],
   );
 
   return (
@@ -124,7 +124,7 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
         <section className="app-content">
           {children}
         </section>
-        <BottomNav page={page} onNavigate={onNavigate} />
+        <BottomNav page={page} onNavigate={onNavigate} onOpenMenu={() => setDrawerOpen(true)} />
         <NavigationDrawer
           isOpen={drawerOpen}
           onClose={() => setDrawerOpen(false)}

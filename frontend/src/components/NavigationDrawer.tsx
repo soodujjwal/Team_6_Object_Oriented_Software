@@ -2,12 +2,9 @@ import { useEffect, useRef } from "react";
 import {
   CircleHelp,
   CreditCard,
-  FileClock,
   LogOut,
-  ReceiptText,
   Settings,
   Target,
-  TrendingUp,
   Users,
   WalletCards,
 } from "lucide-react";
@@ -19,11 +16,8 @@ type DrawerItem =
 
 const drawerItems: DrawerItem[] = [
   { label: "Accounts", icon: WalletCards, page: "accounts" },
-  { label: "Transactions", icon: ReceiptText, page: "transactions" },
   { label: "Split Bill", icon: Users, page: "split" },
   { label: "Goals", icon: Target, page: "goals" },
-  { label: "Reports", icon: TrendingUp, page: "reports" },
-  { label: "Recurring Transactions", icon: FileClock, page: "recurring" },
   { label: "Settings", icon: Settings, page: "settings" },
   { label: "Help", icon: CircleHelp, page: "help" },
   { label: "Logout", icon: LogOut, action: "logout" },

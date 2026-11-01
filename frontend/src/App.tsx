@@ -168,7 +168,7 @@ export default function App() {
         />
       )}
       {page === "budgets" && <BudgetsPage />}
-      {page === "add" && <AddTransactionPage onDone={() => setPage("dashboard")} />}
+      {page === "add" && <AddTransactionPage onDone={() => setPage("transactions")} />}
       {page === "goals" && <SavingsGoalsPage />}
       {page === "afford" && <AffordabilityPage />}
       {page === "reports" && <ReportsPage />}
@@ -176,7 +176,7 @@ export default function App() {
         <AccountSettingsPage onLogout={handleLogout} onThemeChange={setTheme} onUserUpdate={handleUserUpdate} theme={theme} user={user} />
       )}
       {page === "accounts" && <AccountsPage onAddAccount={() => setPage("settings")} />}
-      {page === "transactions" && <TransactionsPage />}
+      {page === "transactions" && <TransactionsPage onAddTransaction={() => setPage("add")} onManageBills={() => setPage("recurring")} />}
       {page === "recurring" && <RecurringTransactionsPage />}
       {page === "help" && <HelpPage onNavigate={setPage} />}
       {page === "split" && <SplitBillPage userName={user.name} />}

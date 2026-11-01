@@ -106,8 +106,8 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
       <section className="section-stack">
         <div className="section-heading">
           <h2>Recent Transactions</h2>
-          <Button variant="secondary" onClick={() => onNavigate("add")}>
-            Add
+          <Button variant="secondary" onClick={() => onNavigate("transactions")}>
+            View
           </Button>
         </div>
         {recent.length > 0 ? (
@@ -173,8 +173,8 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
         }) : <p className="empty-state">No upcoming bills scheduled.</p>}
       </section>
 
-      <Button variant="secondary" onClick={() => onNavigate("settings")}>
-        Account Settings
+      <Button variant="secondary" onClick={() => onNavigate("accounts")}>
+        Manage/View Accounts
       </Button>
     </section>
   );

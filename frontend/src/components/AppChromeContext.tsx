@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 
 type AppChromeContextValue = {
   hasUnreadNotifications: boolean;
-  openDrawer: () => void;
+  openSettings: () => void;
   toggleNotifications: () => void;
 };
 

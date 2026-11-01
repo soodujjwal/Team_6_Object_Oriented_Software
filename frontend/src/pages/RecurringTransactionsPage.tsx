@@ -176,8 +176,9 @@ export function RecurringTransactionsPage() {
           <h2>Subscriptions & Bill Reminders</h2>
           <p className="caption-text">Track renewals, auto-pay status, reminders, and paid cycles from matched transactions.</p>
         </div>
-        <Button onClick={openCreate}><Plus size={17} /> Add Bill</Button>
       </div>
+
+      <Button onClick={openCreate}><Plus size={17} /> Add Bill</Button>
 
       <GlassCard className="bank-subscription-summary">
         <div className="bank-subscription-heading">

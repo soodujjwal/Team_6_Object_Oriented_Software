@@ -1,3 +1,4 @@
+import { accountStorage } from "../api/accountStorage";
 import { useEffect, useMemo, useState, type Dispatch, type KeyboardEvent, type ReactNode, type SetStateAction } from "react";
 import { ArrowLeft, ArrowRight, BadgeDollarSign, CalendarClock, CheckCircle2, Landmark, PiggyBank, Sparkles, Target, WalletCards } from "lucide-react";
 import { createAccount, getAccounts } from "../api/accounts";
@@ -132,7 +133,7 @@ function clampStep(nextStep: number) {
 
 function readStoredDraft(user: User): Draft {
   try {
-    const stored = JSON.parse(localStorage.getItem(keyFor(user)) ?? "{}") as Partial<Draft>;
+    const stored = JSON.parse(accountStorage.getItem(keyFor(user)) ?? "{}") as Partial<Draft>;
     return {
       ...defaultDraft(),
       ...stored,
@@ -147,7 +148,7 @@ function readStoredDraft(user: User): Draft {
 
 function readStoredStep(user: User) {
   try {
-    const stored = Number(localStorage.getItem(stepKeyFor(user)) ?? 0);
+    const stored = Number(accountStorage.getItem(stepKeyFor(user)) ?? 0);
     return Number.isFinite(stored) ? clampStep(stored) : 0;
   } catch {
     return 0;
@@ -156,7 +157,7 @@ function readStoredStep(user: User) {
 
 export function hasCompletedOnboarding(user: User) {
   try {
-    return localStorage.getItem(completionKey(user)) === "true";
+    return accountStorage.getItem(completionKey(user)) === "true";
   } catch {
     return false;
   }
@@ -164,7 +165,7 @@ export function hasCompletedOnboarding(user: User) {
 
 export function markOnboardingComplete(user: User) {
   try {
-    localStorage.setItem(completionKey(user), "true");
+    accountStorage.setItem(completionKey(user), "true");
   } catch {
     // The dashboard is still available if browser storage is unavailable.
   }
@@ -180,7 +181,7 @@ export function OnboardingPage({ onComplete, user }: OnboardingPageProps) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(keyFor(user), JSON.stringify(draft));
+      accountStorage.setItem(keyFor(user), JSON.stringify(draft));
     } catch {
       // Back/refresh preservation is best-effort; backend saves remain authoritative.
     }
@@ -188,7 +189,7 @@ export function OnboardingPage({ onComplete, user }: OnboardingPageProps) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(stepKeyFor(user), String(step));
+      accountStorage.setItem(stepKeyFor(user), String(step));
     } catch {
       // Step restore is best-effort; the setup can still be completed this session.
     }
@@ -225,9 +226,9 @@ export function OnboardingPage({ onComplete, user }: OnboardingPageProps) {
   function complete(skip = false, destination: SetupDestination = "dashboard") {
     markOnboardingComplete(user);
     try {
-      localStorage.removeItem(keyFor(user));
-      localStorage.removeItem(stepKeyFor(user));
-      localStorage.setItem(`pfm_financial_goals_${user.email}`, JSON.stringify(draft.goals));
+      accountStorage.removeItem(keyFor(user));
+      accountStorage.removeItem(stepKeyFor(user));
+      accountStorage.setItem(`pfm_financial_goals_${user.email}`, JSON.stringify(draft.goals));
     } catch {
       // Financial records are saved through the backend; preference storage is non-critical.
     }

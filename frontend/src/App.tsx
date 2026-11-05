@@ -21,6 +21,7 @@ import { SplitBillPage } from "./pages/SplitBillPage";
 import { OnboardingPage, hasCompletedOnboarding, markOnboardingComplete } from "./pages/OnboardingPage";
 import { THEME_STORAGE_KEY, type Theme } from "./theme/theme";
 import { isNativeApp } from "./domain/mobile";
+import { ACCOUNT_SYNC_EVENT, clearAccountStorage, hasLegacyBrowserSettings, hasPendingAccountChanges, importLegacyBrowserSettings, loadAccountStorage, retryAccountSync } from "./api/accountStorage";
 
 export type Page =
   | "dashboard"
@@ -57,9 +58,37 @@ export default function App() {
   const [initialSession] = useState(readStoredSession);
   const [user, setUser] = useState<User | null>(initialSession.user);
   const [sessionNotice, setSessionNotice] = useState(initialSession.expired ? SESSION_EXPIRED_MESSAGE : "");
-  const [onboardingComplete, setOnboardingComplete] = useState(() =>
-    initialSession.user ? hasCompletedOnboarding(initialSession.user) : false,
-  );
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [syncError, setSyncError] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoadedUserId(null);
+    setLoadError(false);
+    setSyncError(false);
+    if (!user) { clearAccountStorage(); return; }
+    void loadAccountStorage(user).then((loaded) => {
+      if (!active || !loaded) return;
+      setOnboardingComplete(hasCompletedOnboarding(user));
+      setLoadedUserId(user.id);
+    }).catch(() => { if (active) setLoadError(true); });
+    return () => { active = false; clearAccountStorage(); };
+  }, [user?.id, user?.email, loadAttempt]);
+
+  useEffect(() => {
+    const handleSync = (event: Event) => setSyncError(Boolean((event as CustomEvent<boolean>).detail));
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (hasPendingAccountChanges()) { event.preventDefault(); event.returnValue = ""; }
+    };
+    window.addEventListener(ACCOUNT_SYNC_EVENT, handleSync);
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => { window.removeEventListener(ACCOUNT_SYNC_EVENT, handleSync); window.removeEventListener("beforeunload", beforeUnload); };
+  }, []);
 
   useEffect(() => {
     function onExpired() {
@@ -115,13 +144,19 @@ export default function App() {
     localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     setUser(nextUser);
-    setOnboardingComplete(hasCompletedOnboarding(nextUser));
+    setOnboardingComplete(false);
+    setLoadedUserId(null);
     setPage("dashboard");
     window.history.replaceState(null, "", "/app");
     setRoute("/app");
   }
 
   function handleLogout() {
+    if (hasPendingAccountChanges() && isTokenCurrent(localStorage.getItem(AUTH_TOKEN_KEY))) {
+      setSyncError(true);
+      void retryAccountSync();
+      return;
+    }
     setSessionNotice("");
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -149,8 +184,25 @@ export default function App() {
     );
   }
 
+  if (loadedUserId !== user.id) return <main className="auth-page"><div role="status">
+    {loadError ? <>Could not load your saved account data. <button onClick={() => setLoadAttempt((n) => n + 1)}>Retry</button> <button onClick={handleLogout}>Sign out</button></> : "Loading your saved account data…"}
+  </div></main>;
+
+  const syncNotice = syncError && <div className="notice" role="alert">Your latest setup or preferences could not be saved. Keep this page open and <button onClick={() => void retryAccountSync()}>retry saving</button>.</div>;
+  const legacyNotice = hasLegacyBrowserSettings() && <div className="notice">
+    This browser has older budget preferences, import history, or goal markers. If they belong to you, you can save them to this account.
+    <button disabled={importing} onClick={async () => {
+      setImporting(true); setImportError(false);
+      try { await importLegacyBrowserSettings(); setLoadAttempt((n) => n + 1); }
+      catch { setImportError(true); }
+      finally { setImporting(false); }
+    }}>{importing ? "Importing…" : "Import my browser settings"}</button>
+    {importError && <span role="alert">Import failed. Your old browser settings have been kept; please retry.</span>}
+  </div>;
+
   if (!onboardingComplete) {
     return (
+      <>{syncNotice}{legacyNotice}
       <OnboardingPage
         onComplete={(destination = "dashboard") => {
           markOnboardingComplete(user);
@@ -159,11 +211,14 @@ export default function App() {
         }}
         user={user}
       />
+      </>
     );
   }
 
   return (
     <AppShell page={page} onLogout={handleLogout} onNavigate={setPage}>
+      {syncNotice}
+      {legacyNotice}
       {page === "dashboard" && (
         <DashboardPage
           onNavigate={setPage}

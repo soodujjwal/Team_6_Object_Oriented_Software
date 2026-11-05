@@ -1,3 +1,4 @@
+import { accountStorage } from "../api/accountStorage";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CalendarDays, CheckCircle2, PiggyBank, Plus, Target, WalletCards } from "lucide-react";
 import { createSavingsGoal, deleteSavingsGoal, getSavingsGoals, SAVINGS_GOALS_UPDATED_EVENT, type SavingsGoal } from "../api/savingsGoals";
@@ -50,7 +51,7 @@ export function SavingsGoalsPage() {
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [completedMonths, setCompletedMonths] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem(COMPLETED_KEY) ?? "{}") as Record<string, boolean>; } catch { return {}; }
+    try { return JSON.parse(accountStorage.getItem(COMPLETED_KEY) ?? "{}") as Record<string, boolean>; } catch { return {}; }
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [draft, setDraft] = useState<GoalDraft>(emptyDraft);
@@ -84,7 +85,7 @@ export function SavingsGoalsPage() {
     const key = `${goalId}:${monthKey}`;
     setCompletedMonths((current) => {
       const next = { ...current, [key]: checked };
-      localStorage.setItem(COMPLETED_KEY, JSON.stringify(next));
+      accountStorage.setItem(COMPLETED_KEY, JSON.stringify(next));
       return next;
     });
   }

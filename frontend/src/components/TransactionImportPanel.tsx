@@ -1,3 +1,4 @@
+import { accountStorage } from "../api/accountStorage";
 import { useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -111,7 +112,7 @@ export function TransactionImportPanel({ accounts, existingTransactions, onSaved
   const [subscriptionPrompts, setSubscriptionPrompts] = useState<SubscriptionPrompt[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [history, setHistory] = useState<ImportHistoryEntry[]>(() => {
-    try { return JSON.parse(localStorage.getItem(IMPORT_HISTORY_KEY) ?? "[]") as ImportHistoryEntry[]; } catch { return []; }
+    try { return JSON.parse(accountStorage.getItem(IMPORT_HISTORY_KEY) ?? "[]") as ImportHistoryEntry[]; } catch { return []; }
   });
   const imageInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -265,7 +266,7 @@ export function TransactionImportPanel({ accounts, existingTransactions, onSaved
   }
 
   function recordHistory(label: string, count: number) {
-    try { const current = JSON.parse(localStorage.getItem(IMPORT_HISTORY_KEY) ?? "[]") as ImportHistoryEntry[]; const next = [{ label, count, importedAt: new Date().toISOString(), account: accounts.find((account) => String(account.id) === defaultAccount)?.name ?? "" }, ...current].slice(0, 20); localStorage.setItem(IMPORT_HISTORY_KEY, JSON.stringify(next)); setHistory(next); } catch { /* Import success does not depend on local history. */ }
+    try { const current = JSON.parse(accountStorage.getItem(IMPORT_HISTORY_KEY) ?? "[]") as ImportHistoryEntry[]; const next = [{ label, count, importedAt: new Date().toISOString(), account: accounts.find((account) => String(account.id) === defaultAccount)?.name ?? "" }, ...current].slice(0, 20); accountStorage.setItem(IMPORT_HISTORY_KEY, JSON.stringify(next)); setHistory(next); } catch { /* Import success does not depend on local history. */ }
   }
 
   function updateRow(id: string, update: Partial<ImportRow>) { setImportRows((rows) => rows.map((row) => row.id === id ? { ...row, ...update } : row)); }

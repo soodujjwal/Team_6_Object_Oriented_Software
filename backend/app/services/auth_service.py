@@ -53,6 +53,8 @@ class AuthService:
         return UserRead.model_validate(updated)
 
     def delete_account(self, user) -> None:
+        from app.repositories.models import UserStateModel
+        self.users.db.query(UserStateModel).filter_by(user_id=user.id).delete()
         self.users.delete(user)
 
     def _auth_response(self, user) -> AuthResponse:

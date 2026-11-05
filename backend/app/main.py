@@ -15,6 +15,7 @@ from app.api import (
     transactions,
     transfers,
     split_bills,
+    user_state,
 )
 from app.core.config import get_settings
 from app.core.database import create_database, database_health
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     )
     protected = [Depends(get_current_user)]
     app.include_router(auth.router)
+    app.include_router(user_state.router)
     app.include_router(plaid.webhook_router)
     app.include_router(plaid.router)
     app.include_router(accounts.router, dependencies=protected)

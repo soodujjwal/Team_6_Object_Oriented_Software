@@ -386,7 +386,7 @@ class MongoSession:
             for name in ("plaid_account_links", "plaid_transaction_links"):
                 self.database[name].delete_many({"plaid_item_id": {"$in": items}}, **self.options())
             self.database.transfers.delete_many({"$or": [{"from_account_id": {"$in": accounts}}, {"to_account_id": {"$in": accounts}}]}, **self.options())
-            for name in ("accounts", "budgets", "friends", "split_bills", "savings_goals", "plaid_items", "_allocations"):
+            for name in ("accounts", "budgets", "friends", "split_bills", "savings_goals", "plaid_items", "_allocations", "user_state"):
                 self.database[name].delete_many({"user_id": record.id}, **self.options())
 
     def commit(self):

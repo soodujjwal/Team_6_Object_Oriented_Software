@@ -47,6 +47,7 @@ def ensure_indexes(database):
     for name in collections - existing:
         database.create_collection(name)
     indexes = {
+        "user_state": [IndexModel([("user_id", ASCENDING), ("key", ASCENDING)], unique=True)],
         "users": [IndexModel([("email", ASCENDING)], unique=True)],
         "accounts": [IndexModel([("user_id", ASCENDING)])],
         "transactions": [IndexModel([("account_id", ASCENDING), ("transaction_date", ASCENDING)])],

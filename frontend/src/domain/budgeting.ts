@@ -1,3 +1,4 @@
+import { accountStorage } from "../api/accountStorage";
 import type { Budget, Transaction } from "../api/types";
 import { reportingAmount, isReportable } from "./financialTracking";
 import type { RecurringTransaction } from "../api/recurringTransactions";
@@ -45,7 +46,7 @@ const VALID_GROUPS = new Set<BudgetGroup>(["needs", "wants", "savingsDebt"]);
 export function loadBudgetPreferences() {
   const defaults = { targets: DEFAULT_BUDGET_TARGETS, categoryGroups: DEFAULT_CATEGORY_GROUPS };
   try {
-    const parsed = JSON.parse(localStorage.getItem(PREFERENCES_KEY) ?? "null") as Partial<typeof defaults> | null;
+    const parsed = JSON.parse(accountStorage.getItem(PREFERENCES_KEY) ?? "null") as Partial<typeof defaults> | null;
     if (!parsed) return defaults;
     const targets = { ...DEFAULT_BUDGET_TARGETS, ...parsed.targets };
     for (const group of Object.keys(DEFAULT_BUDGET_TARGETS) as BudgetGroup[]) {
@@ -65,7 +66,7 @@ export function loadBudgetPreferences() {
 
 export function saveBudgetPreferences(targets: BudgetTargets, categoryGroups: CategoryGroups) {
   try {
-    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ targets, categoryGroups }));
+    accountStorage.setItem(PREFERENCES_KEY, JSON.stringify({ targets, categoryGroups }));
   } catch {
     // Current-session preferences still apply when browser storage is unavailable.
   }

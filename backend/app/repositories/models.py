@@ -18,6 +18,15 @@ class UserModel(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
+class UserStateModel(Base):
+    __tablename__ = "user_state"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    key: Mapped[str] = mapped_column(String(80))
+    value: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
 class AccountModel(Base):
     __tablename__ = "accounts"
 

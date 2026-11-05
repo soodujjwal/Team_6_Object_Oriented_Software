@@ -34,6 +34,8 @@ class AccountModel(Base):
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True, nullable=True)
     bank_current_balance: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     bank_available_balance: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    bank_account_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    bank_credit_limit: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     balance_synced_at: Mapped[datetime | None] = mapped_column(nullable=True)
     bank_name: Mapped[str] = mapped_column(String(100), nullable=False, default="Other")
     name: Mapped[str] = mapped_column(String(100), nullable=False)

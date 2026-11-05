@@ -64,7 +64,8 @@ def migrate_database(database_engine=engine) -> None:
     tables = set(inspector.get_table_names())
     additions = {
         "accounts": {"user_id": "INTEGER REFERENCES users(id)", "bank_current_balance": "NUMERIC(12, 2)",
-                     "bank_available_balance": "NUMERIC(12, 2)", "balance_synced_at": "DATETIME"},
+                     "bank_available_balance": "NUMERIC(12, 2)", "balance_synced_at": "DATETIME",
+                     "bank_account_type": "VARCHAR(30)", "bank_credit_limit": "NUMERIC(12, 2)"},
         "transactions": {"financial_kind": "VARCHAR(30) NOT NULL DEFAULT 'standard'", "personal_amount": "NUMERIC(12, 2)"},
     }
     for table, columns in additions.items():

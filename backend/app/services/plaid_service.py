@@ -277,6 +277,7 @@ class PlaidService:
             account.starting_balance = estimated - movement
             account.bank_current_balance = None
             account.bank_available_balance = None
+            account.bank_credit_limit = None
             account.balance_synced_at = None
         links = self.db.query(PlaidTransactionLinkModel).filter(PlaidTransactionLinkModel.plaid_item_id == item.id).all()
         for link in links:
@@ -300,7 +301,8 @@ class PlaidService:
                 user_id=item.user_id,
                 bank_name=item.institution_name,
                 name=plaid_account.get("name") or plaid_account.get("official_name") or "Connected account",
-                starting_balance=Decimal(str(current if current is not None else 0)),
+                starting_balance=Decimal(str(current if current is not None else 0)) * (-1 if plaid_account.get("type") == "credit" else 1),
+                bank_account_type=plaid_account.get("type"),
                 account_type=account_type,
             )
             self.db.add(account)
@@ -380,10 +382,14 @@ class PlaidService:
             movement = movements.get(link.account_id, Decimal("0"))
             account = accounts.get(link.account_id)
             if account:
-                account.starting_balance = Decimal(str(current)) - movement
+                account.bank_account_type = plaid_account.get("type") or account.bank_account_type
+                signed_current = Decimal(str(current)) * (-1 if account.bank_account_type == "credit" else 1)
+                account.starting_balance = signed_current - movement
                 account.bank_current_balance = Decimal(str(current))
                 available = (plaid_account.get("balances") or {}).get("available")
                 account.bank_available_balance = Decimal(str(available)) if available is not None else None
+                limit = (plaid_account.get("balances") or {}).get("limit")
+                account.bank_credit_limit = Decimal(str(limit)) if limit is not None else None
                 account.balance_synced_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     def _undo_recurring(self, transaction):

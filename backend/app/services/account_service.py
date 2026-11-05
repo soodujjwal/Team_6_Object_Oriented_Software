@@ -91,9 +91,13 @@ class AccountService:
                 balance += movement
                 unmatched += movement
         if account.bank_current_balance is not None:
-            balance = account.bank_current_balance + unmatched
+            bank_balance = -account.bank_current_balance if account.bank_account_type == "credit" else account.bank_current_balance
+            balance = bank_balance + unmatched
+        is_credit = account.bank_account_type == "credit"
         return AccountRead.model_validate(account).model_copy(
-            update={"current_balance": money(balance), "estimated_balance": money(balance), "unmatched_movement": money(unmatched)}
+            update={"current_balance": money(balance), "estimated_balance": money(balance), "unmatched_movement": money(unmatched),
+                    "debt_owed": money(max(-balance, Decimal("0"))) if is_credit else None,
+                    "available_credit": account.bank_available_balance if is_credit else None}
         )
 
 

@@ -24,6 +24,10 @@ class AccountUpdate(ORMModel):
 class AccountRead(AccountCreate):
     bank_current_balance: Decimal | None = None
     bank_available_balance: Decimal | None = None
+    bank_account_type: str | None = None
+    bank_credit_limit: Decimal | None = None
+    debt_owed: Decimal | None = None
+    available_credit: Decimal | None = None
     balance_synced_at: datetime | None = None
     unmatched_movement: Decimal = Decimal("0")
     estimated_balance: Decimal | None = None

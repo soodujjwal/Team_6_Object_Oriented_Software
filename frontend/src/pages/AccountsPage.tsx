@@ -28,7 +28,8 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
       (summary, account) => {
         const balance = getAccountBalance(account);
         summary.total += balance;
-        if (balance >= 0) summary.availableCash += balance;
+        if (isCreditAccount(account)) summary.creditDebt += Math.max(-balance, 0);
+        else if (balance >= 0) summary.availableCash += balance;
         else summary.creditDebt += Math.abs(balance);
         return summary;
       },
@@ -92,7 +93,7 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
                     <small>{account.balance_synced_at ? `Bank snapshot fetched ${new Date(`${account.balance_synced_at}Z`).toLocaleString()}` : "Manual account"}</small>
                   </div>
                   <div className="account-balance-block">
-                    <strong className={balance < 0 ? "negative" : ""}>{formatCurrency(balance)}</strong>
+                    <strong className={balance < 0 ? "negative" : ""}>{isCreditAccount(account) ? `${formatCurrency(Math.max(-balance, 0))} owed` : formatCurrency(balance)}</strong>
                     <Button onClick={() => setSelectedAccountId(account.id)} variant="secondary">
                       View <ArrowRight aria-hidden="true" size={15} />
                     </Button>
@@ -119,15 +120,16 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
               <span>{selectedAccount.bank_name || "Manual account"}</span>
             </div>
             <div className="account-detail-balance">
-              <span>Estimated Balance</span>
+              <span>{isCreditAccount(selectedAccount) ? "Debt owed" : "Estimated Balance"}</span>
               <strong className={getAccountBalance(selectedAccount) < 0 ? "negative" : ""}>
-                {formatCurrency(getAccountBalance(selectedAccount))}
+                {formatCurrency(isCreditAccount(selectedAccount) ? Math.max(-getAccountBalance(selectedAccount), 0) : getAccountBalance(selectedAccount))}
               </strong>
             </div>
             <dl className="account-detail-list">
               {selectedAccount.bank_current_balance != null && <>
-                <div><dt>Bank-reported balance</dt><dd>{formatCurrency(selectedAccount.bank_current_balance)}</dd></div>
-                <div><dt>Bank available balance</dt><dd>{selectedAccount.bank_available_balance == null ? "Not supplied by bank" : formatCurrency(selectedAccount.bank_available_balance)}</dd></div>
+                <div><dt>{isCreditAccount(selectedAccount) ? "Bank-reported card balance" : "Bank-reported balance"}</dt><dd>{formatCurrency(selectedAccount.bank_current_balance)}</dd></div>
+                <div><dt>{isCreditAccount(selectedAccount) ? "Available credit" : "Bank available balance"}</dt><dd>{selectedAccount.bank_available_balance == null ? "Not supplied by bank" : formatCurrency(selectedAccount.bank_available_balance)}</dd></div>
+                {isCreditAccount(selectedAccount) && <div><dt>Credit limit</dt><dd>{selectedAccount.bank_credit_limit == null ? "Not supplied by bank" : formatCurrency(selectedAccount.bank_credit_limit)}</dd></div>}
                 <div><dt>Unmatched manual movement</dt><dd>{formatCurrency(selectedAccount.unmatched_movement ?? "0")}</dd></div>
               </>}
               <div>
@@ -135,7 +137,7 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
                 <dd>{formatCurrency(selectedAccount.starting_balance)}</dd>
               </div>
               <div>
-                <dt>Estimated cash</dt>
+                <dt>{isCreditAccount(selectedAccount) ? "Card credit balance" : "Estimated cash"}</dt>
                 <dd>{formatCurrency(Math.max(getAccountBalance(selectedAccount), 0))}</dd>
               </div>
               <div>
@@ -155,6 +157,10 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
 
 function getAccountBalance(account: Account) {
   return Number(account.current_balance ?? account.starting_balance);
+}
+
+function isCreditAccount(account: Account) {
+  return account.bank_account_type === "credit";
 }
 
 function isCashAccount(account: Account) {

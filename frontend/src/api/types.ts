@@ -3,6 +3,10 @@ export type TransactionType = "income" | "expense";
 export type Account = {
   bank_current_balance?: string | null;
   bank_available_balance?: string | null;
+  bank_account_type?: string | null;
+  bank_credit_limit?: string | null;
+  debt_owed?: string | null;
+  available_credit?: string | null;
   balance_synced_at?: string | null;
   estimated_balance?: string | null;
   unmatched_movement?: string;

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from collections import defaultdict
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -18,7 +19,18 @@ class AccountService:
         self.transactions = TransactionRepository(db)
 
     def list_accounts(self) -> list[AccountRead]:
-        return [self._read(account) for account in self.accounts.list()]
+        accounts = self.accounts.list()
+        transactions = defaultdict(list)
+        for transaction in self.transactions.list():
+            transactions[transaction.account_id].append(transaction)
+        linked = {link.transaction_id for link in self.db.query(PlaidTransactionLinkModel)}
+        transfers = defaultdict(list)
+        for transfer in self.db.query(TransferModel):
+            transfers[transfer.from_account_id].append(transfer)
+            if transfer.to_account_id != transfer.from_account_id:
+                transfers[transfer.to_account_id].append(transfer)
+        return [self._read(account, transactions=transactions[account.id], linked=linked,
+                           transfers=transfers[account.id]) for account in accounts]
 
     def get_account(self, account_id: int) -> AccountRead:
         account = self.accounts.get(account_id)
@@ -53,9 +65,13 @@ class AccountService:
             raise HTTPException(status.HTTP_409_CONFLICT, "Accounts with recorded transfers cannot be deleted.")
         self.accounts.delete(account)
 
-    def _read(self, account) -> AccountRead:
-        transactions = self.transactions.list_for_account(account.id)
-        linked = {link.transaction_id for link in self.db.query(PlaidTransactionLinkModel)}
+    def _read(self, account, *, transactions=None, linked=None, transfers=None) -> AccountRead:
+        if transactions is None:
+            transactions = self.transactions.list_for_account(account.id)
+        if linked is None:
+            linked = {link.transaction_id for link in self.db.query(PlaidTransactionLinkModel)}
+        if transfers is None:
+            transfers = self.db.query(TransferModel).filter(or_(TransferModel.from_account_id == account.id, TransferModel.to_account_id == account.id))
         unmatched = Decimal("0")
         balance = money(account.starting_balance)
         for transaction in transactions:
@@ -68,7 +84,7 @@ class AccountService:
                 balance += transaction.amount
             else:
                 balance -= transaction.amount
-        for transfer in self.db.query(TransferModel).filter(or_(TransferModel.from_account_id == account.id, TransferModel.to_account_id == account.id)):
+        for transfer in transfers:
             # Transfer ledger entries carry the movement; legacy transfers do not.
             if not any((t.receipt_metadata or {}).get("transfer_id") == transfer.id for t in transactions):
                 movement = transfer.amount if transfer.to_account_id == account.id else -transfer.amount

@@ -1,0 +1,5 @@
+{
+  "appId": "com.financebuilder.app",
+  "appName": "Finance Builder",
+  "webDir": "dist-mobile"
+}

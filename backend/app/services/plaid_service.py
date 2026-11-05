@@ -6,6 +6,7 @@ import base64
 import hashlib
 
 import httpx
+from pymongo.errors import OperationFailure
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -43,6 +44,10 @@ CATEGORY_MAP = {
 }
 
 
+class _SyncCursorChanged(Exception):
+    """Another sync committed while this request was fetching bank updates."""
+
+
 class PlaidClient:
     def __init__(self):
         settings = get_settings()
@@ -69,10 +74,11 @@ class PlaidClient:
             raise HTTPException(502, "Could not reach Plaid.") from error
         if response.is_error:
             if data.get("error_code") == "INVALID_API_KEYS":
+                config_file = ".env.plaid-sandbox" if get_settings().profile == "plaid-sandbox" else ".env"
                 raise HTTPException(
                     503,
                     f"Plaid rejected PLAID_CLIENT_ID or PLAID_SECRET for the {self.environment} environment. "
-                    "Copy the matching keys from the Plaid Dashboard into the root .env file, then restart the backend.",
+                    f"Copy the matching keys from the Plaid Dashboard into the root {config_file} file, then restart the backend.",
                 )
             message = data.get("error_message") or data.get("display_message") or "Plaid request failed."
             raise HTTPException(502, message)
@@ -145,6 +151,24 @@ class PlaidService:
         return self.sync_item(item)
 
     def sync_item(self, item: PlaidItemModel) -> dict:
+        item_id = item.id
+        for attempt in range(3):
+            try:
+                return self._sync_item_once(item)
+            except (_SyncCursorChanged, OperationFailure) as error:
+                if isinstance(error, OperationFailure) and (
+                    not error.has_error_label("TransientTransactionError")
+                    or error.has_error_label("UnknownTransactionCommitResult")
+                ):
+                    raise
+                self.db.rollback()
+                if attempt == 2:
+                    raise HTTPException(409, "Bank sync is busy. Please try again shortly.") from None
+                item = self.db.get(PlaidItemModel, item_id)
+                if item is None:
+                    raise HTTPException(409, "This bank was disconnected during sync.") from None
+
+    def _sync_item_once(self, item: PlaidItemModel) -> dict:
         original_cursor = item.cursor
         if hasattr(self.db, "release_read_transaction"):
             self.db.release_read_transaction()
@@ -166,19 +190,24 @@ class PlaidService:
             if not page.get("has_more"):
                 break
 
+        # Complete external requests before opening the atomic import transaction.
+        balances = self.client.post("/accounts/get", {"access_token": _decrypt_token(item.access_token)})
         if hasattr(self.db, "release_read_transaction"):
             from sqlalchemy import update
             self.db.execute(update(PlaidItemModel).where(PlaidItemModel.id == item.id).values(cursor=PlaidItemModel.cursor))
             if item.cursor != original_cursor:
-                self.db.rollback()
-                raise HTTPException(409, "This bank was synced by another request. Retry sync.")
+                raise _SyncCursorChanged()
         self.db.flush()
+        account_links = {link.plaid_account_id: link for link in
+                         self.db.query(PlaidAccountLinkModel).filter_by(plaid_item_id=item.id)}
+        transaction_links = {link.plaid_transaction_id: link for link in
+                             self.db.query(PlaidTransactionLinkModel).filter_by(plaid_item_id=item.id)}
         for page in pages:
             for plaid_transaction in page.get("added", []):
-                if self._upsert_transaction(item, plaid_transaction):
+                if self._upsert_transaction(item, plaid_transaction, account_links, transaction_links):
                     totals["added"] += 1
             for plaid_transaction in page.get("modified", []):
-                if self._upsert_transaction(item, plaid_transaction):
+                if self._upsert_transaction(item, plaid_transaction, account_links, transaction_links):
                     totals["modified"] += 1
         # A posted transaction can replace a pending transaction from another page.
         self.db.flush()
@@ -210,7 +239,7 @@ class PlaidService:
         item.cursor = cursor
         item.status = "active"
         item.last_synced_at = datetime.now(timezone.utc).replace(tzinfo=None)
-        self._reconcile_balances(item)
+        self._reconcile_balances(item, balances)
         self.db.commit()
         return totals
 
@@ -278,23 +307,19 @@ class PlaidService:
             self.db.flush()
             self.db.add(PlaidAccountLinkModel(plaid_item_id=item.id, plaid_account_id=plaid_id, account_id=account.id))
 
-    def _upsert_transaction(self, item: PlaidItemModel, value: dict) -> bool:
-        account_link = self.db.query(PlaidAccountLinkModel).filter(
-            PlaidAccountLinkModel.plaid_item_id == item.id,
-            PlaidAccountLinkModel.plaid_account_id == value.get("account_id"),
-        ).first()
+    def _upsert_transaction(self, item: PlaidItemModel, value: dict,
+                            account_links: dict, transaction_links: dict) -> bool:
+        account_link = account_links.get(value.get("account_id"))
         if not account_link:
             return False
         plaid_id = value["transaction_id"]
-        link = self.db.query(PlaidTransactionLinkModel).filter(
-            PlaidTransactionLinkModel.plaid_transaction_id == plaid_id,
-            PlaidTransactionLinkModel.plaid_item_id == item.id,
-        ).first()
+        link = transaction_links.get(plaid_id)
         if link is None and value.get("pending_transaction_id"):
-            link = self.db.query(PlaidTransactionLinkModel).filter_by(
-                plaid_item_id=item.id, plaid_transaction_id=value["pending_transaction_id"]).first()
+            link = transaction_links.get(value["pending_transaction_id"])
             if link:
+                transaction_links.pop(value["pending_transaction_id"], None)
                 link.plaid_transaction_id = plaid_id
+                transaction_links[plaid_id] = link
         transaction = self.db.get(TransactionModel, link.transaction_id) if link else None
         if transaction is not None:
             self._undo_recurring(transaction)
@@ -328,31 +353,32 @@ class PlaidService:
             "bank_description": bank_name, "pending": bool(value.get("pending")), "bank_removed": False}
         if link is None:
             self.db.flush()
-            self.db.add(PlaidTransactionLinkModel(
+            link = PlaidTransactionLinkModel(
                 plaid_item_id=item.id, plaid_transaction_id=plaid_id, transaction_id=transaction.id
-            ))
+            )
+            self.db.add(link)
+            transaction_links[plaid_id] = link
         return True
 
-    def _reconcile_balances(self, item: PlaidItemModel) -> None:
-        result = self.client.post("/accounts/get", {"access_token": _decrypt_token(item.access_token)})
+    def _reconcile_balances(self, item: PlaidItemModel, result: dict) -> None:
+        links = {row.plaid_account_id: row for row in
+                 self.db.query(PlaidAccountLinkModel).filter_by(plaid_item_id=item.id)}
+        imported_ids = [row.transaction_id for row in self.db.query(PlaidTransactionLinkModel).filter_by(plaid_item_id=item.id)]
+        movements = {}
+        for transaction in self.db.query(TransactionModel).filter(TransactionModel.id.in_(imported_ids)):
+            movement = transaction.amount if transaction.transaction_type == "income" else -transaction.amount
+            movements[transaction.account_id] = movements.get(transaction.account_id, Decimal("0")) + movement
+        accounts = {row.id: row for row in self.db.query(AccountModel).filter(
+            AccountModel.id.in_([link.account_id for link in links.values()]))}
         for plaid_account in result.get("accounts", []):
             current = (plaid_account.get("balances") or {}).get("current")
             if current is None:
                 continue
-            link = self.db.query(PlaidAccountLinkModel).filter(
-                PlaidAccountLinkModel.plaid_item_id == item.id,
-                PlaidAccountLinkModel.plaid_account_id == plaid_account["account_id"],
-            ).first()
+            link = links.get(plaid_account["account_id"])
             if not link:
                 continue
-            imported_ids = [row.transaction_id for row in self.db.query(PlaidTransactionLinkModel).filter_by(plaid_item_id=item.id)]
-            imported = self.db.query(TransactionModel).filter(
-                TransactionModel.id.in_(imported_ids), TransactionModel.account_id == link.account_id).all()
-            movement = sum(
-                (transaction.amount if transaction.transaction_type == "income" else -transaction.amount)
-                for transaction in imported
-            )
-            account = self.db.get(AccountModel, link.account_id)
+            movement = movements.get(link.account_id, Decimal("0"))
+            account = accounts.get(link.account_id)
             if account:
                 account.starting_balance = Decimal(str(current)) - movement
                 account.bank_current_balance = Decimal(str(current))

@@ -12,6 +12,27 @@ from app.services.account_service import AccountService
 from app.services.plaid_service import PlaidClient, PlaidService
 
 
+@pytest.mark.parametrize("labels", [[], ["UnknownTransactionCommitResult"],
+                                   ["UnknownTransactionCommitResult", "TransientTransactionError"]])
+def test_sync_does_not_replay_nonretryable_or_uncertain_commit_errors(monkeypatch, labels):
+    from types import SimpleNamespace
+    from pymongo.errors import OperationFailure
+
+    service = PlaidService(SimpleNamespace(), FakePlaidClient())
+    attempts = []
+    failure = OperationFailure("test failure", details={"errorLabels": labels})
+
+    def fail(item):
+        attempts.append(item.id)
+        raise failure
+
+    monkeypatch.setattr(service, "_sync_item_once", fail)
+    with pytest.raises(OperationFailure) as raised:
+        service.sync_item(SimpleNamespace(id=1))
+    assert raised.value is failure
+    assert attempts == [1]
+
+
 class FakePlaidClient:
     configured = True
 

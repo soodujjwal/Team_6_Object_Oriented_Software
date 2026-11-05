@@ -30,19 +30,36 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [error, setError] = useState("");
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
+  const [transactionsLoaded, setTransactionsLoaded] = useState(false);
 
   useEffect(() => {
-    function loadDashboard() {
-      return Promise.all([getAccounts(), getTransactions(), getBudgets(), getRecurringTransactions(), getSavingsGoals(), getSplitBills()])
-      .then(([accountData, transactionData, budgetData, recurringData, goalData, bills]) => {
-        setSplitBills(bills);
-        setAccounts(accountData);
-        setTransactions(transactionData);
-        setBudgets(budgetData);
-        setRecurring(recurringData);
-        setGoals(goalData);
-      })
-      .catch(() => setError("Start the backend server to load live data."));
+    let active = true;
+    let pending = false;
+    let reloadRequested = false;
+    async function loadDashboard() {
+      if (pending) { reloadRequested = true; return; }
+      pending = true;
+      const failed: string[] = [];
+      async function load<T>(name: string, fetchData: () => Promise<T>, apply: (data: T) => void) {
+        try {
+          const data = await fetchData();
+          if (active) apply(data);
+        } catch {
+          failed.push(name);
+        }
+      }
+      await Promise.all([
+        load("accounts", getAccounts, (data) => { setAccounts(data); setAccountsLoaded(true); }),
+        load("transactions", getTransactions, (data) => { setTransactions(data); setTransactionsLoaded(true); }),
+        load("budgets", getBudgets, setBudgets),
+        load("recurring bills", getRecurringTransactions, setRecurring),
+        load("savings goals", getSavingsGoals, setGoals),
+        load("split bills", getSplitBills, setSplitBills),
+      ]);
+      if (active) setError(failed.length ? `Could not refresh ${failed.join(", ")}. Try refreshing the page.` : "");
+      pending = false;
+      if (active && reloadRequested) { reloadRequested = false; void loadDashboard(); }
     }
     void loadDashboard();
     window.addEventListener(TRANSACTIONS_UPDATED_EVENT, loadDashboard);
@@ -51,6 +68,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
     window.addEventListener(SAVINGS_GOALS_UPDATED_EVENT, loadDashboard);
     window.addEventListener("focus", loadDashboard);
     return () => {
+      active = false;
       window.removeEventListener(TRANSACTIONS_UPDATED_EVENT, loadDashboard);
       window.removeEventListener(BUDGETS_UPDATED_EVENT, loadDashboard);
       window.removeEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, loadDashboard);
@@ -90,8 +108,8 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
 
       <GlassCard className="balance-panel" variant="elevated">
         <p className="section-label">Estimated Balance</p>
-        <div className="balance-card">{formatCurrency(totals.balance)}</div>
-        <p className="caption-text">{accounts.length} linked financial account{accounts.length === 1 ? "" : "s"}</p>
+        <div className="balance-card">{accountsLoaded ? formatCurrency(totals.balance) : "Loading…"}</div>
+        <p className="caption-text">{accountsLoaded ? `${accounts.length} linked financial account${accounts.length === 1 ? "" : "s"}` : "Loading your accounts…"}</p>
         {bankAccounts.length > 0 && <p className="caption-text">Bank-reported total ({bankAccounts.length} connected accounts): {formatCurrency(bankAccounts.reduce((sum, account) => sum + Number(account.bank_current_balance), 0))}. Estimates include unmatched manual entries.</p>}
         {bankAccounts.map((account) => <p className="caption-text" key={account.id}>{account.name} · snapshot fetched {account.balance_synced_at ? new Date(`${account.balance_synced_at}Z`).toLocaleString() : "not yet"}. Bank data may be delayed.</p>)}
         <p className="caption-text">Friends owe you {formatCurrency(owed)} · excluded from your balance</p>
@@ -99,8 +117,8 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
       </GlassCard>
 
       <div className="money-grid">
-        <MoneyCard label="Income" value={formatCurrency(totals.income)} tone="income" />
-        <MoneyCard label="Spent" value={formatCurrency(totals.spent)} tone="expense" />
+        <MoneyCard label="Income" value={transactionsLoaded ? formatCurrency(totals.income) : "Loading…"} tone="income" />
+        <MoneyCard label="Spent" value={transactionsLoaded ? formatCurrency(totals.spent) : "Loading…"} tone="expense" />
       </div>
 
       <section className="section-stack">
@@ -115,7 +133,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
             <TransactionItem key={transaction.id} transaction={transaction} />
           ))
         ) : (
-          <p className="empty-state">No transactions yet.</p>
+          <p className="empty-state">{transactionsLoaded ? "No transactions yet." : "Loading your transactions…"}</p>
         )}
       </section>
 

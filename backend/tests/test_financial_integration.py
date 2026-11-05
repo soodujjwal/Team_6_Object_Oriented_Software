@@ -99,6 +99,53 @@ def sync(client, service, added=None, modified=None, removed=None):
     service.sync_user(1)
 
 
+def test_sync_retries_transient_conflict_without_duplicate_imports(setup, monkeypatch):
+    from copy import deepcopy
+    from pymongo.errors import OperationFailure
+
+    db, client, service, account = setup
+    if getattr(db, "testing_without_transactions", False):
+        pytest.skip("This check requires real transaction rollback.")
+    page = dict(added=[entry("retry-charge")], modified=[], removed=[],
+                has_more=False, next_cursor="after-retry")
+    client.sync_responses.extend([deepcopy(page), deepcopy(page)])
+    reconcile = service._reconcile_balances
+    attempts = []
+
+    def conflict_once(item, balances):
+        reconcile(item, balances)
+        attempts.append(item.id)
+        if len(attempts) == 1:
+            raise OperationFailure("simulated write conflict", code=112,
+                                   details={"errorLabels": ["TransientTransactionError"]})
+
+    monkeypatch.setattr(service, "_reconcile_balances", conflict_once)
+    result = service.sync_user(1)
+    assert result == {"added": 1, "modified": 0, "removed": 0}
+    assert len(attempts) == 2
+    assert db.query(TransactionModel).count() == 1
+    assert db.query(PlaidTransactionLinkModel).count() == 1
+    assert AccountService(db).get_account(account.id).current_balance == Decimal("1000.00")
+
+
+def test_sync_fetches_bank_data_outside_native_transaction(setup, monkeypatch):
+    db, client, service, _ = setup
+    if not hasattr(db, "native_session") or db.testing_without_transactions:
+        pytest.skip("This check requires a native MongoDB session.")
+    post = client.post
+    requests = []
+
+    def checked_post(path, payload):
+        assert not db.native_session.in_transaction
+        requests.append(path)
+        return post(path, payload)
+
+    client.sync_responses.append(dict(added=[], modified=[], removed=[], has_more=False, next_cursor="next"))
+    monkeypatch.setattr(client, "post", checked_post)
+    service.sync_user(1)
+    assert requests == ["/transactions/sync", "/accounts/get"]
+
+
 def manual(db, account, amount="25", note="Coffee shop", direction="expense"):
     return TransactionService(db).create_transaction(TransactionCreate(account_id=account.id, amount=amount,
         category="Food & Dining", transaction_type=direction, transaction_date="2026-09-20", note=note))

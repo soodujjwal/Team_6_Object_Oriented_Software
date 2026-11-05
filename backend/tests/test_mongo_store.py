@@ -43,6 +43,37 @@ def store(database):
     return MongoSession(database, testing_without_transactions=type(database.client).__module__.startswith("mongomock"))
 
 
+def test_initial_multi_account_bank_sync_and_repeated_sync(database):
+    from app.services.plaid_service import PlaidService
+    from app.repositories.models import PlaidItemModel, PlaidTransactionLinkModel
+    from test_plaid_service import FakePlaidClient
+
+    class MultiAccountBank(FakePlaidClient):
+        def post(self, path, payload):
+            if path == "/accounts/get":
+                return {"accounts": [dict(account_id=f"test-account-{i}", name=f"Test checking {i}",
+                                         subtype="checking", balances={"current": 1000}) for i in range(14)]}
+            return super().post(path, payload)
+
+    bank = MultiAccountBank()
+    bank.sync_responses[0]["added"] = [dict(transaction_id=f"test-charge-{i}",
+        account_id=f"test-account-{i % 14}", amount=25, date="2026-09-20", name="Test purchase") for i in range(48)]
+    with store(database) as db:
+        db.add(UserModel(id=1, name="Demo test", email="demo@example.test", password_hash="test"))
+        db.commit()
+        db.info["user_id"] = 1
+        service = PlaidService(db, bank)
+        result = service.exchange(1, "public-sandbox")
+        assert result["sync"] == {"added": 48, "modified": 0, "removed": 0}
+        assert db.query(AccountModel).count() == 14
+        assert db.query(TransactionModel).count() == 48
+        bank.sync_responses.append(dict(added=[], modified=[], removed=[], next_cursor="cursor-2", has_more=False))
+        assert service.sync_user(1) == {"added": 0, "modified": 0, "removed": 0}
+        assert db.query(PlaidTransactionLinkModel).count() == 48
+        assert db.query(PlaidItemModel).one().last_synced_at is not None
+        assert sum(row.current_balance for row in AccountService(db).list_accounts()) == Decimal("14000.00")
+
+
 def seed(database):
     with store(database) as db:
         db.add_all([UserModel(id=1, name="One", email="one@example.test", password_hash="unused"),

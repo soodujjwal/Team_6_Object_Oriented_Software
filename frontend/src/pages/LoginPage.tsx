@@ -6,6 +6,7 @@ import { AuthHeader } from "../components/auth/AuthHeader";
 import { AuthLayout } from "../components/auth/AuthLayout";
 import { PasswordInput } from "../components/auth/PasswordInput";
 import { Button, GlassCard, TextField } from "../components/ui";
+import { AppDownload } from "../components/auth/AppDownload";
 
 type LoginPageProps = {
   notice?: string;
@@ -74,6 +75,7 @@ export function LoginPage({ notice, onLogin, onShowRegister, onShowHome }: Login
         <Button variant="secondary" onClick={onShowRegister}>
           Create a new account
         </Button>
+        <AppDownload />
       </GlassCard>
     </AuthLayout>
   );

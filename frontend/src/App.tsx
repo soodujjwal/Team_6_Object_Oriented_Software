@@ -20,6 +20,7 @@ import { HelpPage } from "./pages/HelpPage";
 import { SplitBillPage } from "./pages/SplitBillPage";
 import { OnboardingPage, hasCompletedOnboarding, markOnboardingComplete } from "./pages/OnboardingPage";
 import { THEME_STORAGE_KEY, type Theme } from "./theme/theme";
+import { isNativeApp } from "./domain/mobile";
 
 export type Page =
   | "dashboard"
@@ -52,7 +53,7 @@ function getInitialTheme(): Theme {
 export default function App() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [page, setPage] = useState<Page>("dashboard");
-  const [route, setRoute] = useState<AppRoute>(() => readRoute(window.location.pathname));
+  const [route, setRoute] = useState<AppRoute>(() => isNativeApp() && readRoute(window.location.pathname) === "/" ? "/login" : readRoute(window.location.pathname));
   const [initialSession] = useState(readStoredSession);
   const [user, setUser] = useState<User | null>(initialSession.user);
   const [sessionNotice, setSessionNotice] = useState(initialSession.expired ? SESSION_EXPIRED_MESSAGE : "");
@@ -94,7 +95,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const destination = resolveRoute(route, Boolean(user));
+    const destination = resolveRoute(route, Boolean(user), isNativeApp());
     if (window.location.pathname !== destination) window.history.replaceState(null, "", destination);
     if (destination !== route) setRoute(destination);
     document.title = destination === "/" ? "Finance Builder | Your money, all connected"
@@ -103,6 +104,7 @@ export default function App() {
   }, [route, user]);
 
   function navigateAuth(route: AppRoute) {
+    if (isNativeApp() && route === "/") route = user ? "/app" : "/login";
     window.history.pushState(null, "", route);
     setRoute(route);
     window.scrollTo(0, 0);
@@ -126,8 +128,9 @@ export default function App() {
     setUser(null);
     setOnboardingComplete(false);
     setPage("dashboard");
-    window.history.replaceState(null, "", "/");
-    setRoute("/");
+    const destination = isNativeApp() ? "/login" : "/";
+    window.history.replaceState(null, "", destination);
+    setRoute(destination);
   }
 
   function handleUserUpdate(nextUser: User, accessToken?: string) {
@@ -136,13 +139,13 @@ export default function App() {
     setUser(nextUser);
   }
 
-  if (route === "/") return <LandingPage signedIn={Boolean(user)} />;
+  if (route === "/" && !isNativeApp()) return <LandingPage signedIn={Boolean(user)} />;
 
   if (!user) {
     return route === "/register" ? (
-      <RegisterPage onRegister={handleAuth} onShowHome={() => navigateAuth("/")} onShowLogin={() => navigateAuth("/login")} />
+      <RegisterPage onRegister={handleAuth} onShowHome={isNativeApp() ? undefined : () => navigateAuth("/")} onShowLogin={() => navigateAuth("/login")} />
     ) : (
-      <LoginPage notice={sessionNotice} onLogin={handleAuth} onShowHome={() => navigateAuth("/")} onShowRegister={() => navigateAuth("/register")} />
+      <LoginPage notice={sessionNotice} onLogin={handleAuth} onShowHome={isNativeApp() ? undefined : () => navigateAuth("/")} onShowRegister={() => navigateAuth("/register")} />
     );
   }
 

@@ -5,11 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:sandbox": "vite --mode plaid-sandbox",
+    "build:sandbox": "tsc -b && vite build --mode plaid-sandbox",
     "build": "tsc -b && vite build",
+    "build:mobile": "tsc -b && vite build --mode mobile",
+    "android:add": "cap add android",
+    "android:sync": "npm run build:mobile && cap sync android",
+    "android:open": "cap open android",
     "preview": "vite preview",
     "test:split-bill": "node --test tests/splitBill.test.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
     "@vitejs/plugin-react": "^5.0.0",
     "lucide-react": "^0.544.0",
     "react": "^19.1.0",
@@ -19,6 +27,7 @@
     "vite": "^7.1.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
     "@eslint/js": "^9.39.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",

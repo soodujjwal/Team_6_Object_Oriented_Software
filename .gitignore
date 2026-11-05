@@ -9,9 +9,16 @@ finance_manager.db
 .env
 .env.*
 !.env.example
+!.env.plaid-sandbox.example
 node_modules/
 *.tsbuildinfo
 dist/
+dist-sandbox/
+dist-mobile/
+frontend/android/.gradle/
+frontend/android/local.properties
+*.jks
+*.keystore
 build/
 backend/.vite/
 graphify-out/

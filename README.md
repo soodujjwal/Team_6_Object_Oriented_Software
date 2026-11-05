@@ -93,6 +93,10 @@ Run backend checks with `python -m pytest` and frontend calculation/parser check
 
 ## Run the Frontend
 
+For an isolated Plaid test-bank demo alongside the original app, see
+[Plaid Sandbox demo](documents/plaid-sandbox-demo.md). The demo runs at port 5174
+and uses its own database and backend at port 8001.
+
 Open a second PowerShell window from the project repo:
 
 ```powershell

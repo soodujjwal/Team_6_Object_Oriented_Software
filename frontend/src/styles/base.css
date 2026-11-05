@@ -3,6 +3,21 @@
   text-rendering: optimizeLegibility;
 }
 
+.sandbox-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  padding: 10px 16px;
+  background: #17452f;
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+}
+
 * {
   box-sizing: border-box;
 }

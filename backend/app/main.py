@@ -1,3 +1,5 @@
+import os
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,6 +32,9 @@ def create_app() -> FastAPI:
             "http://127.0.0.1:5173",
             "http://localhost:5174",
             "http://127.0.0.1:5174",
+            "https://localhost",
+            "capacitor://localhost",
+            *[origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()],
         ],
         allow_credentials=True,
         allow_methods=["*"],
@@ -55,13 +60,15 @@ def create_app() -> FastAPI:
             "message": "Personal Finance Manager API",
             "docs": "/docs",
             "health": "/health",
-            "frontend": "http://127.0.0.1:5173",
+            "frontend": "http://127.0.0.1:5174" if settings.profile == "plaid-sandbox" else "http://127.0.0.1:5173",
+            "environment": settings.profile,
         }
 
     @app.get("/health", tags=["system"])
     def health_check():
         database = database_health()
-        return {"status": "ok" if database["status"] == "ok" else "degraded", "database": database}
+        return {"status": "ok" if database["status"] == "ok" else "degraded", "database": database,
+                "environment": settings.profile}
 
     return app
 

@@ -259,30 +259,68 @@ class PlaidService:
             self.client.post("/item/remove", {"access_token": _decrypt_token(item.access_token)})
         except HTTPException:
             pass
-        from app.services.account_service import AccountService
-        from app.repositories.models import TransferModel
-        for account_link in self.db.query(PlaidAccountLinkModel).filter_by(plaid_item_id=item.id):
-            account = self.db.get(AccountModel, account_link.account_id)
-            if not account:
+        from app.repositories.models import RecurringTransactionModel, SplitBillModel, TransferModel
+        from app.services.split_bill_service import SplitBillService
+        account_links = self.db.query(PlaidAccountLinkModel).filter_by(plaid_item_id=item.id).all()
+        account_ids = {link.account_id for link in account_links}
+        accounts = self.db.query(AccountModel).filter(AccountModel.id.in_(account_ids)).all()
+        rows = self.db.query(TransactionModel).filter(TransactionModel.account_id.in_(account_ids)).all()
+        removed_ids = {row.id for row in rows}
+
+        # Keep receipts as reviewable drafts rather than references to deleted records.
+        bills = SplitBillService(self.db, user_id)
+        for bill in self.db.query(SplitBillModel).filter_by(user_id=user_id):
+            changed = bill.data.get("account_id") in account_ids or bill.payment_transaction_id in removed_ids
+            if changed:
+                bill.data = {**bill.data, "account_id": None, "bank_disconnect_review": True}
+                bill.payment_transaction_id = None
+            repayments = {}
+            for person, value in bill.repayments.items():
+                payments = bills.payments(value)
+                kept = [payment for payment in payments if payment["transaction_id"] not in removed_ids]
+                if len(kept) != len(payments):
+                    changed = True
+                    if kept:
+                        repayments[person] = {**value, "payments": kept,
+                            "amount": str(sum((Decimal(p["amount"]) for p in kept), Decimal("0"))),
+                            "transaction_id": kept[-1]["transaction_id"]}
+                else:
+                    repayments[person] = value
+            if changed:
+                bill.repayments = repayments
+                bill.data = {**bill.data, "bank_disconnect_review": True}
+
+        for transfer in self.db.query(TransferModel).all():
+            if not account_ids.intersection({transfer.from_account_id, transfer.to_account_id}):
                 continue
-            estimated = AccountService(self.db).get_account(account.id).current_balance
-            rows = self.db.query(TransactionModel).filter_by(account_id=account.id).all()
-            movement = sum((t.amount if t.transaction_type == "income" else -t.amount)
-                           for t in rows if not (t.receipt_metadata or {}).get("bank_removed"))
-            for transfer in self.db.query(TransferModel):
-                if account.id not in {transfer.from_account_id, transfer.to_account_id}:
-                    continue
-                if not any((t.receipt_metadata or {}).get("transfer_id") == transfer.id for t in rows):
-                    movement += transfer.amount if transfer.to_account_id == account.id else -transfer.amount
-            account.starting_balance = estimated - movement
-            account.bank_current_balance = None
-            account.bank_available_balance = None
-            account.bank_credit_limit = None
-            account.balance_synced_at = None
+            # The surviving account still received/sent this money. Retain its
+            # transaction while removing the ledger's deleted-account reference.
+            survivor = transfer.to_account_id if transfer.from_account_id in account_ids else transfer.from_account_id
+            if survivor not in account_ids:
+                legs = [row for row in self.db.query(TransactionModel).filter_by(account_id=survivor)
+                        if (row.receipt_metadata or {}).get("transfer_id") == transfer.id]
+                for leg in legs:
+                    leg.receipt_metadata = {key: value for key, value in (leg.receipt_metadata or {}).items() if key != "transfer_id"}
+                if not legs:
+                    self.db.add(TransactionModel(account_id=survivor, amount=transfer.amount, category="Transfer",
+                        transaction_type="income" if survivor == transfer.to_account_id else "expense",
+                        transaction_date=transfer.transfer_date, note=transfer.note or "Transfer from disconnected bank",
+                        financial_kind="transfer"))
+            self.db.delete(transfer)
+
         links = self.db.query(PlaidTransactionLinkModel).filter(PlaidTransactionLinkModel.plaid_item_id == item.id).all()
         for link in links:
             self.db.delete(link)
-        self.db.query(PlaidAccountLinkModel).filter(PlaidAccountLinkModel.plaid_item_id == item.id).delete()
+        for link in account_links:
+            self.db.delete(link)
+        for row in rows:
+            self.db.delete(row)
+        for schedule in self.db.query(RecurringTransactionModel).filter(RecurringTransactionModel.account_id.in_(account_ids)):
+            self.db.delete(schedule)
+        self.db.flush()
+        for account in accounts:
+            self.db.delete(account)
+        self.db.flush()
         self.db.delete(item)
         self.db.commit()
 

@@ -319,17 +319,66 @@ def test_database_migration_is_repeatable_and_preserves_data(setup):
     assert db.get(AccountModel, id).bank_current_balance == Decimal("1000")
 
 
-def test_disconnect_preserves_estimate_and_imported_history(setup):
+def test_disconnect_deletes_connected_accounts_and_their_history(setup):
     db, client, service, account = setup
     manual(db, account, amount="10", note="Unmatched purchase")
     sync(client, service, added=[entry()])
-    before = AccountService(db).get_account(account.id).current_balance
     connection = service.status(1)["connections"][0]["id"]
     service.disconnect(1, connection)
-    after = AccountService(db).get_account(account.id)
-    assert after.current_balance == before
-    assert after.bank_current_balance is None
-    assert db.query(TransactionModel).count() == 2
+    assert db.query(AccountModel).count() == 0
+    assert db.query(TransactionModel).count() == 0
+    assert db.query(PlaidTransactionLinkModel).count() == 0
+    assert service.status(1)["connections"] == []
+
+
+def test_disconnect_cleans_dependencies_and_preserves_other_accounts(setup):
+    from app.repositories.models import PlaidAccountLinkModel, PlaidItemModel, TransferModel
+    from app.schemas.account_schema import AccountCreate
+    from app.schemas.transfer_schema import TransferCreate
+    from app.services.transfer_service import TransferService
+
+    db, client, service, account = setup
+    account.account_type = "savings"
+    db.commit()
+    other = AccountService(db).create_account(AccountCreate(name="Other Checking", bank_name="Other bank",
+        account_type="checking", starting_balance="100"))
+    manual_account = AccountService(db).create_account(AccountCreate(name="Manual Checking", bank_name="Manual",
+        account_type="checking", starting_balance="80"))
+    # A separate connection must remain, even though it belongs to the same user.
+    item = PlaidItemModel(user_id=1, item_id="other-item", access_token="unused-test", institution_name="Other bank")
+    db.add(item)
+    db.flush()
+    db.add(PlaidAccountLinkModel(plaid_item_id=item.id, plaid_account_id="other-account", account_id=other.id))
+    db.add(RecurringTransactionModel(account_id=account.id, name="Bank bill", amount=10, category="Subscriptions",
+        transaction_type="expense", frequency="monthly", next_due_date=date(2026, 12, 1)))
+    db.commit()
+    TransferService(db).create(TransferCreate(from_account_id=account.id, to_account_id=other.id,
+        amount="125", transfer_date=date(2026, 11, 5)))
+    svc, bill_id = bill(db, account)
+    svc.pay(bill_id)
+    svc.add_repayment(bill_id, "friend", RepaymentCreate(amount="20", request_id="repayment", payment_date="2026-09-20"))
+    other_balance = AccountService(db).get_account(other.id).current_balance
+    connection = db.query(PlaidAccountLinkModel).filter_by(account_id=account.id).one().plaid_item_id
+    with pytest.raises(HTTPException) as error:
+        service.disconnect(2, connection)
+    assert error.value.status_code == 404
+    service.disconnect(1, connection)
+    assert {row.id for row in AccountService(db).list_accounts()} == {other.id, manual_account.id}
+    assert AccountService(db).get_account(manual_account.id).current_balance == Decimal("80")
+    assert AccountService(db).get_account(other.id).current_balance == other_balance
+    assert db.query(RecurringTransactionModel).count() == 0
+    assert db.query(TransferModel).count() == 0
+    assert db.query(PlaidAccountLinkModel).one().account_id == other.id
+    assert db.query(PlaidItemModel).one().id == item.id
+    assert all(row.account_id == other.id for row in db.query(TransactionModel))
+    assert all("transfer_id" not in (row.receipt_metadata or {}) for row in db.query(TransactionModel))
+    draft = svc.read(svc.get(bill_id))
+    assert draft["data"]["account_id"] is None
+    assert draft["paid"] is False
+    assert draft["repayments"] == {}
+    assert draft["needs_review"] is True
+    if hasattr(db, "database"):
+        assert db.database["_allocations"].count_documents({"bill_id": bill_id}) == 0
 
 
 def test_import_before_manual_entry_matches_the_same_record(setup):

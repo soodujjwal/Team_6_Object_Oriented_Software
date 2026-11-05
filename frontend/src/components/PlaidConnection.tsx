@@ -122,11 +122,13 @@ export function PlaidConnection({ onAccountsChanged }: { onAccountsChanged: () =
   }
 
   async function disconnect(connectionId: number) {
-    if (!window.confirm("Disconnect this bank? Imported transactions will remain in the app.")) return;
+    if (!window.confirm("Disconnect this bank and delete its linked accounts, transactions, and recurring bills from the app? Affected split bills will need review.")) return;
     setBusy(true);
     try {
       await disconnectPlaid(connectionId);
-      setMessage("Bank disconnected. Existing imported transactions were kept.");
+      setMessage("Bank disconnected. Its linked accounts and transactions were deleted.");
+      window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT));
+      onAccountsChanged();
       await loadStatus();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not disconnect bank.");

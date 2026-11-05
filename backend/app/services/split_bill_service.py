@@ -31,7 +31,7 @@ class SplitBillService:
 
     def read(self, bill):
         repayments = {}
-        review = False
+        review = bool(bill.data.get("bank_disconnect_review"))
         for person, value in bill.repayments.items():
             payments = self.payments(value)
             total = Decimal("0")

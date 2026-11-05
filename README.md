@@ -111,6 +111,8 @@ The frontend now has separate Login and Create Account screens. After login, it 
 
 ## Plaid Bank Sync
 
+Disconnecting a Plaid bank deletes that connection's accounts, their transactions (including manual entries in those accounts), and recurring bills. Other connections and manual accounts remain. Affected split bills are kept for review, and transfers retain their recorded movement on accounts that remain. The disconnect dialog explains this before deletion.
+
 Plaid connections are available in **Account Settings → Bank Sync**. The backend exchanges Link's short-lived public token, stores the encrypted access token server-side in MongoDB, maps Plaid accounts to app accounts, and incrementally imports added, modified, and removed transactions without duplicates.
 
 Copy the single root environment template and enter your keys there:

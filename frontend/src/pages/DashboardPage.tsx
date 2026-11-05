@@ -92,10 +92,6 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   }, [accounts, transactions]);
 
   const recent = transactions.slice(-3).reverse();
-  const owed = splitBills.filter((bill) => bill.paid && !bill.needs_review).reduce((sum, bill) => sum + bill.calculation.people
-    .filter((person) => person.id !== bill.data.self_id)
-    .reduce((total, person) => total + Math.max(0, person.total / 100 - Number(bill.repayments[person.id]?.amount ?? 0)), 0), 0);
-  const bankAccounts = accounts.filter((account) => account.bank_current_balance != null);
   const upcomingBills = getUpcomingBills(recurring).slice(0, 4);
   const today = new Date();
   const activeBudgets = getEffectiveBudgets(budgets, today.getMonth() + 1, today.getFullYear());
@@ -109,10 +105,6 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
       <GlassCard className="balance-panel" variant="elevated">
         <p className="section-label">Estimated Balance</p>
         <div className="balance-card">{accountsLoaded ? formatCurrency(totals.balance) : "Loading…"}</div>
-        <p className="caption-text">{accountsLoaded ? `${accounts.length} linked financial account${accounts.length === 1 ? "" : "s"}` : "Loading your accounts…"}</p>
-        {bankAccounts.length > 0 && <p className="caption-text">Bank-reported total ({bankAccounts.length} connected accounts): {formatCurrency(bankAccounts.reduce((sum, account) => sum + Number(account.bank_current_balance), 0))}. Estimates include unmatched manual entries.</p>}
-        {bankAccounts.map((account) => <p className="caption-text" key={account.id}>{account.name} · snapshot fetched {account.balance_synced_at ? new Date(`${account.balance_synced_at}Z`).toLocaleString() : "not yet"}. Bank data may be delayed.</p>)}
-        <p className="caption-text">Friends owe you {formatCurrency(owed)} · excluded from your balance</p>
         {splitBills.some((bill) => bill.needs_review) && <p className="notice">Some split bills need review after bank changes. Their outstanding amounts are excluded until reviewed.</p>}
       </GlassCard>
 

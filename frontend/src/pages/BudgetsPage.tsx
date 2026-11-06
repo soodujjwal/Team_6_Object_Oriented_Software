@@ -1,3 +1,4 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, CircleCheck, Pencil, Plus, RotateCcw, Target, Trash2 } from "lucide-react";
 import { createBudget, deleteBudget, getBudgets, updateBudget, BUDGETS_UPDATED_EVENT } from "../api/budgets";
@@ -256,6 +257,8 @@ export function BudgetsPage() {
     saveBudgetPreferences(targets, next);
   }
 
+  if (loading) return <PageSkeleton page="budgets" />;
+
   return (
     <section className="page budget-page">
       <TopBar title="Budget" />
@@ -264,7 +267,6 @@ export function BudgetsPage() {
       <div className="budget-page-heading">
         <div>
           <h2>Monthly plan</h2>
-          <p>Understand what came in, what went out, and what remains.</p>
         </div>
         <div className="budget-month-control">
           <IconButton aria-label="Previous month" disabled={selectedIndex <= 0} onClick={() => moveMonth(-1)}><ChevronLeft size={19} /></IconButton>
@@ -295,7 +297,6 @@ export function BudgetsPage() {
         <div className="budget-section-heading">
           <div>
             <h2>Budgeted vs Actual Spending</h2>
-            <p>Planned category limits compared with real expense transactions for {formatMonth(month, year)}.</p>
           </div>
         </div>
         {calculation.plannedVsActualByCategory.length ? (
@@ -331,7 +332,7 @@ export function BudgetsPage() {
 
       <GlassCard className="spending-plan-card" variant="elevated">
         <div className="budget-section-heading spending-plan-heading">
-          <div><h2>Spending Plan</h2><p>50/30/20 is a flexible guideline, not a rule. Adjust targets and category groups to fit your priorities.</p></div>
+          <div><h2>Spending Plan</h2></div>
           <Button onClick={() => { setTargetDraft(targets); setTargetError(""); setTargetsOpen((open) => !open); }} variant="secondary">{targetsOpen ? "Close settings" : "Customize"}</Button>
         </div>
         {targetsOpen && <form className="budget-target-editor" onSubmit={saveTargets}>
@@ -356,11 +357,8 @@ export function BudgetsPage() {
             </div>
           ))}
         </div>
-        <p className="budget-data-footnote">Group totals include only recorded expense transactions. Goal balances are not counted as monthly contributions; use a Savings & Debt category for contributions you record.</p>
-        {goals.length > 0 && <p className="budget-data-footnote"><Target size={15} /> {goals.length} savings goal{goals.length === 1 ? "" : "s"} available. Goal balances are shown separately and aren't treated as monthly cash flow.</p>}
         <details className="budget-category-settings">
           <summary>Review category groups</summary>
-          <p>Defaults are suggestions. Dining, personal care, education, and debt payments can vary by household; change any group below.</p>
           <div className="budget-category-group-list">
             {categories.map((category) => (
               <div className="budget-category-group-row" key={category}>
@@ -373,7 +371,7 @@ export function BudgetsPage() {
       </GlassCard>
 
       <section className="budget-section-stack">
-        <div className="section-heading"><div><h2>Smart insights</h2><p className="caption-text">Based on transactions recorded for {formatMonth(month, year)}.</p></div></div>
+        <div className="section-heading"><div><h2>Smart insights</h2></div></div>
         <div className="budget-insight-list">
           {insights.map((insight) => <GlassCard className="budget-insight" key={insight}><CircleCheck size={18} /><p>{insight}</p></GlassCard>)}
         </div>
@@ -381,7 +379,7 @@ export function BudgetsPage() {
 
       <GlassCard className="projection-card">
         <div className="budget-section-heading">
-          <div><h2>Projected Spending</h2><p>Estimate from month-to-date spending pace and scheduled expenses.</p></div>
+          <div><h2>Projected Spending</h2></div>
           <span className="budget-estimate-label">Estimate</span>
         </div>
         {calculation.projection.amount === null ? (

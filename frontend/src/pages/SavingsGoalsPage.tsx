@@ -1,6 +1,7 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { accountStorage } from "../api/accountStorage";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CalendarDays, CheckCircle2, PiggyBank, Plus, Target, WalletCards } from "lucide-react";
+import { CheckCircle2, PiggyBank, Plus, Target, WalletCards } from "lucide-react";
 import { createSavingsGoal, deleteSavingsGoal, getSavingsGoals, SAVINGS_GOALS_UPDATED_EVENT, type SavingsGoal } from "../api/savingsGoals";
 import { getTransactions, TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
 import type { Transaction } from "../api/types";
@@ -48,6 +49,7 @@ const emptyDraft: GoalDraft = {
 };
 
 export function SavingsGoalsPage() {
+  const [initialLoading, setInitialLoading] = useState(true);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [completedMonths, setCompletedMonths] = useState<Record<string, boolean>>(() => {
@@ -78,7 +80,8 @@ export function SavingsGoalsPage() {
         setTransactions(transactionData);
         setError("");
       })
-      .catch(() => setError("Start the backend server to load savings goals."));
+      .catch(() => setError("Start the backend server to load savings goals."))
+      .finally(() => setInitialLoading(false));
   }
 
   function setCompleted(goalId: number, monthKey: string, checked: boolean) {
@@ -131,6 +134,8 @@ export function SavingsGoalsPage() {
     }
   }
 
+  if (initialLoading) return <PageSkeleton page="goals" />;
+
   return (
     <section className="page savings-goals-page">
       <TopBar title="Savings Goals" />
@@ -139,7 +144,6 @@ export function SavingsGoalsPage() {
       <div className="savings-page-heading">
         <div>
           <h2>Smart Savings Goals</h2>
-          <p>Track monthly targets, real contributions, and carryover automatically.</p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
           <Plus aria-hidden="true" size={18} /> Add Goal
@@ -234,7 +238,6 @@ export function SavingsGoalsPage() {
           <TextField icon={<WalletCards aria-hidden="true" size={18} />} label="Current amount saved" min="0" onChange={(event) => setDraft((current) => ({ ...current, current_amount: event.target.value }))} placeholder="0.00" required step="0.01" type="number" value={draft.current_amount} />
           <DatePicker label="Deadline" onChange={(date) => setDraft((current) => ({ ...current, target_date: date }))} value={draft.target_date} />
           <TextField icon={<span>$</span>} label="Monthly income" min="0" onChange={(event) => setDraft((current) => ({ ...current, monthly_income: event.target.value }))} placeholder="4000.00" required step="0.01" type="number" value={draft.monthly_income} />
-          <p className="budget-data-footnote"><CalendarDays size={15} /> Monthly target is calculated as target remaining divided by months remaining. Recorded savings transactions update actual saved automatically.</p>
           <div className="budget-modal-actions">
             <Button disabled={saving} onClick={() => setModalOpen(false)} type="button" variant="secondary">Cancel</Button>
             <Button disabled={saving} type="submit">{saving ? "Creating..." : "Create Goal"}</Button>

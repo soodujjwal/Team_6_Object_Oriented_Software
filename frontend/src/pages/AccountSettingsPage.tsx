@@ -1,12 +1,13 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, BriefcaseBusiness, Check, Landmark, Mail, Moon, Sun, User as UserIcon, WalletCards } from "lucide-react";
-import { createAccount, deleteAccount, getAccounts, updateAccount } from "../api/accounts";
+import { ArrowRight, BriefcaseBusiness, Check, Mail, Moon, Sun, User as UserIcon } from "lucide-react";
+import { deleteAccount, getAccounts, updateAccount } from "../api/accounts";
 import { AUTH_TOKEN_KEY } from "../api/client";
 import { changePassword, deleteCurrentUser, updateProfile, type User } from "../api/auth";
 import type { Account } from "../api/types";
-import { BankSelector } from "../components/BankSelector";
+import { AccountTrackingPanel } from "../components/AccountTrackingPanel";
 import { MoveFunds } from "../components/MoveFunds";
-import { PlaidConnection } from "../components/PlaidConnection";
+import { TRACKING_MODE_UPDATED } from "../api/trackingMode";
 import { TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
 import { TopBar } from "../components/TopBar";
 import { Button, GlassCard, GlassSelect, Modal, TextField } from "../components/ui";
@@ -28,13 +29,9 @@ const ACCOUNT_TYPES = [
 ];
 
 export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdate, theme }: AccountSettingsPageProps) {
+  const [initialLoading, setInitialLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedBank, setSelectedBank] = useState("");
-  const [bankError, setBankError] = useState("");
-  const [accountName, setAccountName] = useState("Checking");
-  const [accountType, setAccountType] = useState<Account["account_type"]>("checking");
   const [editingType, setEditingType] = useState<Account["account_type"]>("other");
-  const [startingBalance, setStartingBalance] = useState("");
   const [status, setStatus] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -54,7 +51,8 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
   function loadAccounts() {
     getAccounts()
       .then(setAccounts)
-      .catch(() => setStatus("Start the backend server to manage accounts."));
+      .catch(() => setStatus("Start the backend server to manage accounts."))
+      .finally(() => setInitialLoading(false));
   }
 
   function openProfileEditor() {
@@ -124,31 +122,6 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
     }
   }
 
-  async function handleCreateAccount(event: React.FormEvent) {
-    event.preventDefault();
-    setStatus("");
-    setBankError("");
-    if (!selectedBank) {
-      setBankError("Select a bank before creating an account.");
-      return;
-    }
-    try {
-      await createAccount({
-        bank_name: selectedBank,
-        name: accountName,
-        account_type: accountType,
-        starting_balance: startingBalance || "0",
-      });
-      setSelectedBank("");
-      setAccountName("Checking");
-      setAccountType("checking");
-      setStartingBalance("");
-      loadAccounts();
-    } catch {
-      setStatus("Could not create account.");
-    }
-  }
-
   async function handleDeleteAccount(accountId: number) {
     const confirmed = window.confirm("Delete this account and its transactions?");
     if (!confirmed) return;
@@ -156,6 +129,7 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
     try {
       await deleteAccount(accountId);
       loadAccounts();
+      window.dispatchEvent(new Event(TRACKING_MODE_UPDATED));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not delete account.");
     }
@@ -174,6 +148,8 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
       setStatus("Could not update account.");
     }
   }
+
+  if (initialLoading) return <PageSkeleton page="settings" />;
 
   return (
     <section className="page">
@@ -206,7 +182,6 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
         <div className="appearance-heading">
           <div>
             <h2>Appearance</h2>
-            <p>Choose your preferred theme.</p>
           </div>
         </div>
         <div aria-label="Color theme" className="theme-toggle" role="group">
@@ -233,30 +208,7 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
         </div>
       </GlassCard>
 
-      <GlassCard className="settings-panel">
-        <h2>Create Account</h2>
-        <form className="form-stack" onSubmit={handleCreateAccount}>
-          <BankSelector
-            error={bankError}
-            onChange={(bankName) => {
-              setSelectedBank(bankName);
-              setBankError("");
-            }}
-            value={selectedBank}
-          />
-          <TextField icon={<Landmark size={18} />} label="Account Name" onChange={(event) => setAccountName(event.target.value)} required value={accountName} />
-          <GlassSelect label="Account Type" options={ACCOUNT_TYPES} value={accountType} onChange={(value) => {
-            setAccountType(value as Account["account_type"]);
-            if (["Checking", "Savings", "Other"].includes(accountName)) setAccountName(ACCOUNT_TYPES.find((item) => item.value === value)!.label);
-          }} />
-          <TextField icon={<WalletCards size={18} />} label="Starting Balance" min="0" onChange={(event) => setStartingBalance(event.target.value)} placeholder="$0.00" step="0.01" type="number" value={startingBalance} />
-          <Button type="submit">
-            Create Account
-          </Button>
-        </form>
-      </GlassCard>
-
-      <PlaidConnection onAccountsChanged={loadAccounts} />
+      <AccountTrackingPanel onAccountsChanged={loadAccounts} onCreated={(account) => setAccounts((current) => [...current.filter((item) => item.id !== account.id), account])} />
 
       <MoveFunds accounts={accounts} />
 

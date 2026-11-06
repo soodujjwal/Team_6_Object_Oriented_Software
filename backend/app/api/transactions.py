@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from app.core.database import get_db
 from app.schemas.transaction_schema import TransactionBulkCreate, TransactionCreate, TransactionRead, TransactionUpdate
 from app.services.transaction_service import TransactionService
+from app.services.tracking_mode_service import TrackingModeService
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -32,11 +33,13 @@ def list_transactions(db: Session = Depends(get_db)):
 
 @router.post("", response_model=TransactionRead, status_code=status.HTTP_201_CREATED)
 def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db)):
+    TrackingModeService(db).require("manual")
     return TransactionService(db).create_transaction(payload)
 
 
 @router.post("/bulk", response_model=list[TransactionRead], status_code=status.HTTP_201_CREATED)
 def create_transactions(payload: TransactionBulkCreate, db: Session = Depends(get_db)):
+    TrackingModeService(db).require("manual")
     return TransactionService(db).create_transactions(payload.transactions)
 
 

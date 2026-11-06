@@ -1,6 +1,8 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useState } from "react";
 import { DollarSign, FileText } from "lucide-react";
 import { getAccounts } from "../api/accounts";
+import { getTrackingMode, type TrackingState } from "../api/trackingMode";
 import { createTransaction, getTransactions } from "../api/transactions";
 import type { Account, TransactionType } from "../api/types";
 import { TopBar } from "../components/TopBar";
@@ -18,6 +20,8 @@ const TYPE_HELPER_TEXT: Record<TransactionType, string> = {
 };
 
 export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tracking, setTracking] = useState<TrackingState | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<import("../api/types").Transaction[]>([]);
   const [type, setType] = useState<TransactionType>("expense");
@@ -31,9 +35,10 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Promise.all([getAccounts(), getTransactions()])
-      .then(([accountData, transactionData]) => { setAccounts(accountData); setTransactions(transactionData); })
-      .catch(() => setStatus("Start the backend and create an account before saving."));
+    Promise.all([getAccounts(), getTransactions(), getTrackingMode()])
+      .then(([accountData, transactionData, mode]) => { setAccounts(accountData); setTransactions(transactionData); setTracking(mode); })
+      .catch(() => setStatus("Start the backend and create an account before saving."))
+      .finally(() => setInitialLoading(false));
   }, []);
 
   const submitLabel = type === "expense" ? "Save Expense" : "Save Income";
@@ -65,6 +70,9 @@ export function AddTransactionPage({ onDone }: AddTransactionPageProps) {
     } catch (error) { setStatus(error instanceof Error ? error.message : "Could not save transaction."); }
     finally { setSaving(false); }
   }
+
+  if (initialLoading) return <PageSkeleton page="add" />;
+  if (!tracking || tracking.mode === "plaid" || tracking.mode === "mixed") return <section className="page"><TopBar title="Add Transaction" /><p className="notice">{!tracking ? "Could not verify your tracking method. Please reopen this page to retry." : "Bank transactions are managed through Plaid. Manual entries and imports are unavailable for this account."}</p><Button onClick={onDone} variant="secondary">Back to Transactions</Button></section>;
 
   return (
     <section className="page">

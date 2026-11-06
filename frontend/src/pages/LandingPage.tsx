@@ -3,19 +3,13 @@ import { ArrowDownLeft, ArrowRight, ArrowUpRight, ChartNoAxesCombined, Check, Ch
   Fingerprint, Goal, Landmark, LayoutDashboard, Link2, LockKeyhole, PiggyBank, Plus, ReceiptText, ShieldCheck,
   Sparkles, Target, Users, Wallet } from "lucide-react";
 import "./LandingPage.css";
+import { MarketingBrand as Brand, MarketingHeader } from "../components/MarketingHeader";
 
 const budgets = [
   { name: "Food & dining", amount: "$240", total: "$400", percent: 60, icon: ReceiptText },
   { name: "Transport", amount: "$80", total: "$200", percent: 40, icon: CreditCard },
   { name: "Shopping", amount: "$120", total: "$300", percent: 40, icon: Wallet },
 ];
-
-function Brand({ compact = false }: { compact?: boolean }) {
-  return <span className={`lp-brand${compact ? " lp-brand-compact" : ""}`}>
-    <span className="lp-brand-mark"><PiggyBank size={23} strokeWidth={1.7} /></span>
-    <span>finance<span className="lp-brand-light">builder</span><span className="lp-brand-dot">.</span></span>
-  </span>;
-}
 
 function ProductPreview() {
   const [view, setView] = useState<"overview" | "split">("overview");
@@ -58,11 +52,7 @@ export function LandingPage({ signedIn }: { signedIn: boolean }) {
   const startHref = signedIn ? "/app" : "/register";
   return <div className="lp" id="top">
     <a className="lp-skip" href="#main-content">Skip to content</a>
-    <header className="lp-header"><div className="lp-container lp-nav">
-      <a href="/" className="lp-brand-link" aria-label="Finance Builder home"><Brand /></a>
-      <nav aria-label="Main navigation"><a href="#features">Features</a><a href="#how-it-works">How it works</a><a href="#questions">FAQs</a></nav>
-      <div className="lp-nav-actions"><a className="lp-login" href={signedIn ? "/app" : "/login"}>{signedIn ? "Dashboard" : "Log in"}</a><a className="lp-button lp-button-small" href={startHref}>{signedIn ? "Open app" : "Get started"}<ArrowUpRight size={15} /></a></div>
-    </div></header>
+    <MarketingHeader signedIn={signedIn} />
 
     <main id="main-content">
       <section className="lp-hero lp-container" aria-labelledby="hero-title">

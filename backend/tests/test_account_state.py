@@ -42,7 +42,8 @@ def test_new_device_restores_finances_and_preferences_with_account_isolation():
         restored = device_two.get("/auth/state", headers=owner).json()
         assert restored["onboarding_complete"] == "true"
         assert '"needs":60' in restored["budget_preferences"]
-        assert database.user_state.count_documents({}) == 4
+        assert database.user_state.count_documents({}) == 5
+        assert restored["bank_tracking_mode"] == "manual"
         assert len(device_two.get("/transactions", headers=owner).json()) == 1
         assert device_two.get("/accounts", headers=owner).json()[0]["current_balance"] == "975.00"
         other = device_two.post("/auth/register", json={**credentials, "email": "other@example.test"}).json()

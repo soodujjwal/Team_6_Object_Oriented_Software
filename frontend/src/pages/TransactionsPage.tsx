@@ -1,3 +1,4 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CalendarClock, CalendarDays, FileText, Plus, Search, Tag, Wallet } from "lucide-react";
 import { getAccounts } from "../api/accounts";
@@ -36,6 +37,7 @@ type TransactionsPageProps = {
 };
 
 export function TransactionsPage({ onAddTransaction, onManageBills }: TransactionsPageProps) {
+  const [initialLoading, setInitialLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [query, setQuery] = useState("");
@@ -104,7 +106,8 @@ export function TransactionsPage({ onAddTransaction, onManageBills }: Transactio
         setTransactions(transactionData);
         setStatus("");
       })
-      .catch(() => setStatus("Start the backend server to view transactions."));
+      .catch(() => setStatus("Start the backend server to view transactions."))
+      .finally(() => setInitialLoading(false));
   }
 
   function openEditor(transaction: Transaction) {
@@ -151,6 +154,8 @@ export function TransactionsPage({ onAddTransaction, onManageBills }: Transactio
       setSaving(false);
     }
   }
+
+  if (initialLoading) return <PageSkeleton page="transactions" />;
 
   return (
     <section className="page transactions-page">

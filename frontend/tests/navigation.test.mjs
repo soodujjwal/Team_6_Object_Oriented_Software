@@ -22,6 +22,11 @@ test("login and signup remain reachable for visitors and redirect signed-in user
   }
 });
 test("direct and history navigation recognize supported paths and safely handle unknown paths", () => {
-  for (const route of ["/", "/app", "/register", "/login"]) assert.equal(readRoute(route), route);
+  for (const route of ["/", "/app", "/register", "/login", "/download"]) assert.equal(readRoute(route), route);
   assert.equal(readRoute("/unknown"), "/");
+});
+
+test("download page is public for visitors and authenticated users", () => {
+  assert.equal(resolveRoute("/download", false), "/download");
+  assert.equal(resolveRoute("/download", true), "/download");
 });

@@ -221,7 +221,6 @@ export function HelpPage({ onNavigate }: HelpPageProps) {
         <div>
           <span className="help-eyebrow">Interactive User Guide</span>
           <h1>Learn how Personal Finance Manager works</h1>
-          <p>Choose a section to see what each feature does, which buttons matter, when to use it, and how your data flows through the app.</p>
         </div>
       </GlassCard>
 
@@ -280,7 +279,6 @@ export function HelpPage({ onNavigate }: HelpPageProps) {
       <GlassCard className="help-data-flow" variant="elevated">
         <div>
           <h2>How Your Data Flows</h2>
-          <p>Transactions are the main source of truth. When you add, edit, delete, scan, or import transactions, the rest of the app recalculates from that shared data.</p>
         </div>
         <div className="help-flow-steps">
           {[

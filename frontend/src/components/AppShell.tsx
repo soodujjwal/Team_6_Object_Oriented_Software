@@ -30,7 +30,7 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
     let previous: string | undefined;
     let pending = false;
     async function checkBankUpdates() {
-      if (pending) return;
+      if (pending || document.hidden) return;
       pending = true;
       try {
         const status = await getPlaidStatus();
@@ -42,7 +42,8 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
     }
     void checkBankUpdates();
     const timer = window.setInterval(() => void checkBankUpdates(), 15_000);
-    return () => { active = false; window.clearInterval(timer); };
+    document.addEventListener("visibilitychange", checkBankUpdates);
+    return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", checkBankUpdates); };
   }, []);
 
   useEffect(() => {

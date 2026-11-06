@@ -1,8 +1,9 @@
 import { GlassCard } from "./ui";
+import type { ReactNode } from "react";
 
 type MoneyCardProps = {
   label: string;
-  value: string;
+  value: ReactNode;
   tone?: "default" | "income" | "expense";
 };
 

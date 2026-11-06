@@ -77,10 +77,10 @@ export function clearAccountStorage() {
   pending.clear();
 }
 
-export async function loadAccountStorage(user: User) {
+export async function loadAccountStorage(user: User, signal?: AbortSignal) {
   clearAccountStorage();
   const current = generation;
-  const stored = await apiGet<Record<string, string | null>>("/auth/state");
+  const stored = await apiGet<Record<string, string | null>>("/auth/state", { signal });
   if (current !== generation) return false;
   owner = user.email;
   values = stored;

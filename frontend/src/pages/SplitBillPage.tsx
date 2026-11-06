@@ -1,3 +1,4 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Camera, Check, CheckCircle2, History, Pencil, Plus, ReceiptText, Trash2, Upload } from "lucide-react";
 import { getAccounts } from "../api/accounts";
@@ -56,14 +57,13 @@ export function SplitBillPage({ userName }: { userName: string }) {
 
   useEffect(() => {
     let active = true;
-    Promise.all([getFriends(), getSplitBills()]).then(([nextFriends, nextBills]) => {
-      if (active) { setFriends(nextFriends); setBills(nextBills); }
+    Promise.all([getFriends(), getSplitBills(), getAccounts(), getTransactions()]).then(([nextFriends, nextBills, nextAccounts, rows]) => {
+      if (active) { setFriends(nextFriends); setBills(nextBills); setAccounts(nextAccounts); setTransactions(rows); }
     }).catch((reason) => { if (active) setError(reason.message); }).finally(() => { if (active) setLoading(false); });
     const refresh = () => { Promise.all([getAccounts(), getTransactions(), getSplitBills()]).then(([next, rows, nextBills]) => {
       if (active) { setAccounts(next); setTransactions(rows); setBills(nextBills);
         setSaved((current) => current ? nextBills.find((bill) => bill.id === current.id) ?? current : null); }
     }).catch((reason) => { if (active) setError(reason.message); }); };
-    refresh();
     window.addEventListener(TRANSACTIONS_UPDATED_EVENT, refresh);
     return () => { active = false; window.removeEventListener(TRANSACTIONS_UPDATED_EVENT, refresh); };
   }, []);
@@ -139,6 +139,8 @@ export function SplitBillPage({ userName }: { userName: string }) {
     : draft.receipt_total === null ? "Check the receipt total to finish."
     : !calculation.matches ? `The split is ${money(Math.abs(calculation.total - toCents(draft.receipt_total)))} ${calculation.total > toCents(draft.receipt_total) ? "above" : "below"} the receipt total.`
     : ready ? "Every share adds up to the receipt total." : "Check the item amounts before splitting.";
+
+  if (loading) return <PageSkeleton page="split" />;
 
   return (
     <section className="page split-simple">

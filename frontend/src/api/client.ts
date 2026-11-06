@@ -46,7 +46,10 @@ function expireSession(requestToken: string | null) {
   if (hadSession) window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
 }
 
-async function request<T>(path: string, method: string, body?: unknown): Promise<T> {
+type ReadOptions = { signal?: AbortSignal; timeoutMs?: number };
+const pendingReads = new Map<string, Promise<unknown>>();
+
+async function request<T>(path: string, method: string, body?: unknown, options: ReadOptions = {}): Promise<T> {
   const publicRoute = path === "/auth/login" || path === "/auth/register";
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
   if (!publicRoute && !isTokenCurrent(token)) {
@@ -56,21 +59,50 @@ async function request<T>(path: string, method: string, body?: unknown): Promise
   const headers: Record<string, string> = {};
   if (!publicRoute && token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method, headers, ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
-  if (!response.ok) {
-    if (!publicRoute && response.status === 401) {
-      expireSession(token);
-      throw new Error(SESSION_EXPIRED_MESSAGE);
+  if (method !== "GET") pendingReads.clear();
+  const controller = new AbortController();
+  let timedOut = false;
+  const cancel = () => controller.abort();
+  options.signal?.addEventListener("abort", cancel, { once: true });
+  if (options.signal?.aborted) controller.abort();
+  // Slow server wake-ups are allowed, but reads must never spin indefinitely.
+  // Financial writes are not automatically aborted or retried.
+  const timer = method === "GET" ? setTimeout(() => { timedOut = true; controller.abort(); }, options.timeoutMs ?? 75_000) : undefined;
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method, headers, signal: controller.signal, ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+    if (!response.ok) {
+      if (!publicRoute && response.status === 401) {
+        expireSession(token);
+        throw new Error(SESSION_EXPIRED_MESSAGE);
+      }
+      throw new Error(await getErrorMessage(response));
     }
-    throw new Error(await getErrorMessage(response));
+    if (method === "DELETE" || response.status === 204) return undefined as T;
+    return await response.json() as T;
+  } catch (error) {
+    if (timedOut) throw new Error("The connection is taking too long. Please try again.");
+    throw error;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    options.signal?.removeEventListener("abort", cancel);
+    if (method !== "GET") pendingReads.clear();
   }
-  if (method === "DELETE" || response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }
 
-export const apiGet = <T>(path: string) => request<T>(path, "GET");
+export function apiGet<T>(path: string, options: ReadOptions = {}): Promise<T> {
+  // Cancellable reads own their request so one component cannot cancel another.
+  if (options.signal || options.timeoutMs !== undefined) return request<T>(path, "GET", undefined, options);
+  const key = JSON.stringify([localStorage.getItem(AUTH_TOKEN_KEY), path]);
+  const existing = pendingReads.get(key);
+  if (existing) return existing as Promise<T>;
+  const promise = request<T>(path, "GET").finally(() => {
+    if (pendingReads.get(key) === promise) pendingReads.delete(key);
+  });
+  pendingReads.set(key, promise);
+  return promise;
+}
 export const apiPost = <T>(path: string, body: unknown) => request<T>(path, "POST", body);
 export const apiPatch = <T>(path: string, body: unknown) => request<T>(path, "PATCH", body);
 export const apiPut = <T>(path: string, body: unknown) => request<T>(path, "PUT", body);

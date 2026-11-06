@@ -1,7 +1,7 @@
-export type AppRoute = "/" | "/login" | "/register" | "/app";
+export type AppRoute = "/" | "/login" | "/register" | "/app" | "/download";
 
 export function readRoute(pathname: string): AppRoute {
-  return pathname === "/login" || pathname === "/register" || pathname === "/app" ? pathname : "/";
+  return pathname === "/login" || pathname === "/register" || pathname === "/app" || pathname === "/download" ? pathname : "/";
 }
 
 export function resolveRoute(route: AppRoute, authenticated: boolean, nativeApp = false): AppRoute {

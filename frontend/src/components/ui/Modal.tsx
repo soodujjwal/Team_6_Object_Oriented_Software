@@ -8,9 +8,10 @@ type ModalProps = {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  className?: string;
 };
 
-export function Modal({ isOpen, title, onClose, children }: ModalProps) {
+export function Modal({ isOpen, title, onClose, children, className = "" }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
@@ -28,6 +29,7 @@ export function Modal({ isOpen, title, onClose, children }: ModalProps) {
     });
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        if (dialogRef.current?.querySelector('[aria-haspopup="listbox"][aria-expanded="true"]')) return;
         event.preventDefault();
         onCloseRef.current();
         return;
@@ -62,7 +64,7 @@ export function Modal({ isOpen, title, onClose, children }: ModalProps) {
   if (!isOpen) return null;
   return createPortal(
     <div className="modal-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section aria-labelledby={titleId} aria-modal="true" className="modal-panel glass-card elevated" ref={dialogRef} role="dialog" tabIndex={-1}>
+      <section aria-labelledby={titleId} aria-modal="true" className={`modal-panel glass-card elevated ${className}`.trim()} ref={dialogRef} role="dialog" tabIndex={-1}>
         <header className="modal-header">
           <h2 id={titleId}>{title}</h2>
           <IconButton aria-label="Close dialog" onClick={onClose}><X size={19} /></IconButton>

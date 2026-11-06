@@ -1,0 +1,14 @@
+.marketing-header .lp-nav-actions { gap: 15px; }
+.lp-download-nav { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; min-height: 42px; border: 1px solid var(--color-success-border); border-radius: 8px; color: var(--color-primary) !important; background: var(--color-primary-tint); transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
+.lp-download-nav:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+.lp-download-nav[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--color-primary-soft); border-color: var(--color-primary-soft); }
+@media (max-width: 1050px) { .marketing-header .lp-nav { gap: 16px; }.marketing-header .lp-nav nav { gap: 16px; } }
+@media (max-width: 940px) { .marketing-header .lp-nav nav { display: none; } }
+@media (max-width: 560px) {
+  .marketing-header .lp-nav { flex-wrap: wrap; padding-block: 14px; gap: 12px; }
+  .marketing-header .lp-nav-actions { width: 100%; justify-content: space-between; gap: 8px; }
+  .marketing-header .lp-nav-actions .lp-login { display: inline-flex; align-items: center; min-height: 44px; font-size: 12px; }
+  .marketing-header .lp-download-nav { min-height: 44px; padding: 9px 12px; font-size: 12px; }
+  .marketing-header .lp-button-small { min-height: 44px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .lp-download-nav { transition: none; }.lp-download-nav:hover { transform: none; } }

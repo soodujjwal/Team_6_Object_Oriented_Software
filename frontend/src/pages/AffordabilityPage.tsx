@@ -1,3 +1,4 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
@@ -208,17 +209,18 @@ export function AffordabilityPage() {
     ? null
     : snapshot.currentSavings - price;
 
+  if (dataLoading && !snapshotReady) return <PageSkeleton page="afford" />;
+
   return (
     <section className="page purchase-page">
       <TopBar title="Can I Afford It?" />
       <header className="purchase-intro">
-        <p>See whether a purchase fits comfortably into your finances.</p>
       </header>
 
       <GlassCard className="purchase-card">
         <div className="purchase-section-heading">
           <span className="purchase-step">01</span>
-          <div><h2>Purchase information</h2><p>Start with the item and its price.</p></div>
+          <div><h2>Purchase information</h2></div>
         </div>
         <div className="purchase-input-grid">
           <TextField icon={<ShoppingBag size={18} />} label="Item / Purchase" onChange={(event) => setItemName(event.target.value)} placeholder="e.g. Laptop" value={itemName} />
@@ -230,7 +232,7 @@ export function AffordabilityPage() {
         <section className="purchase-method-section" aria-labelledby="payment-method-heading">
           <div className="purchase-section-heading">
             <span className="purchase-step">02</span>
-            <div><h2 id="payment-method-heading">How would you pay?</h2><p>Choose an option to see its impact.</p></div>
+            <div><h2 id="payment-method-heading">How would you pay?</h2></div>
           </div>
           <div className="purchase-methods" role="group" aria-label="Payment method">
             {PAYMENT_METHODS.map(({ id, label, description, icon: Icon }) => (
@@ -254,7 +256,7 @@ export function AffordabilityPage() {
         <GlassCard className="purchase-card purchase-analysis-card" variant="elevated">
           <div className="purchase-section-heading">
             <span className="purchase-step">03</span>
-            <div><h2>Cash purchase analysis</h2><p>Your listed account balances and known outflows.</p></div>
+            <div><h2>Cash purchase analysis</h2></div>
           </div>
           <dl className="purchase-summary">
             <SummaryLine label="Available balances across accounts" value={snapshot.currentSavings === null ? "Not enough information" : formatMoney(snapshot.currentSavings)} />
@@ -276,7 +278,7 @@ export function AffordabilityPage() {
         <GlassCard className="purchase-card" variant="elevated">
           <div className="purchase-section-heading">
             <span className="purchase-step">03</span>
-            <div><h2>Finance details</h2><p>See the full cost of borrowing, not just the monthly payment.</p></div>
+            <div><h2>Finance details</h2></div>
           </div>
           <div className="purchase-input-grid">
             {amountInput(downPayment, setDownPayment, "Down Payment", <DollarSign size={18} />)}
@@ -307,7 +309,7 @@ export function AffordabilityPage() {
         <GlassCard className="purchase-card" variant="elevated">
           <div className="purchase-section-heading">
             <span className="purchase-step">03</span>
-            <div><h2>Lease details</h2><p>Lease cost and ownership cost are different.</p></div>
+            <div><h2>Lease details</h2></div>
           </div>
           <div className="purchase-input-grid">
             {amountInput(leaseDue, setLeaseDue, "Due at Signing / Down Payment", <DollarSign size={18} />)}
@@ -338,7 +340,7 @@ export function AffordabilityPage() {
         <GlassCard className="purchase-card purchase-options-card">
           <div className="purchase-section-heading">
             <span className="purchase-step">04</span>
-            <div><h2>Purchase options</h2><p>Compare upfront cash, monthly impact, total cost, and ownership.</p></div>
+            <div><h2>Purchase options</h2></div>
           </div>
           <div className="purchase-options">
             <OptionCard title="Cash" upfront={formatMoney(price)} monthly={formatMoney(0)} total={formatMoney(price)} savings={savingsAfterCash === null ? "Not enough information" : formatMoney(savingsAfterCash)} budgetImpact="One-time savings impact; no monthly payment" ownership="Yes" status={cashStatus} />

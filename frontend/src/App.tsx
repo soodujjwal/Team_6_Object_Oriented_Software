@@ -1,27 +1,33 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AppShell } from "./components/AppShell";
 import { AUTH_TOKEN_KEY, AUTH_USER_KEY, isTokenCurrent, readStoredSession, SESSION_EXPIRED_EVENT, SESSION_EXPIRED_MESSAGE } from "./api/client";
 import type { User } from "./api/auth";
-import { AddTransactionPage } from "./pages/AddTransactionPage";
-import { AffordabilityPage } from "./pages/AffordabilityPage";
-import { BudgetsPage } from "./pages/BudgetsPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { LoginPage } from "./pages/LoginPage";
-import { LandingPage } from "./pages/LandingPage";
 import { readRoute, resolveRoute, type AppRoute } from "./domain/navigation";
-import { RegisterPage } from "./pages/RegisterPage";
-import { AccountSettingsPage } from "./pages/AccountSettingsPage";
-import { AccountsPage } from "./pages/AccountsPage";
-import { ReportsPage } from "./pages/ReportsPage";
-import { RecurringTransactionsPage } from "./pages/RecurringTransactionsPage";
-import { SavingsGoalsPage } from "./pages/SavingsGoalsPage";
-import { TransactionsPage } from "./pages/TransactionsPage";
-import { HelpPage } from "./pages/HelpPage";
-import { SplitBillPage } from "./pages/SplitBillPage";
-import { OnboardingPage, hasCompletedOnboarding, markOnboardingComplete } from "./pages/OnboardingPage";
+import { hasCompletedOnboarding, markOnboardingComplete } from "./domain/onboardingState";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { PageSkeleton } from "./components/PageSkeleton";
 import { THEME_STORAGE_KEY, type Theme } from "./theme/theme";
 import { isNativeApp } from "./domain/mobile";
 import { ACCOUNT_SYNC_EVENT, clearAccountStorage, hasLegacyBrowserSettings, hasPendingAccountChanges, importLegacyBrowserSettings, loadAccountStorage, retryAccountSync } from "./api/accountStorage";
+
+const AddTransactionPage = lazy(() => import("./pages/AddTransactionPage").then((module) => ({ default: module.AddTransactionPage })));
+const AffordabilityPage = lazy(() => import("./pages/AffordabilityPage").then((module) => ({ default: module.AffordabilityPage })));
+const BudgetsPage = lazy(() => import("./pages/BudgetsPage").then((module) => ({ default: module.BudgetsPage })));
+const DashboardPage = lazy(() => import("./pages/DashboardPage").then((module) => ({ default: module.DashboardPage })));
+const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ default: module.LoginPage })));
+const LandingPage = lazy(() => import("./pages/LandingPage").then((module) => ({ default: module.LandingPage })));
+const DownloadPage = lazy(() => import("./pages/DownloadPage").then((module) => ({ default: module.DownloadPage })));
+const RegisterPage = lazy(() => import("./pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
+const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage").then((module) => ({ default: module.AccountSettingsPage })));
+const AccountsPage = lazy(() => import("./pages/AccountsPage").then((module) => ({ default: module.AccountsPage })));
+const ReportsPage = lazy(() => import("./pages/ReportsPage").then((module) => ({ default: module.ReportsPage })));
+const RecurringTransactionsPage = lazy(() => import("./pages/RecurringTransactionsPage").then((module) => ({ default: module.RecurringTransactionsPage })));
+const SavingsGoalsPage = lazy(() => import("./pages/SavingsGoalsPage").then((module) => ({ default: module.SavingsGoalsPage })));
+const TransactionsPage = lazy(() => import("./pages/TransactionsPage").then((module) => ({ default: module.TransactionsPage })));
+const HelpPage = lazy(() => import("./pages/HelpPage").then((module) => ({ default: module.HelpPage })));
+const SplitBillPage = lazy(() => import("./pages/SplitBillPage").then((module) => ({ default: module.SplitBillPage })));
+
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage").then((module) => ({ default: module.OnboardingPage })));
 
 export type Page =
   | "dashboard"
@@ -72,12 +78,13 @@ export default function App() {
     setLoadError(false);
     setSyncError(false);
     if (!user) { clearAccountStorage(); return; }
-    void loadAccountStorage(user).then((loaded) => {
+    const controller = new AbortController();
+    void loadAccountStorage(user, controller.signal).then((loaded) => {
       if (!active || !loaded) return;
       setOnboardingComplete(hasCompletedOnboarding(user));
       setLoadedUserId(user.id);
     }).catch(() => { if (active) setLoadError(true); });
-    return () => { active = false; clearAccountStorage(); };
+    return () => { active = false; controller.abort(); clearAccountStorage(); };
   }, [user?.id, user?.email, loadAttempt]);
 
   useEffect(() => {
@@ -129,7 +136,8 @@ export default function App() {
     if (destination !== route) setRoute(destination);
     document.title = destination === "/" ? "Finance Builder | Your money, all connected"
       : destination === "/login" ? "Log in | Finance Builder"
-      : destination === "/register" ? "Create an account | Finance Builder" : "Finance Builder";
+      : destination === "/register" ? "Create an account | Finance Builder"
+      : destination === "/download" ? "Download for Android | Finance Builder" : "Finance Builder";
   }, [route, user]);
 
   function navigateAuth(route: AppRoute) {
@@ -175,6 +183,7 @@ export default function App() {
   }
 
   if (route === "/" && !isNativeApp()) return <LandingPage signedIn={Boolean(user)} />;
+  if (route === "/download") return <Suspense fallback={<PageSkeleton page="download" />}><DownloadPage signedIn={Boolean(user)} /></Suspense>;
 
   if (!user) {
     return route === "/register" ? (
@@ -184,9 +193,7 @@ export default function App() {
     );
   }
 
-  if (loadedUserId !== user.id) return <main className="auth-page"><div role="status">
-    {loadError ? <>Could not load your saved account data. <button onClick={() => setLoadAttempt((n) => n + 1)}>Retry</button> <button onClick={handleLogout}>Sign out</button></> : "Loading your saved account data…"}
-  </div></main>;
+  if (loadedUserId !== user.id) return <LoadingScreen page={page} key={loadAttempt} error={loadError} onRetry={() => setLoadAttempt((n) => n + 1)} onSignOut={handleLogout} />;
 
   const syncNotice = syncError && <div className="notice" role="alert">Your latest setup or preferences could not be saved. Keep this page open and <button onClick={() => void retryAccountSync()}>retry saving</button>.</div>;
   const legacyNotice = hasLegacyBrowserSettings() && <div className="notice">
@@ -203,20 +210,21 @@ export default function App() {
   if (!onboardingComplete) {
     return (
       <>{syncNotice}{legacyNotice}
-      <OnboardingPage
+      <Suspense fallback={<PageSkeleton page="onboarding" />}><OnboardingPage
         onComplete={(destination = "dashboard") => {
           markOnboardingComplete(user);
           setOnboardingComplete(true);
           setPage(destination);
         }}
         user={user}
-      />
+      /></Suspense>
       </>
     );
   }
 
   return (
     <AppShell page={page} onLogout={handleLogout} onNavigate={setPage}>
+      <Suspense fallback={<PageSkeleton page={page} />}>
       {syncNotice}
       {legacyNotice}
       {page === "dashboard" && (
@@ -238,6 +246,7 @@ export default function App() {
       {page === "recurring" && <RecurringTransactionsPage />}
       {page === "help" && <HelpPage onNavigate={setPage} />}
       {page === "split" && <SplitBillPage userName={user.name} />}
+      </Suspense>
     </AppShell>
   );
 }

@@ -16,6 +16,7 @@ import { ProgressBar } from "../components/ProgressBar";
 import { getBillDisplayName, getBillStatus, getUpcomingBills } from "../domain/recurringBills";
 import { getEffectiveBudgets } from "../domain/budgeting";
 import { formatCurrency } from "../utils/format";
+import { DashboardSkeleton, Skeleton } from "../components/LoadingScreen";
 
 type DashboardPageProps = {
   onNavigate: (page: Page) => void;
@@ -32,6 +33,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   const [error, setError] = useState("");
   const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [transactionsLoaded, setTransactionsLoaded] = useState(false);
+  const [loadedSections, setLoadedSections] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let active = true;
@@ -44,7 +46,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
       async function load<T>(name: string, fetchData: () => Promise<T>, apply: (data: T) => void) {
         try {
           const data = await fetchData();
-          if (active) apply(data);
+          if (active) { apply(data); setLoadedSections((current) => ({ ...current, [name]: true })); }
         } catch {
           failed.push(name);
         }
@@ -96,6 +98,13 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   const today = new Date();
   const activeBudgets = getEffectiveBudgets(budgets, today.getMonth() + 1, today.getFullYear());
 
+  if (!accountsLoaded && !transactionsLoaded && !error) return <section className="page" aria-busy="true">
+    <TopBar title="Dashboard" />
+    <p className="welcome-line">Welcome, {userName}</p>
+    <span className="loading-sr-only" role="status">Loading your dashboard</span>
+    <DashboardSkeleton />
+  </section>;
+
   return (
     <section className="page">
       <TopBar title="Dashboard" />
@@ -104,13 +113,13 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
 
       <GlassCard className="balance-panel" variant="elevated">
         <p className="section-label">Estimated Balance</p>
-        <div className="balance-card">{accountsLoaded ? formatCurrency(totals.balance) : "Loading…"}</div>
+        <div className="balance-card">{accountsLoaded ? formatCurrency(totals.balance) : error ? "Unavailable" : <Skeleton className="sk-amount" />}</div>
         {splitBills.some((bill) => bill.needs_review) && <p className="notice">Some split bills need review after bank changes. Their outstanding amounts are excluded until reviewed.</p>}
       </GlassCard>
 
       <div className="money-grid">
-        <MoneyCard label="Income" value={transactionsLoaded ? formatCurrency(totals.income) : "Loading…"} tone="income" />
-        <MoneyCard label="Spent" value={transactionsLoaded ? formatCurrency(totals.spent) : "Loading…"} tone="expense" />
+        <MoneyCard label="Income" value={transactionsLoaded ? formatCurrency(totals.income) : error ? "Unavailable" : <Skeleton className="sk-value" />} tone="income" />
+        <MoneyCard label="Spent" value={transactionsLoaded ? formatCurrency(totals.spent) : error ? "Unavailable" : <Skeleton className="sk-value" />} tone="expense" />
       </div>
 
       <section className="section-stack">
@@ -125,7 +134,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
             <TransactionItem key={transaction.id} transaction={transaction} />
           ))
         ) : (
-          <p className="empty-state">{transactionsLoaded ? "No transactions yet." : "Loading your transactions…"}</p>
+          transactionsLoaded ? <p className="empty-state">No transactions yet.</p> : error ? <p className="empty-state">Transactions unavailable.</p> : <Skeleton className="sk-progress" />
         )}
       </section>
 
@@ -137,7 +146,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
           </Button>
         </div>
         <GlassCard variant="subtle">
-          <p className="subtle">{activeBudgets.length} monthly budget{activeBudgets.length === 1 ? "" : "s"} active</p>
+          {loadedSections.budgets ? <p className="subtle">{activeBudgets.length} monthly budget{activeBudgets.length === 1 ? "" : "s"} active</p> : error ? <p className="empty-state">Budgets unavailable.</p> : <Skeleton className="sk-heading" />}
         </GlassCard>
       </section>
 
@@ -148,7 +157,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
             View
           </Button>
         </div>
-        {goals.length ? goals.slice(0, 2).map((goal) => (
+        {!loadedSections["savings goals"] ? (error ? <p className="empty-state">Savings goals unavailable.</p> : <Skeleton className="sk-progress" />) : goals.length ? goals.slice(0, 2).map((goal) => (
           <GlassCard className="dashboard-goal-row" key={goal.id} variant="subtle">
             <div>
               <strong>{goal.name}</strong>
@@ -166,7 +175,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
             Manage
           </Button>
         </div>
-        {upcomingBills.length ? upcomingBills.map(({ item, days }) => {
+        {!loadedSections["recurring bills"] ? (error ? <p className="empty-state">Upcoming bills unavailable.</p> : <Skeleton className="sk-progress" />) : upcomingBills.length ? upcomingBills.map(({ item, days }) => {
           const status = getBillStatus(item);
           return (
             <GlassCard className="bill-row" key={item.id} variant="subtle">

@@ -39,17 +39,19 @@ function loadPlaidScript() {
     script.src = "https://cdn.plaid.com/link/v2/stable/link-initialize.js";
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Could not load Plaid Link."));
+    script.onerror = () => { plaidScriptPromise = null; script.remove(); reject(new Error("Could not load Plaid Link.")); };
     document.head.appendChild(script);
   });
   return plaidScriptPromise;
 }
 
-export function PlaidConnection({ onAccountsChanged }: { onAccountsChanged: () => void }) {
+export function PlaidConnection({ onAccountsChanged, allowConnect = true, openRequest, onOpenHandled }: { onAccountsChanged: () => void; allowConnect?: boolean; openRequest?: number; onOpenHandled?: () => void }) {
   const [plaidStatus, setPlaidStatus] = useState<PlaidStatus | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const lastSync = useRef("");
+  const connecting = useRef(false);
+  const handledOpen = useRef<number | undefined>(undefined);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -72,15 +74,27 @@ export function PlaidConnection({ onAccountsChanged }: { onAccountsChanged: () =
     return () => window.clearInterval(timer);
   }, [loadStatus]);
 
+  useEffect(() => {
+    if (!openRequest || !allowConnect || handledOpen.current === openRequest) return;
+    handledOpen.current = openRequest;
+    onOpenHandled?.();
+    void connect();
+  }, [openRequest, onOpenHandled, allowConnect]);
+
   async function connect() {
+    if (!allowConnect || connecting.current) return;
+    connecting.current = true;
     setBusy(true);
     setMessage("");
+    const finish = () => { connecting.current = false; setBusy(false); };
+    let exchanging = false;
     try {
-      await loadPlaidScript();
-      const { link_token } = await createPlaidLinkToken();
+      const [, { link_token }] = await Promise.all([loadPlaidScript(), createPlaidLinkToken()]);
       const handler = window.Plaid!.create({
         token: link_token,
         onSuccess: (publicToken, metadata) => {
+          if (exchanging) return;
+          exchanging = true;
           void exchangePlaidToken(publicToken, metadata)
             .then(() => {
               setMessage("Bank connected and transactions imported.");
@@ -89,14 +103,14 @@ export function PlaidConnection({ onAccountsChanged }: { onAccountsChanged: () =
               return loadStatus();
             })
             .catch((error) => setMessage(error instanceof Error ? error.message : "Could not connect bank."))
-            .finally(() => setBusy(false));
+            .finally(finish);
         },
-        onExit: () => setBusy(false),
+        onExit: () => { if (!exchanging) finish(); },
       });
       handler.open();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not start Plaid Link.");
-      setBusy(false);
+      finish();
     }
   }
 
@@ -142,9 +156,8 @@ export function PlaidConnection({ onAccountsChanged }: { onAccountsChanged: () =
       <div className="plaid-heading">
         <div>
           <h2>Bank Sync</h2>
-          <p>Connect through Plaid to import spending and income automatically.</p>
         </div>
-        <Button disabled={busy || plaidStatus?.configured === false} onClick={() => void connect()}>
+        <Button disabled={!allowConnect || busy || plaidStatus?.configured === false} onClick={() => void connect()}>
           <Landmark aria-hidden="true" size={17} /> Connect Bank
         </Button>
       </div>

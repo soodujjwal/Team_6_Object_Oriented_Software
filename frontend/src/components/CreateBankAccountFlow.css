@@ -1,0 +1,50 @@
+.bank-account-launcher { display: flex; padding-block: 2px; }
+.bank-account-launcher > button { gap: 9px; }
+.bank-account-modal.modal-panel { max-width: 460px; padding: 25px; border-radius: 22px; background: var(--color-surface-strong); border: 1px solid var(--color-success-border); box-shadow: 0 24px 80px #0004, inset 0 1px 0 var(--color-glass-effect); }
+.bank-account-modal .modal-header { margin-bottom: 25px; }
+.bank-account-modal .modal-header h2 { font-size: 15px; font-weight: 650; letter-spacing: -.25px; }
+.bank-wizard-progress { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 26px; }
+.bank-wizard-progress > span { font-size: 11px; font-weight: 550; color: var(--color-text-secondary); }
+.bank-wizard-progress > div { display: flex; gap: 5px; }
+.bank-wizard-progress i { width: 26px; height: 4px; border-radius: 5px; background: var(--color-primary-tint); }
+.bank-wizard-progress i.active { background: var(--color-primary-soft); }
+.bank-wizard-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.bank-wizard-step { display: grid; gap: 18px; animation: bank-step-in 200ms ease both; }
+.bank-wizard-step > h3 { font-size: 24px; font-weight: 650; letter-spacing: -.7px; line-height: 1.3; margin: 0 0 4px; }
+.bank-wizard-step > h3:focus, .bank-wizard-success h3:focus { outline: none; }
+.bank-wizard-step .ui-field > span { font-size: 12px; }
+.bank-wizard-step .ui-field-control { min-height: 49px; border-radius: 11px; }
+.bank-wizard-step .glass-select-menu { box-shadow: var(--shadow-soft); }
+.bank-wizard-types { display: grid; gap: 9px; }
+.bank-wizard-type { display: flex; gap: 12px; align-items: center; width: 100%; padding: 12px; text-align: left; border: 1px solid var(--color-border-muted); border-radius: 13px; background: var(--color-surface-subtle); color: var(--color-text); transition: background 200ms ease, border-color 200ms ease, transform 200ms ease; }
+.bank-wizard-type:hover { border-color: var(--color-primary-soft); transform: translateX(2px); }
+.bank-wizard-type.selected { border-color: var(--color-primary-soft); background: var(--color-primary-tint); }
+.bank-wizard-type > span:first-child { color: var(--color-primary-soft); width: 35px; height: 35px; display: grid; place-items: center; background: var(--color-primary-tint); border-radius: 10px; flex-shrink: 0; }
+.bank-wizard-type > span:nth-child(2) { flex: 1; min-width: 0; }
+.bank-wizard-type strong { display: block; font-size: 13px; font-weight: 600; }
+.bank-wizard-type small { display: block; font-size: 10px; color: var(--color-text-secondary); line-height: 1.6; margin-top: 3px; }
+.bank-wizard-check { display: grid; place-items: center; width: 19px; height: 19px; flex-shrink: 0; border: 1px solid var(--color-success-border); border-radius: 50%; color: var(--color-primary); }
+.selected .bank-wizard-check { border-color: var(--color-primary-soft); background: var(--color-primary-tint); }
+.bank-wizard-hint { font-size: 11px; line-height: 1.8; color: var(--color-text-secondary); margin: 0; }
+.bank-wizard-summary { display: grid; margin: 0; border-block: 1px solid var(--color-border-muted); }
+.bank-wizard-summary > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 15px; padding: 14px 0; font-size: 12px; border-bottom: 1px solid var(--color-border-muted); }
+.bank-wizard-summary > div:last-child { border-bottom: 0; }
+.bank-wizard-summary dt { color: var(--color-text-secondary); }
+.bank-wizard-summary dd { margin: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+.bank-wizard-actions { display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 25px; }
+.bank-wizard-actions > button { min-height: 46px; gap: 7px; padding-inline: 14px; font-size: 12px; }
+.bank-wizard-error { color: var(--color-danger-text); font-size: 12px; line-height: 1.7; padding: 12px; border: 1px solid var(--color-danger-border); background: var(--color-danger-surface); border-radius: 10px; margin-top: 16px; }
+.bank-wizard-footer { margin-top: 18px; text-align: center; font-size: 10px; color: var(--color-text-muted); line-height: 1.7; }
+.bank-wizard-success { display: flex; align-items: center; flex-direction: column; gap: 20px; text-align: center; padding: 15px 0 5px; animation: bank-step-in 200ms ease both; }
+.bank-wizard-success-icon { width: 66px; height: 66px; display: grid; place-items: center; background: var(--color-primary-tint); color: var(--color-primary-soft); border: 1px solid var(--color-success-border); border-radius: 50%; }
+.bank-wizard-success h3 { margin: 0; font-size: 26px; letter-spacing: -.7px; }
+.bank-wizard-success p { font-size: 13px; line-height: 1.8; color: var(--color-text-secondary); overflow-wrap: anywhere; }
+.bank-wizard-success > button { width: 100%; justify-content: center; gap: 8px; }
+.bank-wizard-spinner { animation: bank-spin 1s linear infinite; }
+.account-tracking-panel { display: grid; gap: 18px; outline: none; }
+.account-tracking-panel > .settings-panel { display: grid; gap: 18px; }
+.tracking-mode-options { display: grid; gap: 10px; }
+@keyframes bank-step-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bank-spin { to { transform: rotate(360deg); } }
+@media (max-width: 480px) { .bank-account-modal.modal-panel { padding: 20px; }.bank-wizard-step > h3 { font-size: 22px; }.bank-wizard-summary > div { grid-template-columns: 95px minmax(0, 1fr); gap: 8px; }.bank-wizard-actions > button { padding-inline: 11px; font-size: 11px; } }
+@media (prefers-reduced-motion: reduce) { .bank-wizard-step, .bank-wizard-success, .bank-wizard-spinner { animation: none; }.bank-wizard-type { transition: none; }.bank-wizard-type:hover { transform: none; } }

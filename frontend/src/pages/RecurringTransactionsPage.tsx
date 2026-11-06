@@ -1,3 +1,4 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useMemo, useState } from "react";
 import { CalendarClock, CheckCircle2, Landmark, Pencil, Plus, Trash2 } from "lucide-react";
 import { getAccounts } from "../api/accounts";
@@ -52,6 +53,7 @@ const defaultDraft: Draft = {
 };
 
 export function RecurringTransactionsPage() {
+  const [initialLoading, setInitialLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [items, setItems] = useState<RecurringTransaction[]>([]);
   const [bankTransactions, setBankTransactions] = useState<Transaction[]>([]);
@@ -76,6 +78,8 @@ export function RecurringTransactionsPage() {
       setError("");
     } catch {
       setError("Start the backend server to manage recurring bills.");
+    } finally {
+      setInitialLoading(false);
     }
   }
 
@@ -166,6 +170,8 @@ export function RecurringTransactionsPage() {
     }));
   }
 
+  if (initialLoading) return <PageSkeleton page="recurring" />;
+
   return (
     <section className="page recurring-page">
       <TopBar title="Recurring Bills" />
@@ -174,7 +180,6 @@ export function RecurringTransactionsPage() {
       <div className="section-heading">
         <div>
           <h2>Subscriptions & Bill Reminders</h2>
-          <p className="caption-text">Track renewals, auto-pay status, reminders, and paid cycles from matched transactions.</p>
         </div>
       </div>
 
@@ -185,7 +190,6 @@ export function RecurringTransactionsPage() {
           <span className="bill-icon"><Landmark aria-hidden="true" size={19} /></span>
           <div>
             <h2>Connected Bank Subscriptions</h2>
-            <p>Estimated from subscription charges imported through Plaid.</p>
           </div>
         </div>
         {bankConnected === null ? (

@@ -449,8 +449,13 @@ def test_api_round_trip_and_actual_authentication_scope(setup):
         assert response.json()[0]["bank_current_balance"] == "1000.00"
         created = api.post("/transactions", headers=owner, json=dict(account_id=account.id, amount="25",
             category="Food & Dining", transaction_type="expense", transaction_date="2026-09-20", note="Receipt coffee"))
-        assert created.status_code == 201
-        id = created.json()["id"]
+        assert created.status_code == 409  # Plaid mode no longer accepts new manual entries.
+        # Legacy manual history remains accessible and can still be reconciled.
+        legacy = TransactionModel(account_id=account.id, amount=Decimal("25"), category="Food & Dining",
+                                  transaction_type="expense", transaction_date=date(2026, 9, 20), note="Receipt coffee")
+        db.add(legacy)
+        db.commit()
+        id = legacy.id
         assert api.get(f"/transactions/{id}", headers=stranger).status_code == 404
         api.get("/accounts", headers=owner)
         sync(client, service, added=[entry()])

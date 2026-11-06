@@ -1,0 +1,27 @@
+.page-loading-landing.page { padding: 0; gap: 0; display: block; min-height: 100dvh; }
+.lps-text { display: inline-block; vertical-align: middle; max-width: 100%; line-height: inherit; }
+.lps-text > span { visibility: hidden; }
+.lps h1 .lps-text, .lps h2 .lps-text { line-height: .82; vertical-align: baseline; }
+.lps-paragraph { color: transparent; border-radius: 7px; background: repeating-linear-gradient(to bottom, var(--color-primary-tint) 0 12px, transparent 12px 1.9em); background-position-y: 7px; }
+.lps-nav-button { width: 124px; height: 42px; border-radius: 8px; }
+.lps-download-button { width: 104px; height: 42px; border-radius: 8px; }
+.lps-primary-button { width: 249px; max-width: 100%; height: 54px; border-radius: 10px; }
+.lps .lp-hero-bottom > div { font-size: 10px; line-height: 1.7; }
+.lps .lp-preview-switch > .skeleton { flex: 1; height: 26px; border-radius: 4px; }
+.lps-lock { width: 12px; height: 12px; }
+.lps-tag { width: 48px; height: 22px; border-radius: 20px; }
+.lps-balance { width: 175px; max-width: 90%; height: 45px; margin-block: 6px; }
+.lps-label { width: 65px; max-width: 45%; height: 9px; }
+.lps-total { width: 95px; max-width: 90%; height: 23px; margin-top: 6px; }
+.lps .lp-floating-note > div { font-size: 9px; line-height: 1.5; }
+.lps .lp-floating-note > div > .lps-text:first-child { font-size: 12px; margin-bottom: 4px; }
+.lps-feature { min-height: 330px; }
+.lps-feature-visual { width: 100%; height: 140px; margin-top: 25px; }
+@media (max-width: 800px) { .lps .lp-hero-description { margin-inline: auto; } }
+@media (max-width: 560px) {
+  .lps-nav-button { width: 104px; height: 38px; }
+  .lps-primary-button { height: 50px; }
+  .lps-balance { height: 39px; width: 155px; }
+  .lps-total { height: 20px; }
+  .lps .lp-floating-note > div > .lps-text:first-child { font-size: 11px; }
+}

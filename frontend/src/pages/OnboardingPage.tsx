@@ -1,15 +1,18 @@
 import { accountStorage } from "../api/accountStorage";
+import { markOnboardingComplete } from "../domain/onboardingState";
 import { useEffect, useMemo, useState, type Dispatch, type KeyboardEvent, type ReactNode, type SetStateAction } from "react";
-import { ArrowLeft, ArrowRight, BadgeDollarSign, CalendarClock, CheckCircle2, Landmark, PiggyBank, Sparkles, Target, WalletCards } from "lucide-react";
-import { createAccount, getAccounts } from "../api/accounts";
+import { ArrowLeft, ArrowRight, BadgeDollarSign, CalendarClock, CheckCircle2, PiggyBank, Sparkles, Target, WalletCards } from "lucide-react";
+import { getAccounts } from "../api/accounts";
+import { getTrackingMode } from "../api/trackingMode";
+import { AccountTrackingPanel } from "../components/AccountTrackingPanel";
 import { createBudget, getBudgets } from "../api/budgets";
 import { createRecurringTransaction, getRecurringTransactions, type RecurringTransactionPayload } from "../api/recurringTransactions";
 import { createSavingsGoal, getSavingsGoals } from "../api/savingsGoals";
 import { createTransaction, getTransactions } from "../api/transactions";
 import type { User } from "../api/auth";
 import type { Account } from "../api/types";
-import { BankSelector } from "../components/BankSelector";
-import { PlaidConnection } from "../components/PlaidConnection";
+
+
 import { Button, DatePicker, GlassCard, GlassSelect, TextField } from "../components/ui";
 import { getCategoriesForType } from "../domain/transactionCategories";
 import { formatCurrency } from "../utils/format";
@@ -123,9 +126,6 @@ function stepKeyFor(user: User) {
   return `pfm_onboarding_step_${user.email}`;
 }
 
-function completionKey(user: User) {
-  return `pfm_onboarding_complete_${user.email}`;
-}
 
 function clampStep(nextStep: number) {
   return Math.max(0, Math.min(STEPS.length - 1, nextStep));
@@ -152,22 +152,6 @@ function readStoredStep(user: User) {
     return Number.isFinite(stored) ? clampStep(stored) : 0;
   } catch {
     return 0;
-  }
-}
-
-export function hasCompletedOnboarding(user: User) {
-  try {
-    return accountStorage.getItem(completionKey(user)) === "true";
-  } catch {
-    return false;
-  }
-}
-
-export function markOnboardingComplete(user: User) {
-  try {
-    accountStorage.setItem(completionKey(user), "true");
-  } catch {
-    // The dashboard is still available if browser storage is unavailable.
   }
 }
 
@@ -264,22 +248,15 @@ export function OnboardingPage({ onComplete, user }: OnboardingPageProps) {
   }
 
   async function saveAccount() {
-    if (draft.accountMethod === "plaid") return;
-    if (!draft.bankName && !draft.accountName && !draft.startingBalance) return;
-    if (!draft.bankName || !draft.accountName || Number(draft.startingBalance) < 0) throw new Error("Choose a bank, account name, and valid starting balance.");
-    const existing = await getAccounts();
-    const match = existing.find((account) => account.bank_name === draft.bankName && account.name.toLowerCase() === draft.accountName.toLowerCase());
-    if (match) {
-      setAccounts(existing);
-      setSelectedAccountId(String(match.id));
-      return;
-    }
-    const created = await createAccount({ bank_name: draft.bankName, name: draft.accountName, starting_balance: Number(draft.startingBalance || 0).toFixed(2) });
-    setAccounts([...existing, created]);
-    setSelectedAccountId(String(created.id));
+    const [existing, tracking] = await Promise.all([getAccounts(), getTrackingMode()]);
+    if (tracking.mode === "mixed") throw new Error("Resolve the existing tracking methods before continuing.");
+    setAccounts(existing);
+    setSelectedAccountId(String(existing[0]?.id ?? ""));
+    setDraft((current) => ({ ...current, accountMethod: tracking.mode === "plaid" ? "plaid" : "manual", bankName: existing[0]?.bank_name ?? "", accountName: existing[0]?.name ?? "" }));
   }
 
   async function saveIncome() {
+    if ((await getTrackingMode()).mode === "plaid") return;
     if (!draft.incomeAmount) return;
     const accountId = Number(selectedAccountId || accounts[0]?.id);
     if (!accountId) throw new Error("Add an account before saving income.");
@@ -435,12 +412,11 @@ function GoalsStep({ draft, setDraft }: { draft: Draft; setDraft: Dispatch<SetSt
   return <section className="onboarding-step"><h2>What are your financial goals?</h2><p>Select every goal that applies. This helps the setup emphasize the right steps.</p><div className="goal-card-grid">{GOALS.map((goal) => { const selected = draft.goals.includes(goal); return <button className={`goal-choice ${selected ? "selected" : ""}`} key={goal} onClick={() => setDraft((current) => ({ ...current, goals: selected ? current.goals.filter((item) => item !== goal) : [...current.goals, goal] }))} type="button"><Sparkles size={18} /> {goal}</button>; })}</div></section>;
 }
 
-function AccountStep({ draft, onAccountsChanged, setDraft }: { draft: Draft; onAccountsChanged: () => void; setDraft: Dispatch<SetStateAction<Draft>> }) {
-  return <section className="onboarding-step"><h2>Connect your account</h2><p>Choose secure bank syncing through Plaid or enter an account yourself.</p><div aria-label="Account connection method" className="onboarding-account-methods" role="group"><button aria-pressed={draft.accountMethod === "plaid"} className={draft.accountMethod === "plaid" ? "selected" : ""} onClick={() => setDraft((current) => ({ ...current, accountMethod: "plaid" }))} type="button"><Landmark size={20} /><span><strong>Connect with Plaid</strong><small>Link a bank and import accounts and transactions automatically.</small></span></button><button aria-pressed={draft.accountMethod === "manual"} className={draft.accountMethod === "manual" ? "selected" : ""} onClick={() => setDraft((current) => ({ ...current, accountMethod: "manual" }))} type="button"><WalletCards size={20} /><span><strong>Enter manually</strong><small>Add the institution, account name, and starting balance yourself.</small></span></button></div>{draft.accountMethod === "plaid" ? <div className="onboarding-plaid"><PlaidConnection onAccountsChanged={onAccountsChanged} /><p className="caption-text">After Plaid confirms the connection, choose Continue to finish the rest of setup.</p></div> : <><div className="onboarding-form-grid"><BankSelector onChange={(bankName) => setDraft((current) => ({ ...current, bankName }))} value={draft.bankName} /><TextField icon={<Landmark size={18} />} label="Account Name" onChange={(event) => setDraft((current) => ({ ...current, accountName: event.target.value }))} placeholder="Checking" value={draft.accountName} /><TextField icon={<span>$</span>} label="Starting Balance" min="0" onChange={(event) => setDraft((current) => ({ ...current, startingBalance: event.target.value }))} placeholder="0.00" step="0.01" type="number" value={draft.startingBalance} /></div><p className="caption-text">Manual accounts can be edited or connected to bank syncing later from Account Settings.</p></>}</section>;
+function AccountStep({ onAccountsChanged }: { draft: Draft; onAccountsChanged: () => void; setDraft: Dispatch<SetStateAction<Draft>> }) {
+  return <section className="onboarding-step"><h2>Choose how to track your accounts</h2><AccountTrackingPanel onCreated={onAccountsChanged} onAccountsChanged={onAccountsChanged} /></section>;
 }
-
 function IncomeStep({ draft, setDraft }: { draft: Draft; setDraft: Dispatch<SetStateAction<Draft>> }) {
-  return <section className="onboarding-step"><h2>What is your monthly income?</h2><p>This creates a real income transaction for the current month.</p><div className="onboarding-form-grid"><TextField icon={<span>$</span>} label="Income amount" min="0" onChange={(event) => setDraft((current) => ({ ...current, incomeAmount: event.target.value }))} placeholder="4000.00" step="0.01" type="number" value={draft.incomeAmount} /><TextField icon={<BadgeDollarSign size={18} />} label="Income source" onChange={(event) => setDraft((current) => ({ ...current, incomeSource: event.target.value }))} placeholder="Salary" value={draft.incomeSource} /><GlassSelect label="Frequency" onChange={(value) => setDraft((current) => ({ ...current, incomeFrequency: value }))} options={INCOME_FREQUENCIES} value={draft.incomeFrequency} /></div></section>;
+  return <section className="onboarding-step"><h2>What is your monthly income?</h2><p>{draft.accountMethod === "plaid" ? "This amount is used for budget planning. Actual income is synced from your bank." : "This creates a real income transaction for the current month."}</p><div className="onboarding-form-grid"><TextField icon={<span>$</span>} label="Income amount" min="0" onChange={(event) => setDraft((current) => ({ ...current, incomeAmount: event.target.value }))} placeholder="4000.00" step="0.01" type="number" value={draft.incomeAmount} /><TextField icon={<BadgeDollarSign size={18} />} label="Income source" onChange={(event) => setDraft((current) => ({ ...current, incomeSource: event.target.value }))} placeholder="Salary" value={draft.incomeSource} /><GlassSelect label="Frequency" onChange={(value) => setDraft((current) => ({ ...current, incomeFrequency: value }))} options={INCOME_FREQUENCIES} value={draft.incomeFrequency} /></div></section>;
 }
 
 function BudgetStep({ draft, income, monthlyBudget, setDraft }: { draft: Draft; income: number; monthlyBudget: Record<"needs" | "wants" | "savingsDebt", number>; setDraft: Dispatch<SetStateAction<Draft>> }) {

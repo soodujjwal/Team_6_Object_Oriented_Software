@@ -6,19 +6,22 @@ type BankSelectorProps = {
   error?: string;
   onChange: (bankName: string) => void;
   value: string;
+  label?: string;
+  inlineMenu?: boolean;
 };
 
-export function BankSelector({ error, onChange, value }: BankSelectorProps) {
+export function BankSelector({ error, onChange, value, label = "Select Your Bank", inlineMenu = false }: BankSelectorProps) {
   return (
     <GlassSelect
       ariaLabel="Select your bank"
       error={error}
       icon={<Landmark size={18} />}
-      label="Select Your Bank"
+      label={label}
+      inlineMenu={inlineMenu}
       onChange={onChange}
       options={BANK_OPTIONS.map((bank) => ({
         value: bank.name,
-        label: bank.name,
+        label: bank.id === "other" && inlineMenu ? "Other bank" : bank.name,
         leading: <BankLogo logoUrl={bank.logoUrl} name={bank.name} />,
       }))}
       placeholder="Select your bank"

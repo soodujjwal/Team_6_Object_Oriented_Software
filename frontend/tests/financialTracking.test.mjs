@@ -10,7 +10,9 @@ async function moduleUrl(path, replacements = {}) {
   return `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
 }
 const financial = await moduleUrl("../src/domain/financialTracking.ts");
-const budgeting = await moduleUrl("../src/domain/budgeting.ts", { "./financialTracking": financial });
+const client = await moduleUrl("../src/api/client.ts");
+const accountStorage = await moduleUrl("../src/api/accountStorage.ts", { "./client": client });
+const budgeting = await moduleUrl("../src/domain/budgeting.ts", { "./financialTracking": financial, "../api/accountStorage": accountStorage });
 const { reportingAmount } = await import(financial);
 const { calculateBudgetMonth } = await import(budgeting);
 const { buildFinancialSnapshot } = await import(await moduleUrl("../src/domain/purchaseAnalysis.ts", { "./financialTracking": financial, "./budgeting": budgeting }));

@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.services.plaid_service import PlaidClient, PlaidService
+from app.services.tracking_mode_service import TrackingModeService
 
 router = APIRouter(prefix="/plaid", tags=["plaid"], dependencies=[Depends(get_current_user)])
 webhook_router = APIRouter(prefix="/plaid", tags=["plaid"])
@@ -29,11 +30,14 @@ def plaid_status(db: Session = Depends(get_db), user=Depends(get_current_user)):
 
 @router.post("/link-token")
 def create_link_token(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    TrackingModeService(db).require("plaid")
+    db.commit()
     return PlaidService(db).create_link_token(user.id)
 
 
 @router.post("/exchange")
 def exchange_public_token(payload: ExchangeRequest, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    TrackingModeService(db).require("plaid")
     return PlaidService(db).exchange(user.id, payload.public_token, payload.metadata)
 
 

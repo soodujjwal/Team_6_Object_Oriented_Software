@@ -1,3 +1,4 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Landmark, Plus, WalletCards } from "lucide-react";
 import { getAccounts } from "../api/accounts";
@@ -13,6 +14,7 @@ type AccountsPageProps = {
 };
 
 export function AccountsPage({ onAddAccount }: AccountsPageProps) {
+  const [initialLoading, setInitialLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const [status, setStatus] = useState("");
@@ -46,8 +48,11 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
         setStatus("");
         setSelectedAccountId((current) => current ?? data[0]?.id ?? null);
       })
-      .catch(() => setStatus("Start the backend server to view accounts."));
+      .catch(() => setStatus("Start the backend server to view accounts."))
+      .finally(() => setInitialLoading(false));
   }
+
+  if (initialLoading) return <PageSkeleton page="accounts" />;
 
   return (
     <section className="page accounts-page">
@@ -58,7 +63,6 @@ export function AccountsPage({ onAddAccount }: AccountsPageProps) {
       <div className="accounts-page-heading">
         <div>
           <h2>Accounts</h2>
-          <p>Manage balances, cash, and debt from one place.</p>
         </div>
         <Button onClick={onAddAccount}>
           <Plus aria-hidden="true" size={18} /> Add Account

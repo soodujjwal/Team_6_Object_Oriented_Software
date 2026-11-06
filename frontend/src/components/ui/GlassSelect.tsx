@@ -25,6 +25,7 @@ type GlassSelectProps = {
   error?: string;
   className?: string;
   compact?: boolean;
+  inlineMenu?: boolean;
 };
 
 type MenuPosition = CSSProperties & { maxHeight: number };
@@ -45,6 +46,7 @@ export function GlassSelect({
   error,
   className = "",
   compact = false,
+  inlineMenu = false,
 }: GlassSelectProps) {
   const generatedId = useId();
   const labelId = `${generatedId}-label`;
@@ -72,6 +74,10 @@ export function GlassSelect({
     const trigger = triggerRef.current;
     if (!trigger) return;
     const rect = trigger.getBoundingClientRect();
+    if (inlineMenu) {
+      setPosition({ position: "relative", left: 0, top: 0, width: "100%", marginTop: 6, maxHeight: Math.min(240, window.innerHeight * .32) });
+      return;
+    }
     const edge = 12;
     const gap = 6;
     const below = window.innerHeight - rect.bottom - edge - gap;
@@ -83,7 +89,7 @@ export function GlassSelect({
     const left = Math.max(edge, Math.min(rect.left, window.innerWidth - width - edge));
     const top = placeAbove ? rect.top - maxHeight - gap : rect.bottom + gap;
     setPosition({ left, top: Math.max(edge, Math.min(window.innerHeight - maxHeight - edge, top)), width, maxHeight });
-  }, [compact, filteredOptions.length, searchable]);
+  }, [compact, filteredOptions.length, searchable, inlineMenu]);
 
   const close = useCallback((restoreFocus = false) => {
     setOpen(false);
@@ -186,7 +192,8 @@ export function GlassSelect({
         choose(option);
       }
     } else if (event.key === "Tab") {
-      close();
+      if (inlineMenu) { event.preventDefault(); close(true); }
+      else close();
     }
   }
 
@@ -212,10 +219,7 @@ export function GlassSelect({
     </button>
   );
 
-  return (
-    <div className={`glass-select${className ? ` ${className}` : ""}`}>
-      {label ? <div className="ui-field glass-select-field"><span id={labelId}>{label}</span>{trigger}{error && <small className="field-error">{error}</small>}</div> : trigger}
-      {open && position && createPortal(
+  const menu = open && position && (
         <div
           aria-label={label ?? ariaLabel ?? "Options"}
           className={`glass-select-menu${compact ? " compact" : ""}${searchable ? " searchable" : ""}`}
@@ -244,9 +248,13 @@ export function GlassSelect({
               {option.value === value && <Check aria-hidden="true" className="glass-select-check" size={17} />}
             </button>
           )) : <div className="glass-select-message">{emptyMessage}</div>}
-        </div>,
-        document.body,
-      )}
+        </div>
+  );
+
+  return (
+    <div className={`glass-select${className ? ` ${className}` : ""}`}>
+      {label ? <div className="ui-field glass-select-field"><span id={labelId}>{label}</span>{trigger}{error && <small className="field-error">{error}</small>}</div> : trigger}
+      {menu && (inlineMenu ? menu : createPortal(menu, document.body))}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { PageSkeleton } from "../components/PageSkeleton";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getMonthlyReport, type MonthlyReport } from "../api/reports";
 import { TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
@@ -55,16 +56,16 @@ export function ReportsPage() {
     year: "numeric",
   }).format(new Date(year, month - 1, 1));
 
+  if (loading && !report) return <PageSkeleton page="reports" />;
+
   return (
     <section className="page">
       <TopBar title="Monthly Report" />
       {error && <p className="notice" role="alert">{error}</p>}
       <h2 className="month-title">{monthLabel}</h2>
-      <p className="caption-text">Personal spending uses your share of split bills. Reimbursements, own-account transfers, and pending payments are excluded from regular income and spending. Bank movements remain in Transactions.</p>
       {report && (
         <>
           <GlassCard className="report-card">
-            <h2>Income vs Expenses</h2>
             <IncomeExpenseDonut
               expenses={totals.expenses}
               income={totals.income}
@@ -77,7 +78,6 @@ export function ReportsPage() {
           </GlassCard>
         </>
       )}
-      {loading && !report && <p className="empty-state">Loading monthly report...</p>}
     </section>
   );
 }

@@ -214,7 +214,7 @@ export function TransactionsPage({ onAddTransaction, onManageBills }: Transactio
           <Plus aria-hidden="true" size={17} /> <span>Add transaction</span>
         </Button>
         <Button onClick={onManageBills}>
-          <CalendarClock aria-hidden="true" size={17} /> <span>Manage Bills</span>
+          <CalendarClock aria-hidden="true" size={17} /> <span>Recurring Transactions</span>
         </Button>
       </div>
 

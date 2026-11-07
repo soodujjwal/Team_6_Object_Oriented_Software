@@ -251,7 +251,7 @@ export default function App() {
       )}
       {page === "accounts" && <AccountsPage onAddAccount={() => setPage("settings")} />}
       {page === "transactions" && <TransactionsPage onAddTransaction={() => setPage("add")} onManageBills={() => setPage("recurring")} />}
-      {page === "recurring" && <RecurringTransactionsPage />}
+      {page === "recurring" && <RecurringTransactionsPage onOpenAccounts={() => setPage("accounts")} />}
       {page === "help" && <HelpPage onNavigate={setPage} />}
       {page === "split" && <SplitBillPage userName={user.name} />}
       </Suspense>

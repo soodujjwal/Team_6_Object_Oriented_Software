@@ -1,3 +1,18 @@
+# Android 1.0.3 — restore Recurring Transactions
+
+- Download: https://finance-builder.vercel.app/download
+- APK: https://github.com/soodujjwal/Team_6_Object_Oriented_Software/releases/download/android-v1.0.3/Finance-Builder-1.0.3.apk
+- Application ID `financebuilder.app.com`; version `1.0.3`, code `4`; Android 7.1+ / SDK 25.
+- Size **5,758,751 bytes**; SHA-256 `0D2A0B3BCD7C16F642FF2561E663F06B112259A1F2D9EF6F38B06BBCBAC7C050`.
+- Same signing certificate: `3689d33f418a5408c4d1a7ca24c2bb7ce2abe8d8a6756b0fbd1226f0f0d4761f`.
+
+Restores **More → Recurring Transactions** and the matching Transactions-page shortcut. The existing page shows detected subscriptions and estimated monthly cost from synced bank transactions, plus saved bill reminders. These are transaction-based estimates; this change does not enable or call Plaid's optional Recurring Transactions add-on. Saved bills remain usable when bank-status/subscription loading fails, with separate retry controls. Disconnected users can navigate directly to Accounts. Existing creation, editing, deletion, bank syncing, and financial calculations are preserved. No backend, database schema, or dependency changed.
+
+Validation: full publication frontend suite **81 passed**, including navigation, subscription totals, bill create/edit/delete, partial-failure retry, and disconnected-bank navigation. Production TypeScript/Vite build and targeted lint passed (automatic-JSX compatibility overrides); Android release build/lint, signature verification, and manifest version checks passed. Download metadata and QR tests are checked after updating the exact artifact metadata. No fresh physical-device installation is claimed for this release.
+
+Install the new signed APK over the existing release, then open **More → Recurring Transactions**. Website users can open it after the production deployment and refresh. No Render configuration change is required. Earlier APKs keep their bundled menu until updated.
+
+---
 # Android 1.0.2 — native Plaid and refresh performance
 
 - Download page: https://finance-builder.vercel.app/download

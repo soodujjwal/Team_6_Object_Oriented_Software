@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import {
   CircleHelp,
+  CalendarClock,
   CreditCard,
   LogOut,
   Settings,
@@ -16,6 +17,7 @@ type DrawerItem =
 
 const drawerItems: DrawerItem[] = [
   { label: "Accounts", icon: WalletCards, page: "accounts" },
+  { label: "Recurring Transactions", icon: CalendarClock, page: "recurring" },
   { label: "Split Bill", icon: Users, page: "split" },
   { label: "Goals", icon: Target, page: "goals" },
   { label: "Settings", icon: Settings, page: "settings" },

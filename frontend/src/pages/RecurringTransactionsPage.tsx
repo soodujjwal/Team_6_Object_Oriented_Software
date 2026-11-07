@@ -52,7 +52,7 @@ const defaultDraft: Draft = {
   note: "",
 };
 
-export function RecurringTransactionsPage() {
+export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?: () => void }) {
   const [initialLoading, setInitialLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [items, setItems] = useState<RecurringTransaction[]>([]);
@@ -61,23 +61,27 @@ export function RecurringTransactionsPage() {
   const [modalItem, setModalItem] = useState<RecurringTransaction | null | "create">(null);
   const [draft, setDraft] = useState<Draft>(defaultDraft);
   const [error, setError] = useState("");
+  const [subscriptionError, setSubscriptionError] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function loadData() {
     try {
-      const [accountData, recurringData, transactionData, plaidStatus] = await Promise.all([
+      const [accountData, recurringData, transactionData, plaidStatus] = await Promise.allSettled([
         getAccounts(),
         getRecurringTransactions(),
         getTransactions(),
         getPlaidStatus(),
       ]);
-      setAccounts(accountData);
-      setItems(recurringData);
-      setBankTransactions(transactionData);
-      setBankConnected(plaidStatus.connections.length > 0);
-      setError("");
+      if (accountData.status === "fulfilled") setAccounts(accountData.value);
+      if (recurringData.status === "fulfilled") setItems(recurringData.value);
+      if (transactionData.status === "fulfilled") setBankTransactions(transactionData.value);
+      if (plaidStatus.status === "fulfilled") setBankConnected(plaidStatus.value.connections.length > 0);
+      const failed = [accountData.status === "rejected" && "accounts", recurringData.status === "rejected" && "saved bills"].filter(Boolean);
+      setError(failed.length ? `Could not refresh your ${failed.join(" and ")}. Please retry.` : "");
+      setSubscriptionError(transactionData.status === "rejected" || plaidStatus.status === "rejected"
+        ? "Could not refresh connected-bank subscriptions. Please retry." : "");
     } catch {
-      setError("Start the backend server to manage recurring bills.");
+      setError("Could not load recurring transactions. Check your connection and retry.");
     } finally {
       setInitialLoading(false);
     }
@@ -174,8 +178,8 @@ export function RecurringTransactionsPage() {
 
   return (
     <section className="page recurring-page">
-      <TopBar title="Recurring Bills" />
-      {error && <p className="notice" role="alert">{error}</p>}
+      <TopBar title="Recurring Transactions" />
+      {error && <p className="notice" role="alert">{error} <Button variant="ghost" onClick={() => void loadData()}>Retry</Button></p>}
 
       <div className="section-heading">
         <div>
@@ -192,13 +196,16 @@ export function RecurringTransactionsPage() {
             <h2>Connected Bank Subscriptions</h2>
           </div>
         </div>
-        {bankConnected === null ? (
+        <p className="caption-text">Estimates from synced bank transactions.</p>
+        {subscriptionError ? (
+          <p className="notice" role="alert">{subscriptionError} <Button variant="ghost" onClick={() => void loadData()}>Retry subscriptions</Button></p>
+        ) : bankConnected === null ? (
           <p className="caption-text">Checking connected banks...</p>
         ) : bankConnected ? (
           <>
             <div className="bank-subscription-metrics">
               <div>
-                <span>Subscriptions</span>
+                <span>Detected subscriptions</span>
                 <strong>{subscriptionSummary.subscriptions.length}</strong>
               </div>
               <div>
@@ -226,7 +233,7 @@ export function RecurringTransactionsPage() {
             )}
           </>
         ) : (
-          <p className="empty-state">Connect a bank in Settings to see your subscription count and estimated monthly cost.</p>
+          <div className="empty-state"><p>Connect a bank in Accounts to see detected subscriptions and estimated monthly cost.</p>{onOpenAccounts && <Button variant="secondary" onClick={onOpenAccounts}>Go to Accounts</Button>}</div>
         )}
       </GlassCard>
 

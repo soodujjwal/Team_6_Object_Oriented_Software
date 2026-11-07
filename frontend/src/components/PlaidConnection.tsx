@@ -4,13 +4,15 @@ import {
   createPlaidLinkToken,
   disconnectPlaid,
   exchangePlaidToken,
-  getPlaidStatus,
   refreshPlaid,
   syncPlaid,
   type PlaidStatus,
 } from "../api/plaid";
 import { TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
+import { getAccessToken } from "../api/client";
 import { Button, GlassCard } from "./ui";
+import { openAndroidPlaid, usesAndroidPlaid } from "../native/plaid";
+import { refreshPlaidStatus, subscribePlaidStatus } from "../services/plaidStatus";
 
 type PlaidHandler = {
   open: () => void;
@@ -49,30 +51,21 @@ export function PlaidConnection({ onAccountsChanged, allowConnect = true, openRe
   const [plaidStatus, setPlaidStatus] = useState<PlaidStatus | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const lastSync = useRef("");
   const connecting = useRef(false);
   const handledOpen = useRef<number | undefined>(undefined);
 
   const loadStatus = useCallback(async () => {
     try {
-      const next = await getPlaidStatus();
-      const latest = next.connections.map((item) => item.last_synced_at ?? "").sort().at(-1) ?? "";
-      if (lastSync.current && latest && latest !== lastSync.current) {
-        window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT));
-        onAccountsChanged();
-      }
-      lastSync.current = latest;
+      const next = await refreshPlaidStatus();
       setPlaidStatus(next);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not check Plaid status.");
     }
-  }, [onAccountsChanged]);
+  }, []);
 
   useEffect(() => {
-    void loadStatus();
-    const timer = window.setInterval(() => void loadStatus(), 15_000);
-    return () => window.clearInterval(timer);
-  }, [loadStatus]);
+    return subscribePlaidStatus(setPlaidStatus);
+  }, []);
 
   useEffect(() => {
     if (!openRequest || !allowConnect || handledOpen.current === openRequest) return;
@@ -88,14 +81,32 @@ export function PlaidConnection({ onAccountsChanged, allowConnect = true, openRe
     setMessage("");
     const finish = () => { connecting.current = false; setBusy(false); };
     let exchanging = false;
+    const owner = getAccessToken();
+    const checkOwner = () => {
+      if (!owner || getAccessToken() !== owner) throw new Error("Your session changed. Sign in and connect your bank again.");
+    };
     try {
+      if (usesAndroidPlaid()) {
+        const { link_token } = await createPlaidLinkToken("android");
+        const result = await openAndroidPlaid(link_token);
+        if (result.status === "success") {
+          checkOwner();
+          await exchangePlaidToken(result.publicToken, result.metadata);
+          setMessage("Bank connected and transactions imported.");
+          window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT));
+          onAccountsChanged();
+          await loadStatus();
+        }
+        finish();
+        return;
+      }
       const [, { link_token }] = await Promise.all([loadPlaidScript(), createPlaidLinkToken()]);
       const handler = window.Plaid!.create({
         token: link_token,
         onSuccess: (publicToken, metadata) => {
           if (exchanging) return;
           exchanging = true;
-          void exchangePlaidToken(publicToken, metadata)
+          void Promise.resolve().then(() => { checkOwner(); return exchangePlaidToken(publicToken, metadata); })
             .then(() => {
               setMessage("Bank connected and transactions imported.");
               window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT));

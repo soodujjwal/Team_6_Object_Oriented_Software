@@ -16,6 +16,7 @@ import { getBillDisplayName, getBillStatus, getUpcomingBills } from "../domain/r
 import { getEffectiveBudgets } from "../domain/budgeting";
 import { formatCurrency } from "../utils/format";
 import { DashboardSkeleton, Skeleton } from "../components/LoadingScreen";
+import { createRefreshQueue } from "../services/refreshQueue";
 
 type DashboardPageProps = {
   onNavigate: (page: Page) => void;
@@ -35,11 +36,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
 
   useEffect(() => {
     let active = true;
-    let pending = false;
-    let reloadRequested = false;
     async function loadDashboard() {
-      if (pending) { reloadRequested = true; return; }
-      pending = true;
       const failed: string[] = [];
       async function load<T>(name: string, fetchData: () => Promise<T>, apply: (data: T) => void) {
         try {
@@ -57,22 +54,15 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
         load("savings goals", getSavingsGoals, setGoals),
       ]);
       if (active) setError(failed.length ? `Could not refresh ${failed.join(", ")}. Try refreshing the page.` : "");
-      pending = false;
-      if (active && reloadRequested) { reloadRequested = false; void loadDashboard(); }
     }
-    void loadDashboard();
-    window.addEventListener(TRANSACTIONS_UPDATED_EVENT, loadDashboard);
-    window.addEventListener(BUDGETS_UPDATED_EVENT, loadDashboard);
-    window.addEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, loadDashboard);
-    window.addEventListener(SAVINGS_GOALS_UPDATED_EVENT, loadDashboard);
-    window.addEventListener("focus", loadDashboard);
+    const queue = createRefreshQueue(loadDashboard);
+    queue.request();
+    const events = [TRANSACTIONS_UPDATED_EVENT, BUDGETS_UPDATED_EVENT, RECURRING_TRANSACTIONS_UPDATED_EVENT, SAVINGS_GOALS_UPDATED_EVENT, "focus"];
+    for (const event of events) window.addEventListener(event, queue.request);
     return () => {
       active = false;
-      window.removeEventListener(TRANSACTIONS_UPDATED_EVENT, loadDashboard);
-      window.removeEventListener(BUDGETS_UPDATED_EVENT, loadDashboard);
-      window.removeEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, loadDashboard);
-      window.removeEventListener(SAVINGS_GOALS_UPDATED_EVENT, loadDashboard);
-      window.removeEventListener("focus", loadDashboard);
+      queue.dispose();
+      for (const event of events) window.removeEventListener(event, queue.request);
     };
   }, []);
 

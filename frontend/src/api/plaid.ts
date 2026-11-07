@@ -14,7 +14,7 @@ export type PlaidStatus = {
 };
 
 export const getPlaidStatus = () => apiGet<PlaidStatus>("/plaid/status");
-export const createPlaidLinkToken = () => apiPost<{ link_token: string }>("/plaid/link-token", {});
+export const createPlaidLinkToken = (platform: "web" | "android" = "web") => apiPost<{ link_token: string }>("/plaid/link-token", { platform });
 export const exchangePlaidToken = (publicToken: string, metadata: unknown) =>
   apiPost("/plaid/exchange", { public_token: publicToken, metadata });
 export const syncPlaid = () => apiPost<{ added: number; modified: number; removed: number }>("/plaid/sync", {});

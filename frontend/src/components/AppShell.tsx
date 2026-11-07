@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { isNativeApp } from "../domain/mobile";
 import type { Page } from "../App";
 import { getAccounts } from "../api/accounts";
-import { getPlaidStatus } from "../api/plaid";
+import { subscribePlaidStatus } from "../services/plaidStatus";
+import { createRefreshQueue } from "../services/refreshQueue";
 import { reportingAmount, isReportable } from "../domain/financialTracking";
 import { getBudgets, BUDGETS_UPDATED_EVENT } from "../api/budgets";
 import { getTransactions, TRANSACTIONS_UPDATED_EVENT } from "../api/transactions";
@@ -32,24 +33,12 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
   }, [page]);
 
   useEffect(() => {
-    let active = true;
     let previous: string | undefined;
-    let pending = false;
-    async function checkBankUpdates() {
-      if (pending || document.hidden) return;
-      pending = true;
-      try {
-        const status = await getPlaidStatus();
+    return subscribePlaidStatus(status => {
         const signature = JSON.stringify(status.connections.map((item) => [item.id, item.last_synced_at, item.status]));
-        if (active && previous !== undefined && previous !== signature) window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT));
-        if (active) previous = signature;
-      } catch { /* The next poll retries transient connection failures. */ }
-      finally { pending = false; }
-    }
-    void checkBankUpdates();
-    const timer = window.setInterval(() => void checkBankUpdates(), 15_000);
-    document.addEventListener("visibilitychange", checkBankUpdates);
-    return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", checkBankUpdates); };
+        if (previous !== undefined && previous !== signature) window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT));
+        previous = signature;
+    });
   }, []);
 
   useEffect(() => {
@@ -100,17 +89,19 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
         // Budget and bill notifications remain unavailable until the backend responds.
       }
     }
-    void refreshBudgetNotifications();
-    window.addEventListener(BUDGETS_UPDATED_EVENT, refreshBudgetNotifications);
-    window.addEventListener(TRANSACTIONS_UPDATED_EVENT, refreshBudgetNotifications);
-    window.addEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, refreshBudgetNotifications);
-    window.addEventListener("focus", refreshBudgetNotifications);
+    const queue = createRefreshQueue(refreshBudgetNotifications);
+    queue.request();
+    window.addEventListener(BUDGETS_UPDATED_EVENT, queue.request);
+    window.addEventListener(TRANSACTIONS_UPDATED_EVENT, queue.request);
+    window.addEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, queue.request);
+    window.addEventListener("focus", queue.request);
     return () => {
       active = false;
-      window.removeEventListener(BUDGETS_UPDATED_EVENT, refreshBudgetNotifications);
-      window.removeEventListener(TRANSACTIONS_UPDATED_EVENT, refreshBudgetNotifications);
-      window.removeEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, refreshBudgetNotifications);
-      window.removeEventListener("focus", refreshBudgetNotifications);
+      queue.dispose();
+      window.removeEventListener(BUDGETS_UPDATED_EVENT, queue.request);
+      window.removeEventListener(TRANSACTIONS_UPDATED_EVENT, queue.request);
+      window.removeEventListener(RECURRING_TRANSACTIONS_UPDATED_EVENT, queue.request);
+      window.removeEventListener("focus", queue.request);
     };
   }, []);
 

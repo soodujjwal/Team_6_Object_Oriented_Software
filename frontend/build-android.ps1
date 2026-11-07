@@ -21,9 +21,20 @@ try {
     $projectKey = ([System.BitConverter]::ToString($projectDigest)).Replace('-', '').ToLowerInvariant().Substring(0, 12)
 } finally { $projectHasher.Dispose() }
 $buildRoot = Join-Path $env:LOCALAPPDATA "FinanceBuilder\android\$projectKey\outputs"
+# OneDrive placeholders can be readable yet fail Gradle's regular-file check.
+# Materialize a plain, immutable asset snapshot outside the synced source tree.
+$assetRoot = Join-Path $buildRoot ("asset-snapshots\" + [Guid]::NewGuid().ToString('N'))
+$sourceAssets = Join-Path $androidProjectRoot 'app\src\main\assets'
+New-Item -ItemType Directory -Path $assetRoot -Force | Out-Null
+foreach ($asset in Get-ChildItem -LiteralPath $sourceAssets -File -Recurse) {
+    $relative = [IO.Path]::GetRelativePath($sourceAssets, $asset.FullName)
+    $destination = Join-Path $assetRoot $relative
+    New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+    [IO.File]::WriteAllBytes($destination, [IO.File]::ReadAllBytes($asset.FullName))
+}
 Push-Location -LiteralPath (Join-Path $PSScriptRoot 'android')
 try {
-    $gradleArgs = @("-PfinanceBuildRoot=$buildRoot", '--console=plain', '--no-daemon')
+    $gradleArgs = @("-PfinanceBuildRoot=$buildRoot", "-PfinanceAssetRoot=$assetRoot", '--console=plain', '--no-daemon')
     if ($Mode -eq 'Debug') { $gradleArgs += 'assembleDebug' }
     else { $gradleArgs += 'assembleRelease' }
     if ($Mode -eq 'VerifyUnsigned') { $gradleArgs += '-PfinanceUnsignedVerification=true' }

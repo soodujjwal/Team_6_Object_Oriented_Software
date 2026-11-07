@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import time
+from typing import Literal
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -23,16 +24,20 @@ class ExchangeRequest(BaseModel):
     metadata: dict | None = None
 
 
+class LinkTokenRequest(BaseModel):
+    platform: Literal["web", "android"] = "web"
+
+
 @router.get("/status")
 def plaid_status(db: Session = Depends(get_db), user=Depends(get_current_user)):
     return PlaidService(db).status(user.id)
 
 
 @router.post("/link-token")
-def create_link_token(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_link_token(payload: LinkTokenRequest | None = None, db: Session = Depends(get_db), user=Depends(get_current_user)):
     TrackingModeService(db).require("plaid")
     db.commit()
-    return PlaidService(db).create_link_token(user.id)
+    return PlaidService(db).create_link_token(user.id, android=bool(payload and payload.platform == "android"))
 
 
 @router.post("/exchange")

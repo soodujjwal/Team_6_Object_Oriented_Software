@@ -33,7 +33,7 @@ export function DownloadPage({ signedIn, release = configuredRelease }: { signed
           {device === "ios" && <p className="dl-release-meta dl-platform-note" role="note">This APK is for Android only. On iPhone or iPad, continue in your browser.</p>}
           <div className="dl-actions"><AndroidDownload release={release} /><a className="dl-button dl-secondary" href="/app">Continue in browser<ArrowUpRight size={18} aria-hidden="true" /></a></div>
           <p className="dl-release-meta">{release.url ? [release.version && `Version ${release.version}`, release.sizeBytes && formatApkSize(release.sizeBytes), "Android APK"].filter(Boolean).join(" · ") : "The Android app is being prepared. Use Finance Builder in your browser today."}</p>
-          {release.url === publishedAndroidRelease.url && <p className="dl-release-meta dl-early-access" role="note"><strong>Early access · Android 7.0+</strong><br />Native Plaid bank linking is still being prepared. Device testing is ongoing; use the browser for bank linking.</p>}
+          {release.url === publishedAndroidRelease.url && <p className="dl-release-meta dl-early-access" role="note"><strong>Early access · Android 7.1+</strong><br />Use the same Finance Builder account on Android and in your browser.</p>}
           <ul className="dl-features" aria-label="App features">{[
             { icon: Wallet, label: "Track Spending" },
             { icon: ChartNoAxesCombined, label: "Manage Budgets" },

@@ -92,9 +92,9 @@ test("download hero preserves the sample preview and groups installation with th
 
 test("the published signed APK is downloadable with real metadata and an early-access notice", () => {
   const html = render(DownloadPage, { signedIn: false });
-  assert.match(html, /releases\/download\/android-v1\.0\.1\/Finance-Builder-1\.0\.1\.apk/);
-  assert.match(html, /Version 1\.0\.1 · 4\.3 MB · Android APK/);
-  assert.match(html, /Early access · Android 7\.0\+/);
-  assert.match(html, /Native Plaid bank linking is still being prepared/);
+  assert.match(html, /releases\/download\/android-v1\.0\.2\/Finance-Builder-1\.0\.2\.apk/);
+  assert.match(html, /Version 1\.0\.2 · 5\.8 MB · Android APK/);
+  assert.match(html, /Early access · Android 7\.1\+/);
+  assert.match(html, /Use the same Finance Builder account/);
   assert.doesNotMatch(html, /Coming soon|disabled=""/);
 });

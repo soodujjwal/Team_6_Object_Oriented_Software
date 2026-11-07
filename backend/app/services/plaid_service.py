@@ -97,7 +97,7 @@ class PlaidService:
             "connections": [self._item_status(item) for item in items],
         }
 
-    def create_link_token(self, user_id: int) -> dict:
+    def create_link_token(self, user_id: int, *, android: bool = False) -> dict:
         settings = get_settings()
         payload = {
             "client_name": settings.app_name,
@@ -108,6 +108,10 @@ class PlaidService:
         }
         if settings.plaid_webhook_url:
             payload["webhook"] = settings.plaid_webhook_url
+        if android:
+            # Fixed to the published application identity; never accept an
+            # arbitrary package name from the requesting client.
+            payload["android_package_name"] = "financebuilder.app.com"
         result = self.client.post("/link/token/create", payload)
         return {"link_token": result["link_token"], "expiration": result.get("expiration")}
 

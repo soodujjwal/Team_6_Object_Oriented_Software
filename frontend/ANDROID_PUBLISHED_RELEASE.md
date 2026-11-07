@@ -1,3 +1,22 @@
+# Android 1.0.2 — native Plaid and refresh performance
+
+- Download page: https://finance-builder.vercel.app/download
+- APK: https://github.com/soodujjwal/Team_6_Object_Oriented_Software/releases/download/android-v1.0.2/Finance-Builder-1.0.2.apk
+- Application ID: `financebuilder.app.com`; version `1.0.2` (code `3`); minimum Android **7.1 / SDK 25**.
+- Size: **5,758,371 bytes**.
+- SHA-256: `B2AA7AB9CC02D9E23F9D92AA6D340A0C8841D6C0E1175B575A51797410192CF7`.
+- Signing certificate SHA-256: `3689d33f418a5408c4d1a7ca24c2bb7ce2abe8d8a6756b0fbd1226f0f0d4761f` (same permanent key).
+- Local APK: `frontend/build/android-release/Finance-Builder-1.0.2.apk`, with `.sha256` sidecar.
+
+This release adds the official Plaid Android SDK 6.4.0, a Capacitor bridge, Android-package-specific Link tokens, cancellation/error/session-change guards, shared owner-scoped status polling, and coalesced dashboard/notification refreshes. The website keeps its web Plaid SDK. No financial calculation, bank-token encryption, ownership rule, or Mongo schema changed. See `ANDROID_PLAID.md` for implementation, setup, performance evidence, and targeted phone test instructions.
+
+Executed: backend full suite **147 passed, 39 skipped**; final isolated publication frontend suite **77 passed**; production TypeScript/Vite build; targeted frontend lint with automatic-JSX compatibility overrides; signed mobile build, Android release lint, signature verification, and manifest inspection. Download metadata/QR checks are rerun after updating this exact release metadata. Native Java compilation passed. A OneDrive asset snapshot fix was required for Gradle.
+
+The owner reports testing the earlier APK on their Android phone generally, while explicitly excluding Plaid. This is acknowledged as a user-reported general phone test, not a new native Plaid test. No device was connected to ADB during this release. Completing actual bank authorization and the OAuth return on the new APK remains a phone check. The app remains early access; do not describe mocked success callbacks or token creation alone as an end-to-end bank connection.
+
+Install 1.0.2 over the existing signed app; do not uninstall or clear its data. Existing website accounts and the Render/MongoDB backend are reused. Previous APK assets remain unchanged. Automatic update prompts are not part of this release.
+
+---
 # Android 1.0.1 — password security update
 
 - Download page: https://finance-builder.vercel.app/download

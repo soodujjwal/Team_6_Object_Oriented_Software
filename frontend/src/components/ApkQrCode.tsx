@@ -19,8 +19,8 @@ export function createApkQr(url: string) {
 export function ApkQrCode({ url }: { url: string }) {
   const code = useMemo(() => { try { return createApkQr(url); } catch { return undefined; } }, [url]);
   if (!code) return <p>Use the download button to get the Android app.</p>;
-  return <a className="dl-qr-link" href={url} aria-label="Download Finance Builder Android APK">
-    <svg viewBox={`0 0 ${code.size} ${code.size}`} role="img" aria-label="QR code for the Finance Builder Android APK" shapeRendering="crispEdges">
+  return <a className="dl-qr-link" href={url} aria-label="Open the Finance Builder download page">
+    <svg viewBox={`0 0 ${code.size} ${code.size}`} role="img" aria-label="QR code for the Finance Builder download page" shapeRendering="crispEdges">
       <rect width={code.size} height={code.size} fill="#fff" /><path d={code.path} fill="#102d20" />
     </svg>
   </a>;

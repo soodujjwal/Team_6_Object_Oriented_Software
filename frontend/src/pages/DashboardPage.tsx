@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Page } from "../App";
 import { getAccounts } from "../api/accounts";
-import { getSplitBills, type SplitBill } from "../api/splitBills";
 import { reportingAmount } from "../domain/financialTracking";
 import { BUDGETS_UPDATED_EVENT, getBudgets } from "../api/budgets";
 import { getRecurringTransactions, RECURRING_TRANSACTIONS_UPDATED_EVENT, type RecurringTransaction } from "../api/recurringTransactions";
@@ -25,7 +24,6 @@ type DashboardPageProps = {
 
 export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [splitBills, setSplitBills] = useState<SplitBill[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
@@ -57,7 +55,6 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
         load("budgets", getBudgets, setBudgets),
         load("recurring bills", getRecurringTransactions, setRecurring),
         load("savings goals", getSavingsGoals, setGoals),
-        load("split bills", getSplitBills, setSplitBills),
       ]);
       if (active) setError(failed.length ? `Could not refresh ${failed.join(", ")}. Try refreshing the page.` : "");
       pending = false;
@@ -114,7 +111,6 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
       <GlassCard className="balance-panel" variant="elevated">
         <p className="section-label">Estimated Balance</p>
         <div className="balance-card">{accountsLoaded ? formatCurrency(totals.balance) : error ? "Unavailable" : <Skeleton className="sk-amount" />}</div>
-        {splitBills.some((bill) => bill.needs_review) && <p className="notice">Some split bills need review after bank changes. Their outstanding amounts are excluded until reviewed.</p>}
       </GlassCard>
 
       <div className="money-grid">

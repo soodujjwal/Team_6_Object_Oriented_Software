@@ -6,6 +6,37 @@ export const AUTH_USER_KEY = "pfm_user";
 export const SESSION_EXPIRED_EVENT = "pfm:session-expired";
 export const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
 
+type CredentialStore = {
+  getItem: (key: string) => string | null;
+  clear: () => void;
+  save: (token: string, user: User) => Promise<void>;
+};
+let credentialStore: CredentialStore | undefined;
+export function configureCredentialStore(store: CredentialStore) { credentialStore = store; }
+export function getAccessToken() { return credentialStore ? credentialStore.getItem(AUTH_TOKEN_KEY) : localStorage.getItem(AUTH_TOKEN_KEY); }
+function getSavedUser() { return credentialStore ? credentialStore.getItem(AUTH_USER_KEY) : localStorage.getItem(AUTH_USER_KEY); }
+export function clearSession() {
+  if (credentialStore) credentialStore.clear();
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
+  invalidateReads();
+}
+export async function storeSession(token: string, user: User) {
+  if (credentialStore) await credentialStore.save(token, user);
+  else {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  }
+  invalidateReads();
+}
+export const DATA_CHANGED_EVENT = "pfm:data-changed";
+export const OFFLINE_MESSAGE = "You're offline. Connect to the internet to use Finance Builder.";
+let connected = true;
+export function setConnectivity(value: boolean) { connected = value; }
+export function isConnected() { return connected && (typeof navigator === "undefined" || navigator.onLine !== false); }
+let readGeneration = 0;
+export function invalidateReads() { readGeneration++; pendingReads.clear(); }
+
 // This only checks whether a cached session can be used. The backend still
 // verifies the signature and authorizes every protected request.
 export function isTokenCurrent(token: string | null): boolean {
@@ -22,8 +53,8 @@ export function isTokenCurrent(token: string | null): boolean {
 }
 
 export function readStoredSession(): { user: User | null; expired: boolean } {
-  const stored = localStorage.getItem(AUTH_USER_KEY);
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const stored = getSavedUser();
+  const token = getAccessToken();
   try {
     const user = stored ? JSON.parse(stored) as User : null;
     if (isTokenCurrent(token) && user && typeof user.id === "number" && typeof user.name === "string" && typeof user.email === "string") {
@@ -32,26 +63,25 @@ export function readStoredSession(): { user: User | null; expired: boolean } {
   } catch {
     // Corrupt browser storage should lead to Login, not a broken dashboard.
   }
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-  localStorage.removeItem(AUTH_USER_KEY);
+  clearSession();
   return { user: null, expired: Boolean(stored || token) };
 }
 
 function expireSession(requestToken: string | null) {
   // An old request must not sign out a newly authenticated session.
-  if (localStorage.getItem(AUTH_TOKEN_KEY) !== requestToken) return;
-  const hadSession = Boolean(requestToken || localStorage.getItem(AUTH_USER_KEY));
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-  localStorage.removeItem(AUTH_USER_KEY);
+  if (getAccessToken() !== requestToken) return;
+  const hadSession = Boolean(requestToken || getSavedUser());
+  clearSession();
   if (hadSession) window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
 }
 
 type ReadOptions = { signal?: AbortSignal; timeoutMs?: number };
 const pendingReads = new Map<string, Promise<unknown>>();
 
-async function request<T>(path: string, method: string, body?: unknown, options: ReadOptions = {}): Promise<T> {
+async function request<T>(path: string, method: string, body?: unknown, options: ReadOptions = {}, refreshed = false): Promise<T> {
+  if (!isConnected()) throw new Error(OFFLINE_MESSAGE);
   const publicRoute = path === "/auth/login" || path === "/auth/register";
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const token = getAccessToken();
   if (!publicRoute && !isTokenCurrent(token)) {
     expireSession(token);
     throw new Error(SESSION_EXPIRED_MESSAGE);
@@ -59,7 +89,8 @@ async function request<T>(path: string, method: string, body?: unknown, options:
   const headers: Record<string, string> = {};
   if (!publicRoute && token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (method !== "GET") pendingReads.clear();
+  if (method !== "GET") invalidateReads();
+  const generation = readGeneration;
   const controller = new AbortController();
   let timedOut = false;
   const cancel = () => controller.abort();
@@ -79,10 +110,22 @@ async function request<T>(path: string, method: string, body?: unknown, options:
       }
       throw new Error(await getErrorMessage(response));
     }
-    if (method === "DELETE" || response.status === 204) return undefined as T;
-    return await response.json() as T;
+    const data = method === "DELETE" || response.status === 204 ? undefined : await response.json();
+    if (!publicRoute && getAccessToken() !== token) throw new Error("The session changed. Please reopen this page.");
+    if (method === "GET" && generation !== readGeneration) {
+      if (refreshed) throw new Error("Data changed while loading. Please refresh.");
+      return request<T>(path, method, body, options, true);
+    }
+    if (method !== "GET" && !publicRoute) {
+      invalidateReads();
+      if (!path.startsWith("/auth/")) window.dispatchEvent(new Event(DATA_CHANGED_EVENT));
+    }
+    return data as T;
   } catch (error) {
     if (timedOut) throw new Error("The connection is taking too long. Please try again.");
+    if (error instanceof TypeError) throw new Error(method === "GET" || publicRoute
+      ? "Could not reach Finance Builder. Check your connection and try again."
+      : "Could not confirm this change. Reconnect and refresh your records before trying again.");
     throw error;
   } finally {
     if (timer !== undefined) clearTimeout(timer);
@@ -94,7 +137,7 @@ async function request<T>(path: string, method: string, body?: unknown, options:
 export function apiGet<T>(path: string, options: ReadOptions = {}): Promise<T> {
   // Cancellable reads own their request so one component cannot cancel another.
   if (options.signal || options.timeoutMs !== undefined) return request<T>(path, "GET", undefined, options);
-  const key = JSON.stringify([localStorage.getItem(AUTH_TOKEN_KEY), path]);
+  const key = JSON.stringify([getAccessToken(), path]);
   const existing = pendingReads.get(key);
   if (existing) return existing as Promise<T>;
   const promise = request<T>(path, "GET").finally(() => {
@@ -103,10 +146,21 @@ export function apiGet<T>(path: string, options: ReadOptions = {}): Promise<T> {
   pendingReads.set(key, promise);
   return promise;
 }
-export const apiPost = <T>(path: string, body: unknown) => request<T>(path, "POST", body);
-export const apiPatch = <T>(path: string, body: unknown) => request<T>(path, "PATCH", body);
-export const apiPut = <T>(path: string, body: unknown) => request<T>(path, "PUT", body);
-export const apiDelete = (path: string) => request<void>(path, "DELETE");
+const pendingWrites = new Map<string, Promise<unknown>>();
+function mutate<T>(path: string, method: string, body?: unknown): Promise<T> {
+  const key = JSON.stringify([getAccessToken(), path, method, body]);
+  const existing = pendingWrites.get(key);
+  if (existing) return existing as Promise<T>;
+  const promise = request<T>(path, method, body).finally(() => {
+    if (pendingWrites.get(key) === promise) pendingWrites.delete(key);
+  });
+  pendingWrites.set(key, promise);
+  return promise;
+}
+export const apiPost = <T>(path: string, body: unknown) => mutate<T>(path, "POST", body);
+export const apiPatch = <T>(path: string, body: unknown) => mutate<T>(path, "PATCH", body);
+export const apiPut = <T>(path: string, body: unknown) => mutate<T>(path, "PUT", body);
+export const apiDelete = (path: string) => mutate<void>(path, "DELETE");
 
 async function getErrorMessage(response: Response): Promise<string> {
   try {

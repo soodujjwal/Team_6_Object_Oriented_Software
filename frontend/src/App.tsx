@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { AppShell } from "./components/AppShell";
-import { AUTH_TOKEN_KEY, AUTH_USER_KEY, isTokenCurrent, readStoredSession, SESSION_EXPIRED_EVENT, SESSION_EXPIRED_MESSAGE } from "./api/client";
+import { clearSession, getAccessToken, storeSession, isTokenCurrent, readStoredSession, SESSION_EXPIRED_EVENT, SESSION_EXPIRED_MESSAGE } from "./api/client";
 import type { User } from "./api/auth";
 import { readRoute, resolveRoute, type AppRoute } from "./domain/navigation";
 import { hasCompletedOnboarding, markOnboardingComplete } from "./domain/onboardingState";
@@ -43,7 +43,7 @@ export type Page =
   | "help"
   | "split";
 
-const USER_KEY = AUTH_USER_KEY;
+
 
 function getInitialTheme(): Theme {
   try {
@@ -108,7 +108,7 @@ export default function App() {
     }
     window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
     // Catch expiry detected by child effects before this listener was installed.
-    if (user && !isTokenCurrent(localStorage.getItem(AUTH_TOKEN_KEY))) onExpired();
+    if (user && !isTokenCurrent(getAccessToken())) onExpired();
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
   }, [user]);
 
@@ -120,6 +120,15 @@ export default function App() {
       // The active theme still applies for this session.
     }
   }, [theme]);
+
+  useEffect(() => {
+    function back(event: Event) {
+      if (user && page !== "dashboard") { event.preventDefault(); setPage("dashboard"); }
+      else if (!user && route === "/register") { event.preventDefault(); navigateAuth("/login"); }
+    }
+    window.addEventListener("pfm:android-back", back);
+    return () => window.removeEventListener("pfm:android-back", back);
+  }, [page, user, route]);
 
   useEffect(() => {
     function handlePopState() {
@@ -147,10 +156,9 @@ export default function App() {
     window.scrollTo(0, 0);
   }
 
-  function handleAuth(accessToken: string, nextUser: User) {
+  async function handleAuth(accessToken: string, nextUser: User) {
+    await storeSession(accessToken, nextUser);
     setSessionNotice("");
-    localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     setUser(nextUser);
     setOnboardingComplete(false);
     setLoadedUserId(null);
@@ -160,14 +168,13 @@ export default function App() {
   }
 
   function handleLogout() {
-    if (hasPendingAccountChanges() && isTokenCurrent(localStorage.getItem(AUTH_TOKEN_KEY))) {
+    if (hasPendingAccountChanges() && isTokenCurrent(getAccessToken())) {
       setSyncError(true);
       void retryAccountSync();
       return;
     }
     setSessionNotice("");
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    clearSession();
     setUser(null);
     setOnboardingComplete(false);
     setPage("dashboard");
@@ -176,9 +183,9 @@ export default function App() {
     setRoute(destination);
   }
 
-  function handleUserUpdate(nextUser: User, accessToken?: string) {
-    if (accessToken) localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+  async function handleUserUpdate(nextUser: User, accessToken?: string) {
+    const token = accessToken ?? getAccessToken();
+    if (token) await storeSession(token, nextUser);
     setUser(nextUser);
   }
 

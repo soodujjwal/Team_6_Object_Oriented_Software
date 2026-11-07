@@ -1,3 +1,17 @@
+// Keep generated state away from OneDrive file locks. Android Studio and the
+// command-line wrapper must use the same locations for repeatable Run builds.
+def localCacheBase = System.getenv('LOCALAPPDATA')
+if (localCacheBase) {
+    def projectKey = java.security.MessageDigest.getInstance('SHA-256')
+        .digest(settingsDir.canonicalPath.toLowerCase(java.util.Locale.ROOT).getBytes('UTF-8'))
+        .encodeHex().toString().take(12)
+    def nativeHome = new File(localCacheBase, "FinanceBuilder/android/${projectKey}")
+    if (gradle.startParameter.projectCacheDir == null) {
+        gradle.startParameter.projectCacheDir = new File(nativeHome, 'gradle-cache')
+    }
+    gradle.ext.financeDefaultBuildRoot = new File(nativeHome, 'outputs')
+}
+
 include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')

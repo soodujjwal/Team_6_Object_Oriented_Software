@@ -9,12 +9,13 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, migrate_database
 from app.repositories.models import AccountModel, TransactionModel, UserModel, PlaidTransactionLinkModel, RecurringTransactionModel
-from app.schemas.split_bill_schema import SplitBillDraft, RepaymentCreate
+from legacy_split_fixture import SplitBillDraft
+from legacy_split_fixture import RepaymentCreate
 from app.schemas.transaction_schema import TransactionCreate
 from app.services.account_service import AccountService
 from app.services.plaid_service import PlaidService
 from app.services.report_service import ReportService
-from app.services.split_bill_service import SplitBillService
+from legacy_split_fixture import LegacySplitFixture as SplitBillService
 from app.services.transaction_service import TransactionService
 from app.services.transaction_matching import suggestions, merge
 from test_plaid_service import FakePlaidClient
@@ -500,7 +501,7 @@ def test_editing_bank_annotations_preserves_sync_facts_and_recategorization(setu
 
 
 def test_migration_backfills_legacy_split_classification_without_changing_cash(setup):
-    from app.schemas.split_bill_schema import RepaymentUpdate
+    from legacy_split_fixture import RepaymentUpdate
     db, client, service, account = setup
     if hasattr(db, "database"):
         pytest.skip("SQLite legacy migration; MongoDB starts with fresh collections.")

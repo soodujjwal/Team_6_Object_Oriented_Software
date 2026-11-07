@@ -18,6 +18,13 @@ buildscript {
 apply from: "variables.gradle"
 
 allprojects {
+    // An explicit override is retained for CI. Windows Studio/CLI builds use
+    // the local cache root selected in settings.gradle by default.
+    if (rootProject.hasProperty('financeBuildRoot')) {
+        layout.buildDirectory.set(new File(rootProject.file(rootProject.property('financeBuildRoot')), project.name))
+    } else if (gradle.ext.has('financeDefaultBuildRoot')) {
+        layout.buildDirectory.set(new File(gradle.ext.financeDefaultBuildRoot, project.name))
+    }
     repositories {
         google()
         mavenCentral()
@@ -25,5 +32,5 @@ allprojects {
 }
 
 task clean(type: Delete) {
-    delete rootProject.buildDir
+    delete allprojects.collect { it.layout.buildDirectory }
 }

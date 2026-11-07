@@ -67,6 +67,10 @@ class FakePlaidClient:
 
 
 def test_plaid_client_explains_environment_mismatched_keys(monkeypatch):
+    from app.core.config import Settings
+    monkeypatch.setattr('app.services.plaid_service.get_settings', lambda: Settings(
+        plaid_client_id='synthetic-client', plaid_secret='synthetic-secret', plaid_environment='sandbox'))
+
     def reject_keys(*args, **kwargs):
         return httpx.Response(
             400,

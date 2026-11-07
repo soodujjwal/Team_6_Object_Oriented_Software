@@ -3,6 +3,18 @@
   text-rendering: optimizeLegibility;
 }
 
+.online-required {
+  max-width: 540px;
+  margin: 10vh auto;
+  padding: 24px;
+}
+
+html[data-native="true"] body { min-height: 100dvh; }
+html[data-native="true"] input,
+html[data-native="true"] textarea,
+html[data-native="true"] select { font-size: max(16px, 1em); }
+html[data-native="true"] .modal-panel { max-height: calc(100dvh - 32px); overflow-y: auto; }
+
 .sandbox-banner {
   position: sticky;
   top: 0;

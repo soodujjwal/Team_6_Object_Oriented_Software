@@ -33,11 +33,11 @@ test("navigation keeps dashboard and open-app destinations with Download immedia
   assert.match(guest, /href="\/register">Get started/);
 });
 
-test("missing APK shows Coming soon without an APK link, QR image or invented metadata", () => {
-  const html = render(DownloadPage, { signedIn: false });
-  assert.equal((html.match(/disabled=""/g) || []).length, 2);
+test("missing APK shows Coming soon without an APK link or invented metadata", () => {
+  const html = render(DownloadPage, { signedIn: false, release: {} });
+  assert.equal((html.match(/disabled=""/g) || []).length, 1);
   assert.match(html, /Coming soon/);
-  assert.doesNotMatch(html, /Version |\d+(\.\d+)? MB|QR code for the Finance Builder Android APK|dl-qr-link/);
+  assert.doesNotMatch(html, /Version |\d+(\.\d+)? MB|QR code for the Finance Builder Android APK/);
   assert.match(html, /href="\/app">Continue in browser/);
 });
 
@@ -50,17 +50,18 @@ test("only a public HTTPS download URL enables release metadata", () => {
   assert.equal(release.sizeBytes, undefined);
 });
 
-test("every Android button and the QR link share the configured URL and real supplied metadata", () => {
+test("Android buttons use the configured APK; the QR opens the permanent download page", () => {
   const release = getAndroidRelease({ url: "https://example.test/releases/finance-1.2.3.apk?download=1&source=web", version: "1.2.3", sizeBytes: "5400000" });
   const html = render(DownloadPage, { signedIn: true, release });
   const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1].replaceAll("&amp;", "&"));
-  assert.equal(hrefs.filter((href) => href === release.url).length, 3);
+  assert.equal(hrefs.filter((href) => href === release.url).length, 1);
+  assert.ok(hrefs.includes("https://finance-builder.vercel.app/download"));
   assert.match(html, /Version 1\.2\.3 · 5\.4 MB · Android APK/);
   assert.doesNotMatch(html, /disabled=""|Coming soon/);
 });
 
-test("a scanner decodes the rendered QR modules to the exact APK URL", () => {
-  const urls = ["https://example.test/releases/finance.apk", "https://example.test/releases/Finance%20Builder.apk?download=1&source=website"];
+test("a scanner decodes the QR modules to the permanent download page", () => {
+  const urls = ["https://finance-builder.vercel.app/download"];
   for (const url of urls) {
     const { size, path } = createApkQr(url);
     const scale = 6;
@@ -77,4 +78,23 @@ test("a scanner decodes the rendered QR modules to the exact APK URL", () => {
     }
     assert.equal(jsQR(pixels, width, width)?.data, url);
   }
+});
+
+
+test("download hero preserves the sample preview and groups installation with the real page QR", () => {
+  const html = render(DownloadPage, { signedIn: false });
+  for (const label of ["Track Spending", "Manage Budgets", "Savings Goals", "Stay in Sync", "Get the app on your phone", "Install Finance Builder on Android"]) assert.ok(html.includes(label));
+  assert.match(html, /illustrative sample data/);
+  assert.equal((html.match(/class="dl-info-card /g) ?? []).length, 2);
+  assert.equal((html.match(/<li>/g) ?? []).length, 9);
+  assert.match(html, /href="https:\/\/finance-builder\.vercel\.app\/download" aria-label="Open the Finance Builder download page"/);
+});
+
+test("the published signed APK is downloadable with real metadata and an early-access notice", () => {
+  const html = render(DownloadPage, { signedIn: false });
+  assert.match(html, /releases\/download\/android-v1\.0\.0\/Finance-Builder-1\.0\.0\.apk/);
+  assert.match(html, /Version 1\.0\.0 · 3\.4 MB · Android APK/);
+  assert.match(html, /Early access · Android 7\.0\+/);
+  assert.match(html, /Native Plaid bank linking is still being prepared/);
+  assert.doesNotMatch(html, /Coming soon|disabled=""/);
 });

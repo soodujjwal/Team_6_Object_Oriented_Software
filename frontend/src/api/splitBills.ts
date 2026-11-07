@@ -1,24 +1,25 @@
 import { apiDelete, apiGet, apiPost, apiPut } from "./client";
-import type { Transaction } from "./types";
 import { TRANSACTIONS_UPDATED_EVENT } from "./transactions";
 import type { BillDraft, calculateBill } from "../domain/splitBill";
 
 export type Friend = { id: number; name: string };
-export type Repayment = { id: string; amount: string; transaction_id: number; payment_date: string | null; needs_review?: boolean };
-export type SplitBill = { id: number; data: BillDraft; paid: boolean; payment_transaction_id?: number; needs_review?: boolean; repayments: Record<string, { amount: string; transaction_id: number; payments?: Repayment[] }>; calculation: ReturnType<typeof calculateBill> };
+export type FriendGroup = { id: string; name: string; friend_ids: number[] };
+export const getFriendGroups = () => apiGet<FriendGroup[]>("/split-bills/groups");
+export const saveFriendGroup = (name: string, friendIds: number[]) => apiPost<FriendGroup>("/split-bills/groups", { name, friend_ids: friendIds });
+export type SplitBill = { id: number; data: BillDraft; calculation: ReturnType<typeof calculateBill>;
+  repayments?: Record<string, { received: string; remaining: string; paid: boolean; needs_review: boolean }> };
+export type RepaymentOptions = { accounts: { id: number; name: string }[];
+  transactions: { id: number; note: string | null; amount: string; transaction_date: string }[] };
+export const deleteSplitBill = (id: number) => apiDelete(`/split-bills/${id}`);
+export const getRepaymentOptions = (id: number, personId: string) => apiGet<RepaymentOptions>(`/split-bills/${id}/repayment-options/${encodeURIComponent(personId)}`);
+export const markSplitPaid = (id: number, personId: string, payload: { account_id?: number; transaction_id?: number; request_id: string }) =>
+  apiPost<SplitBill>(`/split-bills/${id}/mark-paid/${encodeURIComponent(personId)}`, payload).then((bill) => {
+    window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT));
+    return bill;
+  });
 export const getSplitBills = () => apiGet<SplitBill[]>("/split-bills");
 export const getFriends = () => apiGet<Friend[]>("/split-bills/friends");
 export const addFriend = (name: string) => apiPost<Friend>("/split-bills/friends", { name });
-const refresh = (bill: SplitBill) => { window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT)); return bill; };
-export const saveSplitBill = (data: BillDraft, id?: number) => (id
+export const saveSplitBill = (data: BillDraft, id?: number) => id
   ? apiPut<SplitBill>(`/split-bills/${id}`, data)
-  : apiPost<SplitBill>("/split-bills", data)).then(refresh);
-export const paySplitBill = (id: number, transactionId?: number) => apiPost<SplitBill>(`/split-bills/${id}/pay`, { transaction_id: transactionId }).then(refresh);
-export const unlinkBillPayment = (id: number) => apiDelete(`/split-bills/${id}/payment`).then(() => { window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT)); });
-export const getBillCandidates = (id: number, person?: string) => apiGet<Transaction[]>(`/split-bills/${id}/candidates${person ? `?person_id=${encodeURIComponent(person)}` : ""}`);
-export const addRepayment = (id: number, person: string, payload: { amount?: string; transaction_id?: number; account_id?: number; payment_date: string; request_id: string }) =>
-  apiPost<SplitBill>(`/split-bills/${id}/repayments/${encodeURIComponent(person)}`, payload).then(refresh);
-export const removeRepayment = (id: number, person: string, paymentId: string) =>
-  apiDelete(`/split-bills/${id}/repayments/${encodeURIComponent(person)}/${encodeURIComponent(paymentId)}`).then(() => { window.dispatchEvent(new Event(TRANSACTIONS_UPDATED_EVENT)); });
-export const recordRepayment = (id: number, person: string, received: boolean, amount?: string) =>
-  apiPut<SplitBill>(`/split-bills/${id}/repayments/${encodeURIComponent(person)}`, { received, ...(amount ? { amount } : {}) }).then(refresh);
+  : apiPost<SplitBill>("/split-bills", data);

@@ -11,14 +11,14 @@ async function load(path) {
 const { allocate, calculateBill } = await load("../src/domain/splitBill.ts");
 const { parseReceiptText } = await load("../src/services/splitReceipt.ts");
 const draft = { people: [{ id: "self", name: "Ujjwal" }, { id: "friend", name: "Friend" }],
-  items: [{ quantity: 1, price: "15", people: ["self"] }, { quantity: 1, price: "6", people: ["friend"] }, { quantity: 1, price: "20", people: ["self", "friend"] }], tax: "4.10", tip: "8.20", receipt_total: "53.30", tip_method: "bank" };
+  items: [{ quantity: 1, price: "15", people: ["self"] }, { quantity: 1, price: "6", people: ["friend"] }, { quantity: 1, price: "20", people: ["self", "friend"] }], tax: "4.10", tip: "8.20", receipt_total: "53.30" };
 
 test("example assigns shared pizza and proportional tax and tip", () => {
   const result = calculateBill(draft);
   assert.deepEqual(result.people.map(({ subtotal, tax, tip, total }) => ({ subtotal, tax, tip, total })), [{ subtotal: 2500, tax: 250, tip: 500, total: 3250 }, { subtotal: 1600, tax: 160, tip: 320, total: 2080 }]);
   assert.equal(result.allocated, result.total);
   assert.equal(result.matches, true);
-  assert.equal(calculateBill({ ...draft, tip_method: "cash" }).bank_debit, 4510);
+  assert.equal("bank_debit" in result, false);
 });
 test("odd cents and large allocations reconcile exactly", () => {
   assert.deepEqual(allocate(100, [1, 1, 1]), [34, 33, 33]);

@@ -1,14 +1,20 @@
 apply plugin: 'com.android.application'
 
+def signingEnvironment = ['FINANCE_ANDROID_KEYSTORE', 'FINANCE_ANDROID_STORE_PASSWORD', 'FINANCE_ANDROID_KEY_ALIAS', 'FINANCE_ANDROID_KEY_PASSWORD']
+def hasReleaseSigning = signingEnvironment.every { System.getenv(it)?.trim() }
+
 android {
-    namespace = "com.financebuilder.app"
+    namespace = "financebuilder.app.com"
+    // Opt-in instrumentation against the real release signing configuration.
+    // Normal Studio Run and production builds retain their existing variants.
+    testBuildType project.hasProperty('financeReleaseVerification') ? 'release' : 'debug'
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.financebuilder.app"
+        applicationId "financebuilder.app.com"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,11 +22,30 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(System.getenv('FINANCE_ANDROID_KEYSTORE'))
+                storePassword System.getenv('FINANCE_ANDROID_STORE_PASSWORD')
+                keyAlias System.getenv('FINANCE_ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('FINANCE_ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasReleaseSigning) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+// A normal release must be signed. The explicit verification switch permits
+// local compilation only; its unsigned output must never be distributed.
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name in ['assembleRelease', 'bundleRelease'] } && !hasReleaseSigning && !project.hasProperty('financeUnsignedVerification')) {
+        throw new GradleException('Release signing is missing. Set all FINANCE_ANDROID_* signing variables; see ANDROID_RELEASE.md. No official APK was created.')
     }
 }
 

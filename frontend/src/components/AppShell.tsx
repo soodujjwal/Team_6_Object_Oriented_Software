@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { isNativeApp } from "../domain/mobile";
 import type { Page } from "../App";
 import { getAccounts } from "../api/accounts";
 import { getPlaidStatus } from "../api/plaid";
@@ -24,6 +25,11 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const contentRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (isNativeApp()) contentRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [page]);
 
   useEffect(() => {
     let active = true;
@@ -122,7 +128,7 @@ export function AppShell({ children, onLogout, page, onNavigate }: AppShellProps
     <AppChromeProvider value={chromeValue}>
         <a className="skip-link" href="#main-content">Skip to main content</a>
         <main className="app-background app-web" id="main-content" tabIndex={-1}>
-        <section className="app-content">
+        <section className="app-content" ref={contentRef}>
           {children}
         </section>
         <BottomNav page={page} onNavigate={onNavigate} onOpenMenu={() => setDrawerOpen(true)} />

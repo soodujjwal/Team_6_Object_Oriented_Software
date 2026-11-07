@@ -1,0 +1,58 @@
+/* The Android window supplies system-bar insets. Keep the web content compact
+   inside that usable viewport without changing the website's desktop layout. */
+html[data-native="true"] .app-web {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  width: 100%;
+}
+
+html[data-native="true"] .app-content {
+  flex: 1;
+  margin: 0;
+  max-width: none;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: 8px max(8px, env(safe-area-inset-right)) 8px max(8px, env(safe-area-inset-left));
+  width: 100%;
+}
+
+html[data-native="true"] .page {
+  gap: 12px;
+  max-width: none;
+  min-height: 0;
+  padding: 0 0 4px;
+  width: 100%;
+}
+
+html[data-native="true"] .glass-card { padding: 12px; }
+html[data-native="true"] .top-bar,
+html[data-native="true"] .simple-header { grid-template-columns: 44px minmax(0, 1fr) 44px; min-height: 44px; }
+html[data-native="true"] .top-bar .icon-button { height: 44px; width: 44px; }
+
+html[data-native="true"] .bottom-nav {
+  flex-shrink: 0;
+  padding: 4px max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+  position: static;
+  width: 100%;
+}
+html[data-native="true"] .nav-button { min-height: 48px; }
+
+html[data-native="true"] .auth-page {
+  align-items: flex-start;
+  min-height: 100dvh;
+  overflow-y: auto;
+  padding: 12px max(8px, env(safe-area-inset-right)) 12px max(8px, env(safe-area-inset-left));
+}
+html[data-native="true"] .auth-card-wrap { align-content: start; max-width: 600px; }
+html[data-native="true"] .auth-web-card { gap: 16px; padding: 18px 14px; }
+
+html[data-native="true"] .modal-overlay { padding: 8px; }
+html[data-native="true"] .modal-panel { margin: 0; max-height: calc(100dvh - 16px); max-width: 600px; padding: 16px 12px; }
+html[data-native="true"] .navigation-drawer { max-width: none; padding: 16px 12px max(12px, env(safe-area-inset-bottom)); }

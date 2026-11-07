@@ -39,17 +39,17 @@ type HelpPageProps = {
 
 const HELP_SECTIONS: HelpSection[] = [
   {
-    actions: ["Scan receipt reads an image for review.", "Save split saves the editable bill.", "Record bill as paid deducts the bank charge once.", "Payment received records or reverses a friend's repayment."],
-    affects: "Bank payments appear as expenses. Repayments credit the original paying account as Refund income. Cash tips are included in shares but excluded from the bank charge.",
-    examples: ["Assign a $15 burger to you, $6 fries to a friend, and a $20 pizza to both.", "Override a $20.80 share with $25 received to track a $4.20 overpayment."],
+    actions: ["Scan receipt reads an image for review.", "Add Friend selects saved friends or adds someone new.", "Select names under each item to assign shares.", "Split Bill saves the receipt and everyone's final amounts."],
+    affects: "Saving a split stores its receipt and calculated shares. It does not create transactions or change account balances.",
+    examples: ["Assign a $15 burger to you, $6 fries to a friend, and a $20 pizza to both."],
     howItWorks: "Shared items are divided equally among their selected people. Tax and tip follow each person's subtotal, with leftover cents allocated so the shares add up exactly.",
     icon: ReceiptText,
     id: "split-bill",
     page: "split",
-    steps: ["Open Split Bill from the menu.", "Enter or scan a receipt and add friends.", "Assign every item and verify the receipt total including tip.", "Choose the bank account and whether the tip was paid by bank or cash.", "Save the split, then record payment.", "Use repayment checkboxes and actual amounts as friends pay you back."],
+    steps: ["Open Split Bill from the menu.", "Enter or scan a receipt and add friends.", "Assign every item and verify the receipt total including tip.", "Review everyone's individual total.", "Click Split Bill to save the result.", "Open Past splits to review a saved receipt."],
     title: "Split Bill",
     useWhen: "Use this when you cover a restaurant or shopping bill for a group.",
-    whatFor: "Calculates each person's share and tracks the money you paid and received back.",
+    whatFor: "Calculates each person's share of a receipt and saves the results for later.",
   },
   {
     actions: ["Get Started starts first-time setup.", "Skip Setup lets you enter the app and add records later.", "Continue saves each completed setup step."],

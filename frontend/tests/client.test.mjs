@@ -38,8 +38,16 @@ test("reads are isolated by user and successful writes invalidate in-flight shar
   await client.apiPost("/accounts", {});
   const afterWrite = client.apiGet("/accounts");
   assert.equal(completions.length, 3);
+  // Any read invalidated by a write must refetch; a previous user's result
+  // must never be delivered into the new session.
+  globalThis.fetch = async () => ok({ fresh: true });
+  const results = Promise.allSettled([first, otherUser, afterWrite]);
   completions.forEach((resolve, i) => resolve(ok({ i })));
-  assert.deepEqual(await Promise.all([first, otherUser, afterWrite]), [{ i: 0 }, { i: 1 }, { i: 2 }]);
+  const [oldSession, refreshed, latest] = await results;
+  assert.equal(oldSession.status, "rejected");
+  assert.match(oldSession.reason.message, /session changed/);
+  assert.deepEqual(refreshed.value, { fresh: true });
+  assert.deepEqual(latest.value, { i: 2 });
 });
 
 test("hanging reads time out and cancelled reads can be retried", async () => {
@@ -55,4 +63,27 @@ test("hanging reads time out and cancelled reads can be retried", async () => {
   await assert.rejects(cancelled, { name: "AbortError" });
   globalThis.fetch = async () => ok({ onboarding_complete: "true" });
   assert.deepEqual(await client.apiGet("/auth/state"), { onboarding_complete: "true" });
+});
+
+test("offline financial writes fail immediately without sending or queuing a request", async () => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return ok({}); };
+  client.setConnectivity(false);
+  try { await assert.rejects(client.apiPost("/transactions", { amount: "12.00" }), /You're offline/); }
+  finally { client.setConnectivity(true); }
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(calls, 0);
+});
+
+test("simultaneous identical submissions share a single write; later deliberate writes still work", async () => {
+  let finish, calls = 0;
+  globalThis.fetch = async () => { calls++; return new Promise((resolve) => { finish = resolve; }); };
+  const one = client.apiPost("/transactions", { amount: "12.00" });
+  const two = client.apiPost("/transactions", { amount: "12.00" });
+  assert.equal(calls, 1);
+  finish(ok({ id: 12 }));
+  assert.deepEqual(await one, await two);
+  globalThis.fetch = async () => { calls++; return ok({ id: 13 }); };
+  assert.equal((await client.apiPost("/transactions", { amount: "12.00" })).id, 13);
+  assert.equal(calls, 2);
 });

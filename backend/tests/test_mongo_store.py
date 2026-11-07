@@ -18,7 +18,7 @@ from app.schemas.auth_schema import RegisterRequest, LoginRequest
 from app.schemas.transfer_schema import TransferCreate
 from app.services.account_service import AccountService
 from app.services.auth_service import AuthService
-from app.services.split_bill_service import SplitBillService
+from legacy_split_fixture import LegacySplitFixture as SplitBillService
 from app.services.transfer_service import TransferService
 from test_financial_integration import bill
 

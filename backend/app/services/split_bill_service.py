@@ -1,17 +1,18 @@
-from datetime import date
+"""Receipt splitting with explicitly confirmed, idempotent reimbursements."""
+from datetime import date, timedelta
 from decimal import Decimal
-from datetime import timedelta
-
 from fastapi import HTTPException
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.domain.split_bill import calculate_bill
-from app.repositories.models import AccountModel, SplitBillModel, TransactionModel
-from app.schemas.split_bill_schema import RepaymentUpdate, SplitBillDraft
-from app.services.account_service import AccountService
-from app.repositories.transaction_repository import TransactionRepository
-from app.services.transaction_matching import allocated, bank_link
+from app.repositories.models import AccountModel, PlaidAccountLinkModel, SplitBillModel, TransactionModel
+from app.schemas.split_bill_schema import SplitBillDraft
+from app.services.tracking_mode_service import TrackingModeService
+from app.services.transaction_matching import allocated
+
+
+LEGACY_FIELDS = {"account_id", "tip_method", "category"}
 
 
 class SplitBillService:
@@ -25,286 +26,149 @@ class SplitBillService:
             ).values(user_id=SplitBillModel.user_id))
             self.db.expire_all()
         bill = self.db.query(SplitBillModel).filter_by(id=bill_id, user_id=self.user_id).first()
-        if bill is None:
+        if bill is None or bill.data.get("_deleted"):
             raise HTTPException(404, "Split bill not found.")
         return bill
 
     def read(self, bill):
+        draft = SplitBillDraft.model_validate(bill.data)
+        calculation = calculate_bill(draft)
         repayments = {}
-        review = bool(bill.data.get("bank_disconnect_review"))
-        for person, value in bill.repayments.items():
-            payments = self.payments(value)
-            total = Decimal("0")
-            history = []
-            for entry in payments:
+        for person in calculation["people"]:
+            if person["id"] == draft.self_id:
+                continue
+            received = Decimal("0")
+            needs_review = False
+            value = (bill.repayments or {}).get(person["id"])
+            for entry in self.payments(value) if value else []:
                 transaction = self.db.get(TransactionModel, entry["transaction_id"])
-                removed = transaction is None or (transaction.receipt_metadata or {}).get("bank_removed", False)
-                amount = Decimal("0") if removed else transaction.amount
-                changed = removed or amount != Decimal(entry["amount"])
-                review = review or changed
-                total += amount
-                history.append({**entry, "amount": str(amount), "needs_review": changed})
-            repayments[person] = {**value, "amount": value["amount"] if total == Decimal(value["amount"]) else str(total), "payments": history}
-        payment = self.db.get(TransactionModel, bill.payment_transaction_id) if bill.payment_transaction_id else None
-        review = review or bool(payment and ((payment.receipt_metadata or {}).get("bank_removed")
-            or payment.amount != Decimal(calculate_bill(SplitBillDraft.model_validate(bill.data))["bank_debit"]) / 100))
-        return dict(id=bill.id, data=bill.data, paid=bill.payment_transaction_id is not None,
-                    payment_transaction_id=bill.payment_transaction_id, needs_review=review,
-                    repayments=repayments, calculation=calculate_bill(SplitBillDraft.model_validate(bill.data)))
+                account = self.db.get(AccountModel, transaction.account_id) if transaction else None
+                valid = transaction and account and account.user_id == self.user_id and not (transaction.receipt_metadata or {}).get("bank_removed")
+                amount = transaction.amount if valid else Decimal("0")
+                needs_review |= not valid or amount != Decimal(entry["amount"])
+                received += amount
+            owed = Decimal(person["total"]) / 100
+            repayments[person["id"]] = {"received": str(received), "remaining": str(max(owed - received, Decimal("0"))),
+                "paid": received >= owed and owed > 0 and not needs_review, "needs_review": bool(needs_review)}
+        return {"id": bill.id, "data": draft.model_dump(mode="json", exclude=LEGACY_FIELDS),
+                "calculation": calculation, "repayments": repayments}
 
-    def payments(self, value):
+    @staticmethod
+    def payments(value):
+        # Preserve compatibility with historical records and Plaid disconnect.
         return value.get("payments", [dict(id="legacy", amount=value["amount"],
             transaction_id=value["transaction_id"], payment_date=None)])
 
-    def own_amount(self, draft):
-        return Decimal(next(p["total"] for p in calculate_bill(draft)["people"] if p["id"] == draft.self_id)) / 100
-
     def list(self):
-        return [self.read(bill) for bill in self.db.query(SplitBillModel).filter_by(user_id=self.user_id).order_by(SplitBillModel.id.desc())]
+        return [self.read(bill) for bill in self.db.query(SplitBillModel).filter_by(user_id=self.user_id).order_by(SplitBillModel.id.desc()) if not bill.data.get("_deleted")]
 
-    def ready(self, draft):
-        calculation = calculate_bill(draft)
-        if not calculation["all_assigned"] or calculation["allocated"] != calculation["total"]:
-            raise HTTPException(400, "Assign every item to at least one person before recording payment.")
-        if not calculation["matches"]:
-            raise HTTPException(400, "Enter the receipt total including tip and make sure it matches the split.")
-        if calculation["subtotal"] <= 0 or calculation["bank_debit"] >= 10**12:
-            raise HTTPException(400, "The bill must have a positive subtotal within the supported amount range.")
-        if draft.account_id is None:
-            raise HTTPException(400, "Select the account that paid the bill.")
-        return calculation
+    def delete(self, bill_id):
+        try:
+            bill = self.get(bill_id, lock=True)
+            # Keep the record's financial references intact for matching, bank
+            # reconciliation and historical audit. No ledger entries are removed.
+            bill.data = {**bill.data, "_deleted": True}
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
 
-    def require_balance(self, account_id, amount):
-        self.db.execute(update(AccountModel).where(AccountModel.id == account_id).values(starting_balance=AccountModel.starting_balance))
-        account = AccountService(self.db).get_account(account_id)
-        if amount > account.current_balance:
-            raise HTTPException(400, "The selected account has insufficient funds.")
+    def repayment_options(self, bill_id, person_id):
+        bill = self.get(bill_id)
+        status = self.read(bill)["repayments"].get(person_id)
+        if status is None:
+            raise HTTPException(400, "Choose a friend on this split.")
+        remaining = Decimal(status["remaining"])
+        accounts = self.db.query(AccountModel).filter_by(user_id=self.user_id).all()
+        ids = {account.id for account in accounts}
+        transactions = [transaction for transaction in self.db.query(TransactionModel)
+            if transaction.account_id in ids and self._eligible(transaction, bill, remaining)]
+        manual = TrackingModeService(self.db).read()["mode"] in (None, "manual")
+        return {"accounts": [{"id": account.id, "name": account.name} for account in accounts
+                if manual and account.bank_current_balance is None and not self.db.query(PlaidAccountLinkModel).filter_by(account_id=account.id).first()],
+            "transactions": [{"id": transaction.id, "note": transaction.note, "amount": str(transaction.amount),
+                "transaction_date": transaction.transaction_date.isoformat()} for transaction in transactions]}
+
+    def _eligible(self, transaction, bill, remaining):
+        metadata = transaction.receipt_metadata or {}
+        return (transaction.transaction_type == "income" and transaction.amount == remaining and remaining > 0
+            and transaction.financial_kind == "standard" and not allocated(self.db, transaction.id)
+            and not metadata.get("pending") and not metadata.get("bank_removed")
+            and date.fromisoformat(bill.data["bill_date"]) - timedelta(days=3) <= transaction.transaction_date <= date.today())
+
+    def mark_paid(self, bill_id, person_id, payload):
+        try:
+            bill = self.get(bill_id, lock=True)
+            status = self.read(bill)["repayments"].get(person_id)
+            if status is None:
+                raise HTTPException(400, "Choose a friend on this split.")
+            if status["needs_review"]:
+                raise HTTPException(409, "A linked bank repayment changed. Review the transaction before recording more money.")
+            if status["paid"]:
+                self.db.commit()
+                return self.read(bill)
+            if any(entry.get("id") == payload.request_id for value in (bill.repayments or {}).values() for entry in self.payments(value)):
+                raise HTTPException(409, "This repayment request was already used. Refresh the split.")
+            remaining = Decimal(status["remaining"])
+            if remaining <= 0:
+                raise HTTPException(400, "This friend has no remaining share.")
+            draft = SplitBillDraft.model_validate(bill.data)
+            person = next(person for person in draft.people if person.id == person_id)
+            if payload.transaction_id:
+                transaction = self.db.get(TransactionModel, payload.transaction_id)
+                account_id = transaction.account_id if transaction else None
+            else:
+                transaction = None
+                account_id = payload.account_id
+                TrackingModeService(self.db).require("manual")
+            # Serialize allocation across different splits targeting the same account.
+            self.db.execute(update(AccountModel).where(AccountModel.id == account_id, AccountModel.user_id == self.user_id).values(starting_balance=AccountModel.starting_balance))
+            account = self.db.query(AccountModel).filter_by(id=account_id, user_id=self.user_id).first()
+            if account is None:
+                raise HTTPException(404, "Receiving account or transaction not found.")
+            if payload.transaction_id:
+                self.db.refresh(transaction)
+                if not self._eligible(transaction, bill, remaining):
+                    raise HTTPException(409, "Choose an unassigned posted incoming transaction matching the remaining share.")
+            else:
+                if account.bank_current_balance is not None or self.db.query(PlaidAccountLinkModel).filter_by(account_id=account.id).first():
+                    raise HTTPException(409, "Link the existing bank transaction instead of creating a duplicate repayment.")
+                transaction = TransactionModel(account_id=account.id, amount=remaining, category="Refund",
+                    transaction_type="income", transaction_date=date.today(),
+                    note=f"Split bill repayment: {person.name} — {draft.title}"[:255])
+                self.db.add(transaction)
+                self.db.flush()
+            transaction.financial_kind = "reimbursement"
+            transaction.receipt_metadata = {**(transaction.receipt_metadata or {}), "split_bill_id": bill.id}
+            values = dict(bill.repayments or {})
+            payments = list(self.payments(values[person_id])) if person_id in values else []
+            payments.append({"id": payload.request_id, "amount": str(remaining), "transaction_id": transaction.id,
+                "payment_date": transaction.transaction_date.isoformat(), "existing": bool(payload.transaction_id), "previous_kind": "standard"})
+            values[person_id] = {"amount": str(sum(Decimal(entry["amount"]) for entry in payments)),
+                "transaction_id": transaction.id, "payments": payments}
+            bill.repayments = values
+            self.db.commit()
+            return self.read(bill)
+        except Exception:
+            self.db.rollback()
+            raise
 
     def save(self, draft: SplitBillDraft, bill_id=None):
+        calculation = calculate_bill(draft)
+        if not calculation["all_assigned"] or calculation["allocated"] != calculation["total"]:
+            raise HTTPException(400, "Assign every item to at least one person before saving the split.")
+        if not calculation["matches"] or calculation["subtotal"] <= 0 or calculation["total"] >= 10**12:
+            raise HTTPException(400, "Check the receipt total and item amounts before saving the split.")
         try:
-            bill = self.get(bill_id, lock=True) if bill_id else SplitBillModel(user_id=self.user_id, repayments={})
-            if bill.payment_transaction_id:
-                calculation = self.ready(draft)
-                old = SplitBillDraft.model_validate(bill.data)
-                if old.account_id != draft.account_id or old.self_id != draft.self_id:
-                    raise HTTPException(400, "The paying account and your identity cannot change after payment.")
-                if not set(bill.repayments).issubset(person.id for person in draft.people):
-                    raise HTTPException(400, "Undo a person's repayment before removing them.")
-                transaction = self.db.get(TransactionModel, bill.payment_transaction_id)
-                amount = Decimal(calculation["bank_debit"]) / 100
-                if bank_link(self.db, transaction.id):
-                    if amount != transaction.amount or draft.bill_date != old.bill_date:
-                        raise HTTPException(409, "A linked bank charge cannot be changed. Keep its amount and payment date.")
-                else:
-                    self.require_balance(draft.account_id, max(Decimal(0), amount - transaction.amount))
-                    transaction.amount = amount
-                    transaction.note = f"Split bill: {draft.title}"
-                transaction.category = draft.category
-                transaction.transaction_date = draft.bill_date
-                transaction.personal_amount = self.own_amount(draft)
-            bill.data = draft.model_dump(mode="json")
+            bill = self.get(bill_id, lock=True) if bill_id else None
+            # Older receipts may own financial references. Create a calculator
+            # copy rather than editing, removing or reclassifying their ledger.
+            if bill is None or bill.payment_transaction_id is not None or bill.repayments or bill.data.get("account_id") is not None or bill.data.get("bank_disconnect_review"):
+                bill = SplitBillModel(user_id=self.user_id, repayments={})
+            bill.data = draft.model_dump(mode="json", exclude=LEGACY_FIELDS)
             self.db.add(bill)
             self.db.commit()
             self.db.refresh(bill)
-            return self.read(bill)
-        except Exception:
-            self.db.rollback()
-            raise
-
-    def pay(self, bill_id, transaction_id=None):
-        try:
-            bill = self.get(bill_id, lock=True)
-            if not bill.payment_transaction_id:
-                draft = SplitBillDraft.model_validate(bill.data)
-                calculation = self.ready(draft)
-                amount = Decimal(calculation["bank_debit"]) / 100
-                AccountService(self.db).get_account(draft.account_id)
-                if transaction_id:
-                    transaction = TransactionRepository(self.db).get(transaction_id)
-                    if (not transaction or transaction.account_id != draft.account_id or transaction.amount != amount
-                            or transaction.transaction_type != "expense" or allocated(self.db, transaction.id)
-                            or transaction.financial_kind == "transfer"
-                            or (transaction.receipt_metadata or {}).get("pending")
-                            or (transaction.receipt_metadata or {}).get("bank_removed")):
-                        raise HTTPException(409, "Choose an unassigned posted expense with the same account and bill amount.")
-                else:
-                    self.require_balance(draft.account_id, amount)
-                    transaction = TransactionModel(account_id=draft.account_id, amount=amount, category=draft.category,
-                        transaction_type="expense", transaction_date=draft.bill_date, note=f"Split bill: {draft.title}",
-                        receipt_metadata={"split_payment_created": True})
-                transaction.personal_amount = self.own_amount(draft)
-                transaction.category = draft.category
-                transaction.receipt_metadata = {**(transaction.receipt_metadata or {}), "split_bill_id": bill.id}
-                self.db.add(transaction)
-                self.db.flush()
-                bill.payment_transaction_id = transaction.id
-            elif transaction_id and transaction_id != bill.payment_transaction_id:
-                raise HTTPException(409, "This bill already has a payment.")
-            self.db.commit()
-            return self.read(bill)
-        except Exception:
-            self.db.rollback()
-            raise
-
-    def unlink_payment(self, bill_id):
-        try:
-            bill = self.get(bill_id, lock=True)
-            if bill.repayments:
-                raise HTTPException(409, "Remove repayment links before unlinking this bill payment.")
-            transaction = self.db.get(TransactionModel, bill.payment_transaction_id) if bill.payment_transaction_id else None
-            if transaction:
-                if (transaction.receipt_metadata or {}).get("split_payment_created") and not bank_link(self.db, transaction.id):
-                    self.db.delete(transaction)
-                else:
-                    transaction.personal_amount = None
-                    transaction.receipt_metadata = {k: v for k, v in (transaction.receipt_metadata or {}).items()
-                                                    if k not in {"split_bill_id", "split_payment_created"}}
-            bill.payment_transaction_id = None
-            self.db.commit()
-            return self.read(bill)
-        except Exception:
-            self.db.rollback()
-            raise
-
-    def repay(self, bill_id, person_id, payload: RepaymentUpdate):
-        try:
-            bill = self.get(bill_id, lock=True)
-            if not bill.payment_transaction_id:
-                raise HTTPException(400, "Record the bill payment before recording repayments.")
-            draft = SplitBillDraft.model_validate(bill.data)
-            person = next((person for person in calculate_bill(draft)["people"] if person["id"] == person_id), None)
-            if person is None or person_id == draft.self_id:
-                raise HTTPException(400, "Choose a friend on this bill.")
-            repayments = dict(bill.repayments)
-            previous = repayments.get(person_id)
-            if not payload.received:
-                if previous:
-                    for payment in self.payments(previous):
-                        self.release(payment)
-                    del repayments[person_id]
-            else:
-                if previous and len(self.payments(previous)) > 1:
-                    raise HTTPException(409, "Manage individual payments in repayment history.")
-                if previous and bank_link(self.db, previous["transaction_id"]):
-                    raise HTTPException(409, "A bank repayment cannot be overwritten. Unlink it in repayment history.")
-                amount = payload.amount if payload.amount is not None else Decimal(person["total"]) / 100
-                if amount <= 0:
-                    raise HTTPException(400, "The received amount must be positive.")
-                transaction = self.db.get(TransactionModel, previous["transaction_id"]) if previous else TransactionModel(
-                    account_id=draft.account_id, transaction_type="income", category="Refund", transaction_date=date.today())
-                transaction.amount = amount
-                transaction.financial_kind = "reimbursement"
-                transaction.receipt_metadata = {**(transaction.receipt_metadata or {}), "split_bill_id": bill.id}
-                transaction.note = f"Split bill repayment: {person['name']} — {draft.title}"[:255]
-                self.db.add(transaction)
-                self.db.flush()
-                repayments[person_id] = dict(amount=str(amount), transaction_id=transaction.id)
-            bill.repayments = repayments
-            self.db.commit()
-            return self.read(bill)
-        except Exception:
-            self.db.rollback()
-            raise
-
-    def release(self, payment):
-        transaction = self.db.get(TransactionModel, payment["transaction_id"])
-        if transaction:
-            if bank_link(self.db, transaction.id) or payment.get("existing"):
-                transaction.financial_kind = payment.get("previous_kind", "standard")
-                transaction.receipt_metadata = {k: v for k, v in (transaction.receipt_metadata or {}).items() if k != "split_bill_id"}
-            else:
-                self.db.delete(transaction)
-
-    def candidates(self, bill_id, person_id=None):
-        bill = self.get(bill_id)
-        draft = SplitBillDraft.model_validate(bill.data)
-        rows = TransactionRepository(self.db).list()
-        direction = "income" if person_id else "expense"
-        amount = Decimal(calculate_bill(draft)["bank_debit"]) / 100
-        from app.schemas.transaction_schema import TransactionRead
-        remaining = Decimal("0")
-        friend_name = ""
-        if person_id:
-            person = next((p for p in calculate_bill(draft)["people"] if p["id"] == person_id), None)
-            if person is None or person_id == draft.self_id:
-                raise HTTPException(400, "Choose a friend on this bill.")
-            friend_name = person["name"].lower()
-            remaining = Decimal(person["total"]) / 100 - Decimal(self.read(bill)["repayments"].get(person_id, {}).get("amount", "0"))
-            rows.sort(key=lambda t: (friend_name in (t.note or "").lower(), t.amount == remaining, t.transaction_date), reverse=True)
-        return [TransactionRead.model_validate(t) for t in rows
-                if t.transaction_type == direction and t.financial_kind != "transfer"
-                and not allocated(self.db, t.id) and not (t.receipt_metadata or {}).get("pending")
-                and not (t.receipt_metadata or {}).get("bank_removed")
-                and (person_id or (t.account_id == draft.account_id and t.amount == amount))
-                and (draft.bill_date - timedelta(days=3) <= t.transaction_date <= date.today() if person_id
-                     else abs((t.transaction_date - draft.bill_date).days) <= 7)]
-
-    def add_repayment(self, bill_id, person_id, payload):
-        try:
-            bill = self.get(bill_id, lock=True)
-            if not bill.payment_transaction_id:
-                raise HTTPException(400, "Record the bill payment first.")
-            draft = SplitBillDraft.model_validate(bill.data)
-            person = next((p for p in calculate_bill(draft)["people"] if p["id"] == person_id), None)
-            if not person or person_id == draft.self_id:
-                raise HTTPException(400, "Choose a friend on this bill.")
-            values = dict(bill.repayments)
-            payments = list(self.payments(values[person_id])) if person_id in values else []
-            if any(p["id"] == payload.request_id for value in values.values() for p in self.payments(value)):
-                self.db.commit()
-                return self.read(bill)
-            account_id = payload.account_id or draft.account_id
-            if payload.transaction_id:
-                transaction = TransactionRepository(self.db).get(payload.transaction_id)
-                if (not transaction or transaction.transaction_type != "income" or allocated(self.db, transaction.id)
-                        or transaction.financial_kind == "transfer" or (transaction.receipt_metadata or {}).get("pending")
-                        or (transaction.receipt_metadata or {}).get("bank_removed")):
-                    raise HTTPException(409, "Choose an unassigned posted incoming transaction.")
-                if payload.amount is not None and payload.amount != transaction.amount:
-                    raise HTTPException(400, "The repayment must match the selected transaction's amount.")
-            else:
-                if payload.amount is None:
-                    raise HTTPException(400, "Enter the amount received.")
-                AccountService(self.db).get_account(account_id)
-                transaction = TransactionModel(account_id=account_id, amount=payload.amount, category="Refund",
-                    transaction_type="income", transaction_date=payload.payment_date,
-                    note=f"Split bill repayment: {person['name']} — {draft.title}"[:255])
-                self.db.add(transaction)
-                self.db.flush()
-            payment = dict(id=payload.request_id, amount=str(transaction.amount), transaction_id=transaction.id,
-                           payment_date=transaction.transaction_date.isoformat(), existing=bool(payload.transaction_id),
-                           previous_kind=transaction.financial_kind or "standard")
-            transaction.financial_kind = "reimbursement"
-            transaction.receipt_metadata = {**(transaction.receipt_metadata or {}), "split_bill_id": bill.id}
-            payments.append(payment)
-            values[person_id] = dict(amount=str(sum(Decimal(p["amount"]) for p in payments)),
-                                     transaction_id=transaction.id, payments=payments)
-            bill.repayments = values
-            self.db.commit()
-            return self.read(bill)
-        except Exception:
-            self.db.rollback()
-            raise
-
-    def remove_repayment(self, bill_id, person_id, payment_id):
-        try:
-            bill = self.get(bill_id, lock=True)
-            values = dict(bill.repayments)
-            if person_id not in values:
-                raise HTTPException(404, "Repayment not found.")
-            payments = self.payments(values[person_id])
-            entry = next((p for p in payments if p["id"] == payment_id), None)
-            if entry is None:
-                raise HTTPException(404, "Repayment not found.")
-            self.release(entry)
-            payments = [p for p in payments if p["id"] != payment_id]
-            if payments:
-                values[person_id] = dict(amount=str(sum(Decimal(p["amount"]) for p in payments)),
-                    transaction_id=payments[-1]["transaction_id"], payments=payments)
-            else:
-                del values[person_id]
-            bill.repayments = values
-            self.db.commit()
             return self.read(bill)
         except Exception:
             self.db.rollback()

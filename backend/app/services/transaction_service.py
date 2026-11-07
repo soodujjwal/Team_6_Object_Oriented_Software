@@ -101,7 +101,7 @@ class TransactionService:
             if bill.payment_transaction_id == transaction_id or any(
                 payment["transaction_id"] == transaction_id for payment in bill.repayments.values()
             ):
-                raise HTTPException(409, "Manage this payment from Split Bill to keep balances and repayments in sync.")
+                raise HTTPException(409, "This transaction is linked to a historical split record and cannot be changed here. Its existing financial links are preserved.")
 
     def _require_account(self, account_id: int) -> None:
         if self.accounts.get(account_id) is None:

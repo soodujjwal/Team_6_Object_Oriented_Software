@@ -18,7 +18,10 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.6.0",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
     "@vitejs/plugin-react": "^5.0.0",
     "lucide-react": "^0.544.0",
     "qrcode-generator": "^2.0.4",

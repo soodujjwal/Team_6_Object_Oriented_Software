@@ -1,10 +1,14 @@
+import json
+from uuid import uuid4
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.repositories.models import FriendModel
-from app.schemas.split_bill_schema import FriendCreate, FriendRead, RepaymentUpdate, SplitBillDraft, PaymentLink, RepaymentCreate
+from app.repositories.models import FriendModel, UserStateModel
+from app.schemas.split_bill_schema import FriendCreate, FriendRead, MarkSplitPaid, SplitBillDraft
 from app.services.split_bill_service import SplitBillService
 
 router = APIRouter(prefix="/split-bills", tags=["split bills"])
@@ -34,6 +38,37 @@ def add_friend(payload: FriendCreate, db: Session = Depends(get_db), user=Depend
     return friend
 
 
+class FriendGroupCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    friend_ids: list[int] = Field(min_length=1, max_length=49)
+
+
+GROUP_PREFIX = "split_group_"
+
+
+@router.get("/groups")
+def friend_groups(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    rows = db.query(UserStateModel).filter_by(user_id=user.id).all()
+    groups = [{"id": row.key[len(GROUP_PREFIX):], **json.loads(row.value)}
+              for row in rows if row.key.startswith(GROUP_PREFIX) and row.value]
+    return sorted(groups, key=lambda group: (group["name"].casefold(), group["id"]))
+
+
+@router.post("/groups", status_code=201)
+def save_friend_group(payload: FriendGroupCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    name = payload.name.strip()
+    if not name or len(set(payload.friend_ids)) != len(payload.friend_ids):
+        raise HTTPException(400, "Enter a group name and select distinct saved friends.")
+    owned = {friend.id for friend in db.query(FriendModel).filter_by(user_id=user.id).all()}
+    if not set(payload.friend_ids).issubset(owned):
+        raise HTTPException(400, "Choose friends saved to your own account.")
+    group_id = str(uuid4())
+    group = {"name": name, "friend_ids": payload.friend_ids}
+    db.add(UserStateModel(user_id=user.id, key=f"{GROUP_PREFIX}{group_id}", value=json.dumps(group)))
+    db.commit()
+    return {"id": group_id, **group}
+
+
 @router.get("")
 def list_bills(svc=Depends(service)):
     return svc.list()
@@ -49,31 +84,16 @@ def update_bill(bill_id: int, payload: SplitBillDraft, svc=Depends(service)):
     return svc.save(payload, bill_id)
 
 
-@router.post("/{bill_id}/pay")
-def pay_bill(bill_id: int, payload: PaymentLink | None = None, svc=Depends(service)):
-    return svc.pay(bill_id, payload.transaction_id if payload else None)
+@router.delete("/{bill_id}", status_code=204)
+def delete_bill(bill_id: int, svc=Depends(service)):
+    svc.delete(bill_id)
 
 
-@router.get("/{bill_id}/candidates")
-def candidates(bill_id: int, person_id: str | None = None, svc=Depends(service)):
-    return svc.candidates(bill_id, person_id)
+@router.get("/{bill_id}/repayment-options/{person_id}")
+def repayment_options(bill_id: int, person_id: str, svc=Depends(service)):
+    return svc.repayment_options(bill_id, person_id)
 
 
-@router.delete("/{bill_id}/payment")
-def unlink_payment(bill_id: int, svc=Depends(service)):
-    return svc.unlink_payment(bill_id)
-
-
-@router.post("/{bill_id}/repayments/{person_id}")
-def add_repayment(bill_id: int, person_id: str, payload: RepaymentCreate, svc=Depends(service)):
-    return svc.add_repayment(bill_id, person_id, payload)
-
-
-@router.delete("/{bill_id}/repayments/{person_id}/{payment_id}")
-def remove_repayment(bill_id: int, person_id: str, payment_id: str, svc=Depends(service)):
-    return svc.remove_repayment(bill_id, person_id, payment_id)
-
-
-@router.put("/{bill_id}/repayments/{person_id}")
-def repay(bill_id: int, person_id: str, payload: RepaymentUpdate, svc=Depends(service)):
-    return svc.repay(bill_id, person_id, payload)
+@router.post("/{bill_id}/mark-paid/{person_id}")
+def mark_paid(bill_id: int, person_id: str, payload: MarkSplitPaid, svc=Depends(service)):
+    return svc.mark_paid(bill_id, person_id, payload)

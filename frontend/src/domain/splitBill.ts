@@ -8,9 +8,6 @@ export type BillDraft = {
   tax: string;
   tip: string;
   receipt_total: string | null;
-  tip_method: "bank" | "cash";
-  account_id: number | null;
-  category: string;
   bill_date: string;
 };
 export const toCents = (value: string | null) => Math.round(Number(value || 0) * 100);
@@ -43,5 +40,5 @@ export function calculateBill(draft: BillDraft) {
   const people = draft.people.map((person, index) => ({ ...person, subtotal: subtotals[index], tax: taxes[index], tip: tips[index], total: subtotals[index] + taxes[index] + tips[index] }));
   return { subtotal, tax, tip, total, people, unassigned, all_assigned: draft.items.every((item) => item.people.length > 0),
     matches: draft.receipt_total !== null && draft.receipt_total !== "" && toCents(draft.receipt_total) === total,
-    allocated: people.reduce((sum, person) => sum + person.total, 0), bank_debit: subtotal + tax + (draft.tip_method === "bank" ? tip : 0) };
+    allocated: people.reduce((sum, person) => sum + person.total, 0) };
 }

@@ -16,6 +16,13 @@ const pending = new Map<string, string | null>();
 export const ACCOUNT_SYNC_EVENT = "pfm:account-sync";
 export const hasPendingAccountChanges = () => pending.size > 0;
 
+export async function refreshAccountStorage() {
+  if (!owner || saving || pending.size) return;
+  const current = generation;
+  const stored = await apiGet<Record<string, string | null>>("/auth/state");
+  if (current === generation && !saving && !pending.size) values = stored;
+}
+
 export function hasLegacyBrowserSettings() {
   try { return Object.keys(aliases).some((key) => localStorage.getItem(key) !== null && !(aliases[key] in values)); }
   catch { return false; }

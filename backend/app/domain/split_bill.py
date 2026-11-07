@@ -34,5 +34,4 @@ def calculate_bill(draft: SplitBillDraft) -> dict:
     matches = draft.receipt_total is not None and int(draft.receipt_total * 100) == total
     return dict(subtotal=subtotal, tax=tax, tip=tip, total=total, people=people,
                 unassigned=unassigned, all_assigned=all(item.people for item in draft.items),
-                matches=matches, allocated=sum(person["total"] for person in people),
-                bank_debit=subtotal + tax + (tip if draft.tip_method == "bank" else 0))
+                matches=matches, allocated=sum(person["total"] for person in people))

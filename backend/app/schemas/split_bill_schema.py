@@ -1,6 +1,5 @@
 from datetime import date
 from decimal import Decimal
-from typing import Literal
 
 from pydantic import Field, model_validator
 
@@ -28,9 +27,6 @@ class SplitBillDraft(ORMModel):
     tax: Decimal = Field(ge=0, max_digits=10, decimal_places=2)
     tip: Decimal = Field(ge=0, max_digits=10, decimal_places=2)
     receipt_total: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
-    tip_method: Literal["bank", "cash"] = "bank"
-    account_id: int | None = Field(default=None, gt=0)
-    category: str = Field(default="Food & Dining", min_length=1, max_length=80)
     bill_date: date
 
     @model_validator(mode="after")
@@ -48,25 +44,21 @@ class SplitBillDraft(ORMModel):
         return self
 
 
-class RepaymentUpdate(ORMModel):
-    received: bool
-    amount: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
-
-
-class PaymentLink(ORMModel):
-    transaction_id: int | None = Field(default=None, gt=0)
-
-
-class RepaymentCreate(PaymentLink):
-    amount: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
-    account_id: int | None = Field(default=None, gt=0)
-    payment_date: date = Field(default_factory=date.today)
-    request_id: str = Field(min_length=1, max_length=100)
-
-
 class FriendCreate(ORMModel):
     name: str = Field(min_length=1, max_length=100)
 
 
 class FriendRead(FriendCreate):
     id: int
+
+
+class MarkSplitPaid(ORMModel):
+    account_id: int | None = Field(default=None, gt=0)
+    transaction_id: int | None = Field(default=None, gt=0)
+    request_id: str = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def choose_destination(self):
+        if (self.account_id is None) == (self.transaction_id is None):
+            raise ValueError("Choose a receiving account or an existing incoming transaction.")
+        return self

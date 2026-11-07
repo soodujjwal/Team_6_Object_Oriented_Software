@@ -90,3 +90,18 @@ test("successful requests retain the existing JSON and DELETE behavior", async (
   assert.deepEqual(await api.apiPost("/transactions", {}), { ok: true });
   assert.equal(await api.apiDelete("/accounts/1"), undefined);
 });
+
+test("native credentials are read from the configured secure store and never written to browser storage", async () => {
+  let secure;
+  api.configureCredentialStore({
+    getItem: (key) => secure ? key === api.AUTH_TOKEN_KEY ? secure.token : JSON.stringify(secure.user) : null,
+    save: async (token, user) => { secure = { token, user }; },
+    clear: () => { secure = undefined; },
+  });
+  await api.storeSession(token(), user);
+  assert.deepEqual(api.readStoredSession(), { user, expired: false });
+  assert.equal(localStorage.getItem(api.AUTH_TOKEN_KEY), null);
+  assert.equal(localStorage.getItem(api.AUTH_USER_KEY), null);
+  api.clearSession();
+  assert.equal(api.getAccessToken(), null);
+});

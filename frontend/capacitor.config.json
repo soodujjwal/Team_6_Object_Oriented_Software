@@ -1,5 +1,11 @@
 {
-  "appId": "com.financebuilder.app",
+  "appId": "financebuilder.app.com",
   "appName": "Finance Builder",
-  "webDir": "dist-mobile"
+  "webDir": "dist-mobile",
+  "server": { "androidScheme": "https", "cleartext": false },
+  "android": { "allowMixedContent": false, "webContentsDebuggingEnabled": false },
+  "plugins": {
+    "SystemBars": { "insetsHandling": "native", "style": "DEFAULT" },
+    "SplashScreen": { "launchAutoHide": true, "launchShowDuration": 1000, "backgroundColor": "#071B14", "showSpinner": false }
+  }
 }

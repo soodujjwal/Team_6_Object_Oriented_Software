@@ -1,3 +1,18 @@
+# Android 1.0.4 — Recurring Transactions presentation
+
+- Download: https://finance-builder.vercel.app/download
+- APK: https://github.com/soodujjwal/Team_6_Object_Oriented_Software/releases/download/android-v1.0.4/Finance-Builder-1.0.4.apk
+- Application ID `financebuilder.app.com`; version `1.0.4`, code `5`; Android 7.1+ / SDK 25.
+- Size **5,762,352 bytes**; SHA-256 `6D68113CB2022470E965AD482DE469BA24302A6539BF6839C3FFBE21A98C8670`.
+- Permanent signing certificate unchanged.
+
+Adds four data-backed summary cards and responsive subscription/upcoming sections. The page inherits the shared application background; cards remain distinct. Bill creation, editing, deletion and reminders use existing APIs. No backend or schema changes.
+
+Validation: frontend 88 passed; production TypeScript/Vite build and targeted lint passed. Browser tests at 390, 768, 1280 and 1920px verified bill create/edit/delete, empty-state navigation, summary updates, no overflow and shared background consistency with Home, Accounts and Budgets. Android release build, lint, signature and manifest checks passed. Download checks: 7 passed. The owner reports successful Plaid linking on an unspecified earlier APK; no fresh physical installation of 1.0.4 is claimed.
+
+Install over the existing signed release without clearing data. Automatic update prompts remain deferred.
+
+---
 # Android 1.0.3 — restore Recurring Transactions
 
 - Download: https://finance-builder.vercel.app/download
@@ -83,4 +98,5 @@ The final compact-layout rebuild was compiled and signature-verified; no complet
 On Android, open the download page, tap **Download for Android**, open the downloaded APK, and approve installation from that source if Android asks. Launch Finance Builder and sign in. A debug installation signed by a different key cannot be updated by this release; do not automatically uninstall another installation or clear its data.
 
 The public binary is hosted as a GitHub release asset, not inside the frontend public directory, so future Capacitor builds do not bundle the APK inside another APK. Future published updates must increase Android versionCode and use a new immutable download asset/version/checksum. Never commit the keystore or signing passwords.
+
 

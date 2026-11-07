@@ -33,13 +33,23 @@ test('More menu opens Recurring Transactions without removing existing destinati
 });
 test('recurring page shows synced subscription estimates and preserves reminder create/edit/delete',async()=>{
  await setup();try{await show();assert.equal(document.querySelector('h1').textContent,'Recurring Transactions');assert.match(document.body.textContent,/Detected subscriptions2/);assert.match(document.body.textContent,/\$27\.98/);assert.match(document.body.textContent,/Internet plan/);assert.equal(saves.length,0);
- await click(button('Add Bill'));await input('Name','Music reminder');await input('Amount','12.00');await act(async()=>document.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));assert.equal(saves.length,1);assert.equal(bills.length,2);assert.equal(transactions.length,2);assert.match(document.body.textContent,/Music reminder/);
- await click(button('Edit',[...document.querySelectorAll('.bill-card')].find(card=>card.textContent.includes('Internet plan'))));await input('Amount','50.00');await act(async()=>document.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));assert.equal(saves.length,2);assert.equal(bills[0].amount,'50.00');assert.equal(transactions.length,2);
- await click(document.querySelector('[aria-label="Delete Music reminder"]'));assert.deepEqual(removes,[2]);assert.equal(bills.length,1);assert.equal(transactions.length,2);}finally{await cleanup();}
+ assert.equal(document.querySelector('[data-summary="monthly"] strong').textContent,'$49.00');
+ await click(button('Add Bill or Subscription'));await input('Name','Music reminder');await input('Amount','12.00');await act(async()=>document.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));assert.equal(saves.length,1);assert.equal(bills.length,2);assert.equal(transactions.length,2);assert.match(document.body.textContent,/Music reminder/);assert.equal(document.querySelector('[data-summary="monthly"] strong').textContent,'$61.00');
+ await click(button('Edit',[...document.querySelectorAll('.bill-card')].find(card=>card.textContent.includes('Internet plan'))));await input('Amount','50.00');await act(async()=>document.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));assert.equal(saves.length,2);assert.equal(bills[0].amount,'50.00');assert.equal(transactions.length,2);assert.equal(document.querySelector('[data-summary="monthly"] strong').textContent,'$62.00');
+ await click(document.querySelector('[aria-label="Delete Music reminder"]'));assert.deepEqual(removes,[2]);assert.equal(bills.length,1);assert.equal(transactions.length,2);assert.equal(document.querySelector('[data-summary="monthly"] strong').textContent,'$50.00');}finally{await cleanup();}
 });
 test('bank-status failure leaves saved bills accessible and subscriptions can be retried',async()=>{
- await setup();statusFails=true;try{await show();assert.match(document.body.textContent,/Internet plan/);assert.ok(button('Add Bill'));assert.ok(button('Retry subscriptions'));assert.doesNotMatch(document.body.textContent,/Detected subscriptions0/);statusFails=false;await click(button('Retry subscriptions'));assert.match(document.body.textContent,/\$27\.98/);}finally{await cleanup();}
+ await setup();statusFails=true;try{await show();assert.match(document.body.textContent,/Internet plan/);assert.ok(button('Add Bill or Subscription'));assert.ok(button('Retry subscriptions'));assert.doesNotMatch(document.body.textContent,/Detected subscriptions0/);statusFails=false;await click(button('Retry subscriptions'));assert.match(document.body.textContent,/\$27\.98/);}finally{await cleanup();}
 });
 test('disconnected users get a working Accounts action rather than invented subscriptions',async()=>{
  await setup();connected=false;transactions=[];bills=[];try{await show();assert.match(document.body.textContent,/Connect a bank in Accounts/);assert.doesNotMatch(document.body.textContent,/Detected subscriptions0/);await click(button('Go to Accounts'));assert.equal(opened,1);}finally{await cleanup();}
+});
+test('loading uses the new card skeletons without displaying invented financial values',async()=>{
+ await setup();const original=api.getRecurringTransactions;let resolve;
+ api.getRecurringTransactions=()=>new Promise(done=>resolve=done);
+ try{await show();assert.equal(document.querySelector('.recurring-page').getAttribute('aria-busy'),'true');assert.equal(document.querySelectorAll('.rt-loading-card').length,4);assert.doesNotMatch(document.body.textContent,/\$0\.00/);await act(async()=>resolve(bills));assert.equal(document.querySelector('[data-summary="monthly"] strong').textContent,'$49.00');}finally{api.getRecurringTransactions=original;await cleanup();}
+});
+test('failed saved-bill loading is unavailable rather than a false zero or empty account',async()=>{
+ await setup();const original=api.getRecurringTransactions;api.getRecurringTransactions=async()=>{throw Error('Synthetic schedule outage');};
+ try{await show();assert.equal(document.querySelector('[data-summary="monthly"] strong').textContent,'—');assert.match(document.body.textContent,/Saved bills are unavailable/);assert.ok(button('Retry bills'));assert.equal(button('Add Your First Bill'),undefined);api.getRecurringTransactions=original;await click(button('Retry bills'));assert.equal(document.querySelector('[data-summary="monthly"] strong').textContent,'$49.00');}finally{api.getRecurringTransactions=original;await cleanup();}
 });

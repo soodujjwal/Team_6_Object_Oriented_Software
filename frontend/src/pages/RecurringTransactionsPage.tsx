@@ -1,6 +1,5 @@
-import { PageSkeleton } from "../components/PageSkeleton";
-import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, CheckCircle2, Landmark, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { CalendarClock, CalendarDays, CheckCircle2, CreditCard, DollarSign, Landmark, Pencil, Plus, Repeat2, Trash2 } from "lucide-react";
 import { getAccounts } from "../api/accounts";
 import { getPlaidStatus } from "../api/plaid";
 import {
@@ -16,9 +15,11 @@ import type { Account, Transaction } from "../api/types";
 import { TopBar } from "../components/TopBar";
 import { Button, DatePicker, GlassCard, GlassSelect, IconButton, Modal, TextField } from "../components/ui";
 import { getCategoriesForType } from "../domain/transactionCategories";
-import { getBillDisplayName, getBillStatus, getUpcomingBills } from "../domain/recurringBills";
+import { getBillDisplayName, getBillStatus, getUpcomingBills, parseLocalDate } from "../domain/recurringBills";
+import { summarizeRecurringBills } from "../domain/recurringSummary";
 import { summarizeBankSubscriptions } from "../domain/subscriptionInsights";
 import { formatCurrency, formatDate } from "../utils/format";
+import "./RecurringTransactionsPage.css";
 
 type Draft = {
   name: string;
@@ -62,6 +63,7 @@ export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?:
   const [draft, setDraft] = useState<Draft>(defaultDraft);
   const [error, setError] = useState("");
   const [subscriptionError, setSubscriptionError] = useState("");
+  const [schedulesLoaded, setSchedulesLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function loadData() {
@@ -73,7 +75,7 @@ export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?:
         getPlaidStatus(),
       ]);
       if (accountData.status === "fulfilled") setAccounts(accountData.value);
-      if (recurringData.status === "fulfilled") setItems(recurringData.value);
+      if (recurringData.status === "fulfilled") { setItems(recurringData.value); setSchedulesLoaded(true); }
       if (transactionData.status === "fulfilled") setBankTransactions(transactionData.value);
       if (plaidStatus.status === "fulfilled") setBankConnected(plaidStatus.value.connections.length > 0);
       const failed = [accountData.status === "rejected" && "accounts", recurringData.status === "rejected" && "saved bills"].filter(Boolean);
@@ -99,6 +101,9 @@ export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?:
 
   const upcoming = useMemo(() => getUpcomingBills(items, new Date(), 45), [items]);
   const subscriptionSummary = useMemo(() => summarizeBankSubscriptions(bankTransactions), [bankTransactions]);
+  const todayKey = new Date().toDateString();
+  const summary = useMemo(() => summarizeRecurringBills(items, new Date(todayKey)), [items, todayKey]);
+  const nextPayment = summary.nextPayment;
   const accountOptions = accounts.map((account) => ({ value: String(account.id), label: `${account.name} · ${account.bank_name}` }));
   const categoryOptions = getCategoriesForType("expense").map((category) => ({ value: category.label, label: category.label }));
 
@@ -174,29 +179,33 @@ export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?:
     }));
   }
 
-  if (initialLoading) return <PageSkeleton page="recurring" />;
+  if (initialLoading) return <section className="page recurring-page" aria-busy="true">
+    <RecurringHeader />
+    <span className="loading-sr-only" role="status">Loading recurring transactions</span>
+    <div className="rt-summary">{[0, 1, 2, 3].map(value => <div className="rt-summary-card rt-loading-card" key={value}><span className="rt-skeleton" /><span className="rt-skeleton rt-skeleton-value" /></div>)}</div>
+    <div className="rt-main">{[0, 1].map(value => <div className="rt-panel rt-loading-panel" key={value}><span className="rt-skeleton" /><span className="rt-skeleton rt-skeleton-body" /></div>)}</div>
+  </section>;
 
   return (
     <section className="page recurring-page">
-      <TopBar title="Recurring Transactions" />
+      <RecurringHeader />
       {error && <p className="notice" role="alert">{error} <Button variant="ghost" onClick={() => void loadData()}>Retry</Button></p>}
 
-      <div className="section-heading">
-        <div>
-          <h2>Subscriptions & Bill Reminders</h2>
-        </div>
+      <div className="rt-summary" aria-label="Recurring bill overview">
+        <SummaryCard kind="monthly" label="Monthly Total" icon={DollarSign} value={!schedulesLoaded ? "—" : summary.monthlyTotal === null ? "Unavailable" : formatCurrency(summary.monthlyTotal)} note="Saved bills · monthly estimate" />
+        <SummaryCard kind="subscriptions" label="Active Subscriptions" icon={Repeat2} value={schedulesLoaded ? summary.activeSubscriptions : "—"} note="Saved subscription reminders" />
+        <SummaryCard kind="upcoming" label="Upcoming This Month" icon={CalendarDays} value={schedulesLoaded ? summary.upcomingThisMonth : "—"} note="Scheduled next due dates" />
+        <SummaryCard kind="next" label="Next Payment" icon={CreditCard} value={schedulesLoaded && nextPayment ? <time dateTime={nextPayment.next_due_date}>{new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(parseLocalDate(nextPayment.next_due_date))}</time> : "—"} note={schedulesLoaded && nextPayment ? `${formatCurrency(nextPayment.amount)} · ${getBillDisplayName(nextPayment)}` : schedulesLoaded ? "No upcoming payments" : "Waiting for saved bills"} />
       </div>
 
-      <Button onClick={openCreate}><Plus size={17} /> Add Bill</Button>
+      <div className="rt-toolbar"><Button className="rt-add-button" onClick={openCreate}><Plus aria-hidden="true" size={18} /> Add Bill or Subscription</Button></div>
 
-      <GlassCard className="bank-subscription-summary">
-        <div className="bank-subscription-heading">
-          <span className="bill-icon"><Landmark aria-hidden="true" size={19} /></span>
-          <div>
-            <h2>Connected Bank Subscriptions</h2>
-          </div>
+      <div className="rt-main">
+      <GlassCard className="rt-panel rt-bank-panel bank-subscription-summary" aria-labelledby="rt-bank-title">
+        <div className="rt-panel-heading">
+          <span className="rt-panel-icon"><Landmark aria-hidden="true" size={21} /></span>
+          <div><h2 id="rt-bank-title">Connected Bank Subscriptions</h2><p>Estimates from synced bank transactions.</p></div>
         </div>
-        <p className="caption-text">Estimates from synced bank transactions.</p>
         {subscriptionError ? (
           <p className="notice" role="alert">{subscriptionError} <Button variant="ghost" onClick={() => void loadData()}>Retry subscriptions</Button></p>
         ) : bankConnected === null ? (
@@ -214,7 +223,7 @@ export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?:
               </div>
             </div>
             {subscriptionSummary.subscriptions.length ? (
-              <div className="bank-subscription-list">
+              <div className="bank-subscription-list rt-subscription-list">
                 {subscriptionSummary.subscriptions.map((subscription) => {
                   const account = accounts.find((item) => item.id === subscription.account_id);
                   return (
@@ -229,18 +238,19 @@ export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?:
                 })}
               </div>
             ) : (
-              <p className="empty-state">No subscription charges detected in synced bank transactions yet.</p>
+              <div className="rt-empty"><span className="rt-empty-icon"><Repeat2 aria-hidden="true" size={28} /></span><h3>No subscriptions detected yet</h3><p>Recurring charges may appear as more bank transactions sync.</p></div>
             )}
           </>
         ) : (
-          <div className="empty-state"><p>Connect a bank in Accounts to see detected subscriptions and estimated monthly cost.</p>{onOpenAccounts && <Button variant="secondary" onClick={onOpenAccounts}>Go to Accounts</Button>}</div>
+          <div className="rt-empty"><span className="rt-empty-icon"><Landmark aria-hidden="true" size={28} /></span><h3>Bring your subscriptions together</h3><p>Connect a bank in Accounts. Synced transactions may help detect recurring subscriptions.</p>{onOpenAccounts && <Button variant="secondary" onClick={onOpenAccounts}>Go to Accounts</Button>}</div>
         )}
       </GlassCard>
 
-      <section className="section-stack">
-        <h2 className="section-title">Upcoming</h2>
-        {upcoming.length ? upcoming.map(({ item, days }) => (
-          <GlassCard className={`bill-card ${getBillStatus(item)}`} key={item.id}>
+      <GlassCard className="rt-panel rt-upcoming-panel" aria-labelledby="rt-upcoming-title">
+        <div className="rt-panel-heading"><span className="rt-panel-icon"><CalendarClock aria-hidden="true" size={21} /></span><div><h2 id="rt-upcoming-title">Upcoming</h2><p>Your bills and renewal dates.</p></div><span className="rt-count">{upcoming.length}</span></div>
+        <div className="rt-bills">
+        {!schedulesLoaded ? <div className="rt-empty"><span className="rt-empty-icon"><CalendarClock aria-hidden="true" size={28} /></span><h3>Saved bills are unavailable</h3><p>Retry to load your existing schedules.</p><Button variant="secondary" onClick={() => void loadData()}>Retry bills</Button></div> : upcoming.length ? upcoming.map(({ item, days }) => (
+          <article className={`bill-card rt-bill-row ${getBillStatus(item)}`} key={item.id}>
             <div className="bill-card-main">
               <span className="bill-icon"><CalendarClock size={19} /></span>
               <div>
@@ -254,14 +264,16 @@ export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?:
               {item.last_paid_date && <small><CheckCircle2 size={14} /> Paid {formatDate(item.last_paid_date)}</small>}
             </div>
             <div className="bill-card-actions">
-              <Button onClick={() => openEdit(item)} variant="secondary"><Pencil size={15} /> Edit</Button>
+              <Button aria-label={`Edit ${getBillDisplayName(item)}`} disabled={saving} onClick={() => openEdit(item)} variant="secondary"><Pencil size={15} aria-hidden="true" /> Edit</Button>
               <IconButton aria-label={`Delete ${getBillDisplayName(item)}`} disabled={saving} onClick={() => void remove(item)}><Trash2 size={17} /></IconButton>
             </div>
-          </GlassCard>
-        )) : <p className="empty-state">No upcoming subscriptions or bills yet.</p>}
-      </section>
+          </article>
+        )) : <div className="rt-empty"><span className="rt-empty-icon"><CalendarDays aria-hidden="true" size={28} /></span><h3>{items.length ? "Nothing due soon" : "Stay one step ahead"}</h3><p>{items.length ? "No saved bills are due in the next 45 days." : "Add your subscriptions and bills to keep upcoming payments in view."}</p><Button variant="secondary" onClick={openCreate}><Plus size={17} aria-hidden="true" />{items.length ? "Add Bill or Subscription" : "Add Your First Bill"}</Button></div>}
+        </div>
+      </GlassCard>
+      </div>
 
-      <Modal isOpen={modalItem !== null} onClose={() => !saving && setModalItem(null)} title={modalItem === "create" ? "Add bill reminder" : "Edit bill reminder"}>
+      <Modal className="rt-bill-modal" isOpen={modalItem !== null} onClose={() => !saving && setModalItem(null)} title={modalItem === "create" ? "Add bill reminder" : "Edit bill reminder"}>
         <form className="budget-editor-form" onSubmit={(event) => void save(event)}>
           <TextField autoFocus label="Name" onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} placeholder="Netflix, Rent, Internet" required value={draft.name} />
           <TextField icon={<span>$</span>} label="Amount" min="0.01" onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))} required step="0.01" type="number" value={draft.amount} />
@@ -279,4 +291,12 @@ export function RecurringTransactionsPage({ onOpenAccounts }: { onOpenAccounts?:
       </Modal>
     </section>
   );
+}
+
+function RecurringHeader() {
+  return <div className="rt-header"><TopBar title="Recurring Transactions" /><p>Manage your subscriptions and recurring bills in one place.</p></div>;
+}
+
+function SummaryCard({ kind, label, icon: Icon, value, note }: { kind: string; label: string; icon: typeof DollarSign; value: ReactNode; note: string }) {
+  return <GlassCard className="rt-summary-card" data-summary={kind}><div className="rt-summary-top"><h2>{label}</h2><span className="rt-stat-icon"><Icon aria-hidden="true" size={18} /></span></div><strong className="rt-summary-value">{value}</strong><p>{note}</p></GlassCard>;
 }

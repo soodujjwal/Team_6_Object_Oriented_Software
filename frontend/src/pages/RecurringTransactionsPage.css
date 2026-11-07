@@ -1,0 +1,119 @@
+.recurring-page .rt-summary-card,
+.recurring-page .rt-panel,
+.rt-bill-modal {
+  --color-primary: #25cb78;
+  --color-primary-strong: #20b46a;
+  --color-text: #f1f8f4;
+  --color-text-secondary: #9cb8aa;
+  --color-text-muted: #9cb8aa;
+  --color-surface: #10291f;
+  --color-surface-strong: #10291f;
+  --color-surface-subtle: #0b2118;
+  --color-surface-hover: #163a2a;
+  --color-border: #244638;
+  --color-border-muted: #244638;
+  --color-input: #0b2118;
+  --color-input-focus: #0b2118;
+  --color-input-border: #365746;
+  --color-primary-tint: #153e2b;
+  --color-glass-control: #0b2118;
+  --color-glass-control-border: #365746;
+  --color-focus-ring: #25cb78;
+  --color-danger-surface: #302022;
+  --color-danger-border: #673b40;
+  --color-danger-text: #ffb3b8;
+  color: var(--color-text);
+  color-scheme: dark;
+}
+.recurring-page { gap: 24px; }
+.recurring-page .rt-header { display: grid; gap: 8px; }
+.recurring-page .rt-header > p { color: var(--color-text-secondary); font-size: 14px; line-height: 1.5; margin: 0; text-align: center; }
+.recurring-page .top-bar { gap: 10px; grid-template-columns: 44px minmax(0, 1fr) 44px; }
+.recurring-page .top-bar h1 { font-size: clamp(20px, 2.5vw, 28px); line-height: 1.2; overflow-wrap: anywhere; }
+.recurring-page .rt-summary { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.recurring-page .rt-summary-card { background: #10291f; border: 1px solid #244638; border-radius: 18px; box-shadow: 0 6px 20px #00000012; display: grid; align-content: start; gap: 10px; min-width: 0; padding: 18px; }
+.recurring-page .rt-summary-top { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; min-width: 0; min-height: 36px; }
+.recurring-page .rt-summary-top h2 { color: #b5ccbf; font-size: 12px; font-weight: 600; line-height: 1.5; margin: 0; }
+.recurring-page .rt-stat-icon { align-items: center; border-radius: 9px; background: #153e2b; color: #25cb78; display: flex; flex: 0 0 30px; height: 30px; justify-content: center; }
+.recurring-page .rt-summary-value { color: #f1f8f4; font-size: clamp(21px, 2.2vw, 28px); font-variant-numeric: tabular-nums; font-weight: 750; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }
+.recurring-page .rt-summary-card[data-summary="monthly"] .rt-summary-value { color: #25cb78; }
+.recurring-page .rt-summary-card > p { color: #9cb8aa; font-size: 11px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
+.recurring-page .rt-toolbar { display: flex; justify-content: flex-end; }
+.recurring-page .rt-add-button { background: #25cb78; border: 1px solid #25cb78; border-radius: 12px; color: #071b14; font-weight: 750; min-height: 44px; padding: 11px 18px; transition: background 160ms ease, transform 160ms ease; }
+.recurring-page .rt-add-button:hover:not(:disabled) { background: #3bdc8a; transform: translateY(-1px); }
+.recurring-page .rt-main { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.recurring-page .rt-panel { background: #10291f; border: 1px solid #244638; border-radius: 20px; box-shadow: 0 8px 24px #00000010; display: grid; gap: 20px; margin: 0; min-width: 0; padding: 22px; }
+.recurring-page .rt-panel-heading { align-items: center; display: flex; gap: 12px; min-width: 0; }
+.recurring-page .rt-panel-heading > div { min-width: 0; }
+.recurring-page .rt-panel-heading h2 { color: #f1f8f4; font-size: 17px; font-weight: 700; line-height: 1.35; margin: 0; }
+.recurring-page .rt-panel-heading p { color: #9cb8aa; font-size: 12px; line-height: 1.5; margin: 5px 0 0; }
+.recurring-page .rt-panel-icon { align-items: center; background: #153e2b; border: 1px solid #244c36; border-radius: 12px; color: #25cb78; display: flex; flex: 0 0 42px; height: 42px; justify-content: center; }
+.recurring-page .rt-count { background: #153e2b; border-radius: 20px; color: #a7e6c3; font-size: 12px; margin-left: auto; padding: 4px 10px; }
+.recurring-page .bank-subscription-metrics { gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.recurring-page .bank-subscription-metrics > div { background: #0c2319; border-color: #244638; border-radius: 12px; min-width: 0; padding: 12px; }
+.recurring-page .bank-subscription-metrics strong { color: #f1f8f4; font-size: 23px; overflow-wrap: anywhere; }
+.recurring-page .bank-subscription-metrics span { color: #9cb8aa; font-size: 11px; }
+.recurring-page .rt-subscription-list > div { align-items: center; flex-direction: row; gap: 12px; padding: 15px 0; }
+.recurring-page .rt-subscription-list strong { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.recurring-page .rt-subscription-list small { color: #9cb8aa; font-size: 11px; }
+.recurring-page .rt-subscription-list > div > strong { font-size: 12px; text-align: right; }
+.recurring-page .rt-empty { align-content: center; align-items: center; display: grid; gap: 12px; justify-items: center; min-height: 250px; padding: 28px 12px; text-align: center; }
+.recurring-page .rt-empty-icon { align-items: center; background: #153e2b; border: 1px solid #244638; border-radius: 18px; color: #5adf98; display: flex; height: 64px; justify-content: center; margin-bottom: 4px; width: 64px; }
+.recurring-page .rt-empty h3 { color: #f1f8f4; font-size: 17px; line-height: 1.4; margin: 0; }
+.recurring-page .rt-empty p { color: #9cb8aa; font-size: 13px; line-height: 1.6; margin: 0; max-width: 300px; }
+.recurring-page .ui-button.secondary,
+.rt-bill-modal .ui-button.secondary { background: #153e2b; border: 1px solid #315640; color: #c7f3d9; min-height: 44px; }
+.recurring-page .ui-button.secondary:hover:not(:disabled),
+.rt-bill-modal .ui-button.secondary:hover:not(:disabled) { background: #1a4b34; }
+.recurring-page .rt-bills { display: grid; gap: 0; min-width: 0; }
+.recurring-page .rt-bill-row { background: transparent; border: 0; border-bottom: 1px solid #244638; border-radius: 0; box-shadow: none; display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) auto; min-width: 0; padding: 18px 0; }
+.recurring-page .rt-bill-row:first-child { padding-top: 0; }
+.recurring-page .rt-bill-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.recurring-page .bill-card-main { gap: 10px; }
+.recurring-page .bill-card-main .bill-icon { border-radius: 10px; flex-basis: 34px; height: 34px; }
+.recurring-page .bill-card-main h3 { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.recurring-page .bill-card-main p { font-size: 11px; overflow-wrap: anywhere; }
+.recurring-page .bill-card-meta { max-width: 130px; }
+.recurring-page .bill-card-meta strong { font-size: 15px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.recurring-page .bill-card-meta span { font-size: 11px; }
+.recurring-page .bill-card.overdue .bill-card-meta span { color: #ff9297; }
+.recurring-page .bill-card.due-today .bill-card-meta span { color: #f4cc7b; }
+.recurring-page .bill-card-actions { grid-column: 1 / -1; justify-content: flex-end; }
+.recurring-page .bill-card-actions .ui-button { font-size: 12px; min-height: 44px; padding: 7px 12px; }
+.recurring-page .bill-card-actions .icon-button { background: #153426; border: 1px solid #244638; color: #9cb8aa; height: 44px; width: 44px; }
+.recurring-page button:focus-visible,
+.rt-bill-modal button:focus-visible { outline: 2px solid #25cb78; outline-offset: 3px; }
+.rt-bill-modal { background: #10291f; border: 1px solid #244638; border-radius: 20px; }
+.rt-bill-modal .ui-button.primary { background: #25cb78; color: #071b14; }
+.recurring-page .rt-skeleton { animation: rt-pulse 1.5s ease-in-out infinite; background: #244638; border-radius: 8px; display: block; height: 14px; width: 65%; }
+.recurring-page .rt-skeleton-value { height: 30px; width: 80%; }
+.recurring-page .rt-loading-card { gap: 22px; min-height: 144px; }
+.recurring-page .rt-loading-panel { min-height: 300px; }
+.recurring-page .rt-skeleton-body { align-self: center; height: 130px; width: 100%; }
+@keyframes rt-pulse { 50% { opacity: .45; } }
+@media (min-width: 1000px) {
+  .recurring-page .rt-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .recurring-page .rt-main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .recurring-page { gap: 20px; padding-inline: 12px; }
+  .recurring-page .rt-header > p { font-size: 12px; padding-inline: 8px; }
+  .recurring-page .rt-summary { gap: 10px; }
+  .recurring-page .rt-summary-card { border-radius: 16px; gap: 10px; padding: 14px 12px; }
+  .recurring-page .rt-summary-top { gap: 5px; }
+  .recurring-page .rt-summary-top h2 { font-size: 11px; }
+  .recurring-page .rt-stat-icon { flex-basis: 26px; height: 26px; }
+  .recurring-page .rt-stat-icon svg { height: 15px; width: 15px; }
+  .recurring-page .rt-summary-value { font-size: 22px; }
+  .recurring-page .rt-summary-card > p { font-size: 10px; }
+  .recurring-page .rt-add-button { min-height: 48px; width: 100%; }
+  .recurring-page .rt-panel { border-radius: 18px; gap: 18px; padding: 18px; }
+  .recurring-page .rt-panel-heading h2 { font-size: 16px; }
+  .recurring-page .rt-panel-heading p { font-size: 11px; }
+  .recurring-page .rt-empty { min-height: 220px; padding: 20px 6px; }
+  .rt-bill-modal .reminder-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recurring-page .rt-add-button { transition: none; }
+  .recurring-page .rt-skeleton { animation: none; }
+}

@@ -51,7 +51,7 @@ def app_store(request, monkeypatch):
 
 
 def register(client, email="mode@example.test"):
-    response = client.post("/auth/register", json={"name": "Mode Test", "email": email, "password": "safe-test-password", "phone_number": "(202) 555-0100"})
+    response = client.post("/auth/register", json={"name": "Mode Test", "email": email, "password": "Copper lantern orbit meadow 7249!", "phone_number": "(202) 555-0100"})
     assert response.status_code == 200, response.text
     session = response.json()
     return {"Authorization": f"Bearer {session['access_token']}"}, session["user"]["id"]
@@ -72,7 +72,7 @@ def test_manual_mode_is_persisted_and_blocks_plaid_without_deleting_records(app_
     assert client.patch("/accounts/tracking-mode", headers=headers, json={"mode": "plaid"}).status_code == 409
     assert len(client.get("/accounts", headers=headers).json()) == 1
     # A new authenticated session on another device gets the same server-owned choice.
-    login = client.post("/auth/login", json={"email": "mode@example.test", "password": "safe-test-password"}).json()
+    login = client.post("/auth/login", json={"email": "mode@example.test", "password": "Copper lantern orbit meadow 7249!"}).json()
     assert client.get("/accounts/tracking-mode", headers={"Authorization": f"Bearer {login['access_token']}"}).json()["mode"] == "manual"
     other, _ = register(client, "other-mode@example.test")
     assert client.get("/accounts/tracking-mode", headers=other).json()["mode"] is None

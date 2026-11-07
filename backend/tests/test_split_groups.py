@@ -33,7 +33,7 @@ def client(request):
 
 
 def register(client, email):
-    response = client.post('/auth/register', json={'name': 'Group Test', 'email': email, 'password': 'safe-test-password', 'phone_number': '(202) 555-0100'})
+    response = client.post('/auth/register', json={'name': 'Group Test', 'email': email, 'password': 'Copper lantern orbit meadow 7249!', 'phone_number': '(202) 555-0100'})
     assert response.status_code == 200, response.text
     return {'Authorization': 'Bearer ' + response.json()['access_token']}
 
@@ -53,7 +53,7 @@ def test_groups_persist_across_sessions_and_are_isolated_without_changing_bills(
     other = register(client, 'other-groups@example.test')
     assert client.get('/split-bills/groups', headers=other).json() == []
     assert client.post('/split-bills/groups', headers=other, json={'name': 'Stolen friends', 'friend_ids': [friend['id']]}).status_code == 400
-    session = client.post('/auth/login', json={'email': 'groups@example.test', 'password': 'safe-test-password'}).json()
+    session = client.post('/auth/login', json={'email': 'groups@example.test', 'password': 'Copper lantern orbit meadow 7249!'}).json()
     fresh = {'Authorization': 'Bearer ' + session['access_token']}
     assert client.get('/split-bills/groups', headers=fresh).json() == [group]
     assert client.get('/split-bills/friends', headers=fresh).json() == [friend]

@@ -9,12 +9,13 @@ class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     email: str = EmailField
     phone_number: str = Field(min_length=14, max_length=14, pattern=r"^\(\d{3}\) \d{3}-\d{4}$")
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=15, max_length=128, repr=False, json_schema_extra={"writeOnly": True})
+    confirm_password: str | None = Field(default=None, max_length=128, repr=False, json_schema_extra={"writeOnly": True})
 
 
 class LoginRequest(BaseModel):
     email: str = EmailField
-    password: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=128, repr=False, json_schema_extra={"writeOnly": True})
 
 
 class UserRead(ORMModel):
@@ -32,8 +33,9 @@ class ProfileUpdateRequest(BaseModel):
 
 
 class PasswordChangeRequest(BaseModel):
-    current_password: str = Field(min_length=1, max_length=128)
-    new_password: str = Field(min_length=8, max_length=128)
+    current_password: str = Field(min_length=1, max_length=128, repr=False, json_schema_extra={"writeOnly": True})
+    new_password: str = Field(min_length=15, max_length=128, repr=False, json_schema_extra={"writeOnly": True})
+    confirm_password: str | None = Field(default=None, max_length=128, repr=False, json_schema_extra={"writeOnly": True})
 
 
 class AuthResponse(BaseModel):

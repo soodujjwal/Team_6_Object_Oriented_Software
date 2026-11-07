@@ -21,7 +21,7 @@ def test_registration_persists_phone_number_on_user_profile():
                 name="Alex Morgan",
                 email="alex@example.com",
                 phone_number="(555) 123-4567",
-                password="securepass123",
+                password="Copper lantern orbit meadow 7249!",
             )
         )
 
@@ -39,7 +39,7 @@ def test_registration_rejects_malformed_phone_number():
             name="Alex Morgan",
             email="alex@example.com",
             phone_number="555123",
-            password="securepass123",
+            password="Copper lantern orbit meadow 7249!",
         )
 
 

@@ -16,6 +16,7 @@ class UserModel(Base):
     phone_number: Mapped[str] = mapped_column(String(14), nullable=False, default="")
     occupation: Mapped[str] = mapped_column(String(100), nullable=False, default="")
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    session_version: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
 
 
 class UserStateModel(Base):

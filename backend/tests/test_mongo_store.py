@@ -110,12 +110,12 @@ def test_unique_email_and_collection_indexes_are_enforced(database):
 def test_registration_login_and_password_hash_persist_between_sessions(database):
     with store(database) as db:
         result = AuthService(db).register(RegisterRequest(name="Test User", email="login@example.test",
-            phone_number="(817) 555-0100", password="Test-only-password-123"))
+            phone_number="(817) 555-0100", password="Copper lantern orbit meadow 7249!"))
         id = result.user.id
     document = database.users.find_one({"_id": id})
-    assert document["password_hash"] != "Test-only-password-123"
+    assert document["password_hash"] != "Copper lantern orbit meadow 7249!"
     with store(database) as db:
-        result = AuthService(db).login(LoginRequest(email="login@example.test", password="Test-only-password-123"))
+        result = AuthService(db).login(LoginRequest(email="login@example.test", password="Copper lantern orbit meadow 7249!"))
         assert result.user.id == id
         assert result.access_token
 

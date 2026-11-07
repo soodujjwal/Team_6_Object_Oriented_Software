@@ -334,7 +334,10 @@ class MongoSession:
             self.reserve_bill_allocations(record, original, document)
             revision = original.get("_revision", 0)
             document["_revision"] = revision + 1
-            result = self.collection(type(record)).replace_one({"_id": record.id, "_revision": revision}, document, **self.options())
+            # Historical documents may predate revision metadata. Match its
+            # absence explicitly so their first update is also a safe CAS.
+            expected_revision = original["_revision"] if "_revision" in original else {"$exists": False}
+            result = self.collection(type(record)).replace_one({"_id": record.id, "_revision": expected_revision}, document, **self.options())
             if result.matched_count != 1:
                 raise HTTPException(409, "This record changed in another request. Refresh and retry.")
             self.originals[key] = deepcopy(document)

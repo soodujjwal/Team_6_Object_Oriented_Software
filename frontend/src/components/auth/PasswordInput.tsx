@@ -8,9 +8,11 @@ type PasswordInputProps = {
   placeholder: string;
   value: string;
   minLength?: number;
+  autoComplete?: "current-password" | "new-password";
+  name?: string;
 };
 
-export function PasswordInput({ label, minLength, onChange, placeholder, value }: PasswordInputProps) {
+export function PasswordInput({ label, minLength, onChange, placeholder, value, autoComplete = "current-password", name = "password" }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
   return (
     <TextField
@@ -19,13 +21,16 @@ export function PasswordInput({ label, minLength, onChange, placeholder, value }
           className="field-action"
           type="button"
           onClick={() => setVisible((current) => !current)}
-          aria-label={`Toggle ${label} visibility`}
+          aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`}
+          aria-pressed={visible}
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       }
       icon={<Lock size={18} />}
       label={label}
+      autoComplete={autoComplete}
+      name={name}
       minLength={minLength}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}

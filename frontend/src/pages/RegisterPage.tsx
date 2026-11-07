@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { PasswordStrength } from "../components/auth/PasswordStrength";
+import { passwordProblem } from "../domain/passwordStrength";
 import { ArrowLeft, ArrowRight, Mail, UserRound } from "lucide-react";
 import { register, type User } from "../api/auth";
 import { AuthHeader } from "../components/auth/AuthHeader";
@@ -9,7 +11,7 @@ import { Button, GlassCard, TextField } from "../components/ui";
 import { formatUsPhoneNumber, isValidUsPhoneNumber } from "../utils/phoneNumber";
 
 type RegisterPageProps = {
-  onRegister: (accessToken: string, user: User) => void;
+  onRegister: (accessToken: string, user: User) => void | Promise<void>;
   onShowLogin: () => void;
   onShowHome?: () => void;
 };
@@ -22,9 +24,12 @@ export function RegisterPage({ onRegister, onShowLogin, onShowHome }: RegisterPa
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submissionLock = useRef(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submissionLock.current) return;
     setStatus("");
     if (password !== confirmPassword) {
       setStatus("Passwords do not match.");
@@ -34,11 +39,17 @@ export function RegisterPage({ onRegister, onShowLogin, onShowHome }: RegisterPa
       setPhoneError("Enter a valid US phone number.");
       return;
     }
+    const problem = passwordProblem(password, [name, email, phoneNumber]);
+    if (problem) { setStatus(problem); return; }
+    submissionLock.current = true;
+    setSubmitting(true);
     try {
-      const session = await register(name, email, phoneNumber, password);
-      onRegister(session.access_token, session.user);
+      const session = await register(name, email, phoneNumber, password, confirmPassword);
+      await onRegister(session.access_token, session.user);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not create account.");
+    } finally {
+      submissionLock.current = false; setSubmitting(false);
     }
   }
 
@@ -88,20 +99,24 @@ export function RegisterPage({ onRegister, onShowLogin, onShowHome }: RegisterPa
           />
           <PasswordInput
             label="Password"
-            minLength={8}
+            minLength={15}
+            autoComplete="new-password"
             onChange={setPassword}
             placeholder="Create a password"
             value={password}
           />
+          <PasswordStrength password={password} name={name} email={email} phone={phoneNumber} />
           <PasswordInput
             label="Confirm Password"
-            minLength={8}
+            minLength={15}
+            autoComplete="new-password"
+            name="confirm_password"
             onChange={setConfirmPassword}
             placeholder="Confirm password"
             value={confirmPassword}
           />
-          <Button className="auth-submit" type="submit">
-            Create Account <ArrowRight size={18} />
+          <Button className="auth-submit" type="submit" disabled={submitting}>
+            {submitting ? "Creating account…" : "Create Account"} <ArrowRight size={18} />
           </Button>
         </form>
         <p className="terms-copy web">

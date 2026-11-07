@@ -22,7 +22,7 @@ def test_new_device_restores_finances_and_preferences_with_account_isolation():
             yield db
 
     app.dependency_overrides[get_db] = session
-    credentials = {"name": "Device One", "email": "devices@example.test", "password": "cross-device-test-password", "phone_number": "(202) 555-0100"}
+    credentials = {"name": "Device One", "email": "devices@example.test", "password": "Copper lantern orbit meadow 7249!", "phone_number": "(202) 555-0100"}
     with TestClient(app) as device_one:
         registered = device_one.post("/auth/register", json=credentials)
         assert registered.status_code == 200, registered.text

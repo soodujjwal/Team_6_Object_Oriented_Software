@@ -11,11 +11,11 @@ from fastapi import HTTPException
 def profiles(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "PROJECT_ROOT", tmp_path)
     monkeypatch.setenv("MONGODB_DATABASE", "original_data")
-    monkeypatch.setenv("JWT_SECRET_KEY", "original-jwt-secret")
+    monkeypatch.setenv("JWT_SECRET_KEY", "original-jwt-secret-for-tests-only-12345")
     monkeypatch.setenv("PLAID_ENV", "production")
     monkeypatch.setenv("PLAID_SECRET", "production-secret")
     (tmp_path / ".env").write_text(
-        "MONGODB_DATABASE=original_data\nJWT_SECRET_KEY=original-jwt-secret\n", encoding="utf-8"
+        "MONGODB_DATABASE=original_data\nJWT_SECRET_KEY=original-jwt-secret-for-tests-only-12345\n", encoding="utf-8"
     )
     path = tmp_path / ".env.plaid-sandbox"
     values = {
@@ -52,7 +52,7 @@ def test_sandbox_ignores_inherited_production_values(profiles, monkeypatch):
     {"MONGODB_DATABASE": "original_data"},
     {"MONGODB_DATABASE": "finance_builder"},
     {"PLAID_ENV": "production"},
-    {"JWT_SECRET_KEY": "original-jwt-secret"},
+    {"JWT_SECRET_KEY": "original-jwt-secret-for-tests-only-12345"},
 ])
 def test_unsafe_sandbox_configuration_is_rejected(profiles, updates):
     path, write = profiles

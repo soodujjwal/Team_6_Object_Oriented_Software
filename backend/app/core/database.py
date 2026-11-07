@@ -42,11 +42,12 @@ def get_mongo_database():
 
 def ensure_indexes(database):
     from app.repositories import models  # noqa: F401
-    collections = {mapper.local_table.name for mapper in Base.registry.mappers} | {"_counters", "_allocations"}
+    collections = {mapper.local_table.name for mapper in Base.registry.mappers} | {"_counters", "_allocations", "auth_rate_limits"}
     existing = set(database.list_collection_names())
     for name in collections - existing:
         database.create_collection(name)
     indexes = {
+        "auth_rate_limits": [IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=0)],
         "user_state": [IndexModel([("user_id", ASCENDING), ("key", ASCENDING)], unique=True)],
         "users": [IndexModel([("email", ASCENDING)], unique=True)],
         "accounts": [IndexModel([("user_id", ASCENDING)])],

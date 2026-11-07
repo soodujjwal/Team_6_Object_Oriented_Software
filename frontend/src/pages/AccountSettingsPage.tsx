@@ -1,8 +1,11 @@
 import { PageSkeleton } from "../components/PageSkeleton";
+import { PasswordInput } from "../components/auth/PasswordInput";
+import { PasswordStrength } from "../components/auth/PasswordStrength";
+import { passwordProblem } from "../domain/passwordStrength";
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, BriefcaseBusiness, Check, Mail, Moon, Sun, User as UserIcon } from "lucide-react";
 import { deleteAccount, getAccounts, updateAccount } from "../api/accounts";
-import { AUTH_TOKEN_KEY } from "../api/client";
+import { clearSession } from "../api/client";
 import { changePassword, deleteCurrentUser, updateProfile, type User } from "../api/auth";
 import type { Account } from "../api/types";
 import { AccountTrackingPanel } from "../components/AccountTrackingPanel";
@@ -73,7 +76,7 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
         email: profileDraft.email.trim(),
         occupation: profileDraft.occupation.trim(),
       });
-      onUserUpdate(session.user, session.access_token);
+      await onUserUpdate(session.user, session.access_token);
       setProfileMessage("Profile updated.");
     } catch (error) {
       setProfileMessage(error instanceof Error ? error.message : "Could not update profile.");
@@ -89,13 +92,11 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
       setProfileMessage("New password and confirmation do not match.");
       return;
     }
-    if (passwordDraft.next.length < 8) {
-      setProfileMessage("New password must be at least 8 characters.");
-      return;
-    }
+    const problem = passwordProblem(passwordDraft.next, [user.name, user.email, user.phone_number]);
+    if (problem) { setProfileMessage(problem); return; }
     setProfileSaving(true);
     try {
-      await changePassword({ current_password: passwordDraft.current, new_password: passwordDraft.next });
+      await changePassword({ current_password: passwordDraft.current, new_password: passwordDraft.next, confirm_password: passwordDraft.confirm });
       setPasswordDraft({ current: "", next: "", confirm: "" });
       setProfileMessage("Password changed.");
     } catch (error) {
@@ -114,7 +115,7 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
     setProfileSaving(true);
     try {
       await deleteCurrentUser();
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      clearSession();
       onLogout();
     } catch (error) {
       setProfileMessage(error instanceof Error ? error.message : "Could not delete account.");
@@ -299,27 +300,28 @@ export function AccountSettingsPage({ user, onLogout, onThemeChange, onUserUpdat
 
           <form className="profile-editor-section" onSubmit={handleChangePassword}>
             <h3>Change Password</h3>
-            <TextField
+              <PasswordInput
               label="Current Password"
-              onChange={(event) => setPasswordDraft((current) => ({ ...current, current: event.target.value }))}
-              required
-              type="password"
+                placeholder="Your current password"
+                onChange={(value) => setPasswordDraft((current) => ({ ...current, current: value }))}
               value={passwordDraft.current}
             />
-            <TextField
+              <PasswordInput
               label="New Password"
-              minLength={8}
-              onChange={(event) => setPasswordDraft((current) => ({ ...current, next: event.target.value }))}
-              required
-              type="password"
+                placeholder="Choose a unique passphrase"
+                autoComplete="new-password"
+                minLength={15}
+                onChange={(value) => setPasswordDraft((current) => ({ ...current, next: value }))}
               value={passwordDraft.next}
             />
-            <TextField
+              <PasswordStrength password={passwordDraft.next} name={user.name} email={user.email} phone={user.phone_number} />
+              <PasswordInput
               label="Confirm New Password"
-              minLength={8}
-              onChange={(event) => setPasswordDraft((current) => ({ ...current, confirm: event.target.value }))}
-              required
-              type="password"
+                placeholder="Confirm your new password"
+                autoComplete="new-password"
+                name="confirm_password"
+                minLength={15}
+                onChange={(value) => setPasswordDraft((current) => ({ ...current, confirm: value }))}
               value={passwordDraft.confirm}
             />
             <div className="budget-modal-actions">

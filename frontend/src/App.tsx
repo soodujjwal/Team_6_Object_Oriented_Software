@@ -98,11 +98,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    function onExpired() {
+    function onExpired(event?: Event) {
       setUser(null);
       setOnboardingComplete(false);
       setPage("dashboard");
-      setSessionNotice(SESSION_EXPIRED_MESSAGE);
+      const message = (event as CustomEvent<{ message?: string }> | undefined)?.detail?.message;
+      setSessionNotice(typeof message === "string" ? message : SESSION_EXPIRED_MESSAGE);
       setRoute("/login");
       window.history.replaceState(null, "", "/login");
     }

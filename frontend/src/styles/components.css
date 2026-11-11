@@ -1504,7 +1504,7 @@
 .transactions-actions {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .transactions-actions > .ui-button {
@@ -2416,6 +2416,10 @@
   .transactions-toolbar > :first-child,
   .transactions-toolbar > :last-child {
     grid-column: 1 / -1;
+  }
+
+  .transactions-actions {
+    grid-template-columns: 1fr;
   }
 
   .help-layout,

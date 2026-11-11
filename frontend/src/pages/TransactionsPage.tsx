@@ -1,12 +1,13 @@
 import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CalendarClock, CalendarDays, FileText, Plus, Search, Tag, Wallet } from "lucide-react";
+import { CalendarClock, CalendarDays, Download, FileText, Plus, Search, Tag, Wallet } from "lucide-react";
 import { getAccounts } from "../api/accounts";
 import { getTransactions, getTransactionMatches, confirmTransactionMatch, type TransactionMatch, TRANSACTIONS_UPDATED_EVENT, updateTransaction } from "../api/transactions";
 import type { Account, Transaction, TransactionType } from "../api/types";
 import { TopBar } from "../components/TopBar";
 import { Button, CategorySelect, DatePicker, GlassCard, GlassSelect, Modal, TextField } from "../components/ui";
 import { getDefaultCategory } from "../domain/transactionCategories";
+import { createTransactionCsv, transactionExportFilename } from "../domain/transactionExport";
 import { formatCurrency, formatDate } from "../utils/format";
 
 type SourceFilter = "all" | "receipt" | "csv" | "pdf" | "plaid" | "manual";
@@ -155,6 +156,20 @@ export function TransactionsPage({ onAddTransaction, onManageBills }: Transactio
     }
   }
 
+  function exportTransactions() {
+    if (!filteredTransactions.length) return;
+    const csv = createTransactionCsv(filteredTransactions, accounts);
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = transactionExportFilename(monthFilter);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setStatus(`Exported ${filteredTransactions.length} transaction${filteredTransactions.length === 1 ? "" : "s"}.`);
+  }
+
   if (initialLoading) return <PageSkeleton page="transactions" />;
 
   return (
@@ -215,6 +230,9 @@ export function TransactionsPage({ onAddTransaction, onManageBills }: Transactio
         </Button>
         <Button onClick={onManageBills}>
           <CalendarClock aria-hidden="true" size={17} /> <span>Recurring Transactions</span>
+        </Button>
+        <Button disabled={!filteredTransactions.length} onClick={exportTransactions} variant="secondary">
+          <Download aria-hidden="true" size={17} /> <span>Export visible transactions ({filteredTransactions.length})</span>
         </Button>
       </div>
 

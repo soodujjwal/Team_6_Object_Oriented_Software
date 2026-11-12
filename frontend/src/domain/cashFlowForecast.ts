@@ -25,18 +25,18 @@ export function forecastCashFlow(
   horizonDays = 30,
 ): CashFlowForecast {
   const start = startOfDay(today);
-  const end = addDays(start, horizonDays);
+  const end = addDays(start, Math.max(0, Math.floor(horizonDays)) - 1);
   const scheduled = recurring.flatMap((item) => expandOccurrences(item, start, end));
-  scheduled.sort((left, right) => left.date.localeCompare(right.date) || left.name.localeCompare(right.name));
+  scheduled.sort((left, right) => left.date.localeCompare(right.date) || left.type.localeCompare(right.type) || left.name.localeCompare(right.name));
 
-  let balance = safeAmount(startingBalance);
+  let balance = roundMoney(safeAmount(startingBalance));
   let lowestBalance = balance;
   let expectedIncome = 0;
   let expectedExpenses = 0;
   const events = scheduled.map((event) => {
     if (event.type === "income") expectedIncome += event.amount;
     else expectedExpenses += event.amount;
-    balance += event.type === "income" ? event.amount : -event.amount;
+    balance = roundMoney(balance + (event.type === "income" ? event.amount : -event.amount));
     lowestBalance = Math.min(lowestBalance, balance);
     return { ...event, balance: roundMoney(balance) };
   });
@@ -53,12 +53,13 @@ export function forecastCashFlow(
 
 function expandOccurrences(item: RecurringTransaction, start: Date, end: Date): Omit<CashFlowEvent, "balance">[] {
   const amount = safeAmount(Number(item.amount));
-  if (amount <= 0) return [];
+  if (amount <= 0 || !["weekly", "monthly"].includes(item.frequency)) return [];
   let due = parseDate(item.next_due_date);
   if (!due) return [];
   const anchorDay = due.getDate();
 
-  while (due < start) due = nextOccurrence(due, item.frequency, anchorDay);
+  const paidThrough = item.last_paid_date ? parseDate(item.last_paid_date) : null;
+  while (due < start || (paidThrough && due <= paidThrough)) due = nextOccurrence(due, item.frequency, anchorDay);
   const events: Omit<CashFlowEvent, "balance">[] = [];
   let sequence = 0;
   while (due <= end) {

@@ -1,12 +1,14 @@
 import { PageSkeleton } from "../components/PageSkeleton";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CalendarClock, CalendarDays, FileText, Plus, Search, Tag, Wallet } from "lucide-react";
+import { CalendarClock, CalendarDays, Download, FileText, Plus, Search, Tag, Wallet } from "lucide-react";
 import { getAccounts } from "../api/accounts";
 import { getTransactions, getTransactionMatches, confirmTransactionMatch, type TransactionMatch, TRANSACTIONS_UPDATED_EVENT, updateTransaction } from "../api/transactions";
 import type { Account, Transaction, TransactionType } from "../api/types";
 import { TopBar } from "../components/TopBar";
 import { Button, CategorySelect, DatePicker, GlassCard, GlassSelect, Modal, TextField } from "../components/ui";
 import { getDefaultCategory } from "../domain/transactionCategories";
+import { createTransactionCsv, transactionExportFilename } from "../domain/transactionExport";
+import { downloadCsv } from "../services/csvDownload";
 import { formatCurrency, formatDate } from "../utils/format";
 
 type SourceFilter = "all" | "receipt" | "csv" | "pdf" | "plaid" | "manual";
@@ -48,6 +50,7 @@ export function TransactionsPage({ onAddTransaction, onManageBills }: Transactio
   const [draft, setDraft] = useState<EditDraft | null>(null);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [matches, setMatches] = useState<TransactionMatch[]>([]);
 
   useEffect(() => {
@@ -155,6 +158,19 @@ export function TransactionsPage({ onAddTransaction, onManageBills }: Transactio
     }
   }
 
+  async function exportTransactions() {
+    if (!filteredTransactions.length || exporting) return;
+    setExporting(true);
+    try {
+      const result = await downloadCsv(createTransactionCsv(filteredTransactions, accounts), transactionExportFilename(monthFilter));
+      setStatus(result === "canceled" ? "Export canceled." : `${result === "saved" ? "Saved" : "CSV download started for"} ${filteredTransactions.length} transaction${filteredTransactions.length === 1 ? "" : "s"}.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "The CSV could not be exported. Please retry.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (initialLoading) return <PageSkeleton page="transactions" />;
 
   return (
@@ -215,6 +231,9 @@ export function TransactionsPage({ onAddTransaction, onManageBills }: Transactio
         </Button>
         <Button onClick={onManageBills}>
           <CalendarClock aria-hidden="true" size={17} /> <span>Recurring Transactions</span>
+        </Button>
+        <Button disabled={exporting || !filteredTransactions.length} onClick={exportTransactions} variant="secondary">
+          <Download aria-hidden="true" size={17} /> <span>{exporting ? "Exporting…" : `Export visible transactions (${filteredTransactions.length})`}</span>
         </Button>
       </div>
 

@@ -32,6 +32,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [error, setError] = useState("");
+  const [failedSections, setFailedSections] = useState<string[]>([]);
   const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [transactionsLoaded, setTransactionsLoaded] = useState(false);
   const [loadedSections, setLoadedSections] = useState<Record<string, boolean>>({});
@@ -55,7 +56,10 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
         load("recurring bills", getRecurringTransactions, setRecurring),
         load("savings goals", getSavingsGoals, setGoals),
       ]);
-      if (active) setError(failed.length ? `Could not refresh ${failed.join(", ")}. Try refreshing the page.` : "");
+      if (active) {
+        setFailedSections(failed);
+        setError(failed.length ? `Could not refresh ${failed.join(", ")}. Try refreshing the page.` : "");
+      }
     }
     const queue = createRefreshQueue(loadDashboard);
     queue.request();
@@ -86,7 +90,9 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
   const upcomingBills = getUpcomingBills(recurring).slice(0, 4);
   const today = new Date();
   const activeBudgets = getEffectiveBudgets(budgets, today.getMonth() + 1, today.getFullYear());
-  const forecast = useMemo(() => forecastCashFlow(totals.balance, recurring, today), [recurring, totals.balance]);
+  const forecast = forecastCashFlow(totals.balance, recurring, today);
+  const forecastUnavailable = failedSections.some((section) => section === "accounts" || section === "recurring bills");
+  const forecastReady = accountsLoaded && loadedSections["recurring bills"] && !forecastUnavailable;
   const forecastPoints = useMemo(() => chartPoints(totals.balance, forecast.events.map((event) => event.balance)), [forecast.events, totals.balance]);
 
   if (!accountsLoaded && !transactionsLoaded && !error) return <section className="page" aria-busy="true">
@@ -113,7 +119,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
             <span className="forecast-eyebrow"><CalendarRange aria-hidden="true" size={17} /> Next 30 days</span>
             <h2>Cash-Flow Outlook</h2>
           </div>
-          {loadedSections["recurring bills"] && forecast.status !== "no-schedule" && (
+          {forecastReady && forecast.status !== "no-schedule" && (
             <span className={`forecast-status ${forecast.status}`}>
               {forecast.status === "at-risk" ? <AlertTriangle aria-hidden="true" size={16} /> : <TrendingUp aria-hidden="true" size={16} />}
               {forecast.status === "at-risk" ? "Shortfall risk" : "On track"}
@@ -121,7 +127,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
           )}
         </div>
 
-        {!loadedSections["recurring bills"] ? (error ? <p className="empty-state">Forecast unavailable.</p> : <Skeleton className="sk-progress" />) : forecast.status === "no-schedule" ? (
+        {!forecastReady ? (forecastUnavailable ? <p className="empty-state">Forecast unavailable. Refresh to retry loading balances and recurring activity.</p> : <Skeleton className="sk-progress" />) : forecast.status === "no-schedule" ? (
           <div className="forecast-empty">
             <p>Add recurring income and bills to see where your balance is heading.</p>
             <Button variant="secondary" onClick={() => onNavigate("recurring")}>Set up recurring activity</Button>
@@ -139,6 +145,7 @@ export function DashboardPage({ onNavigate, userName }: DashboardPageProps) {
                 <polyline points={forecastPoints} className="forecast-line" />
               </svg>
             </div>
+            <p className="subtle">Based on your current balance and saved recurring activity. Unscheduled spending is not included.</p>
             <div className="forecast-events">
               {forecast.events.slice(0, 3).map((event) => (
                 <div key={event.id}>

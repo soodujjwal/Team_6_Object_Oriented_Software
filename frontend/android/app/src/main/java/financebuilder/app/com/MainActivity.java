@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SecureSessionPlugin.class);
         registerPlugin(PlaidLinkPlugin.class);
+        registerPlugin(CsvExportPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

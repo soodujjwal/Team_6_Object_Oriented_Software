@@ -1,18 +1,8 @@
-.dl-page {
-  --color-text: #edf9f1; --color-text-secondary: #b4c8bb; --color-text-muted: #8fae9b;
-  --color-bg: #0d291d; --color-primary: #bff1d2; --color-primary-soft: #bff1d2;
-  --color-primary-tint: #bff1d210; --color-success-border: #bff1d22c;
-  --color-border-muted: #bff1d224; --color-surface-subtle: #153b2a;
-  --color-button-primary: #c4f5d6; --color-on-primary: #123222;
-  --color-focus-ring: #c4f5d6; --color-secondary-strong: #245c3e;
-  min-height: 100dvh; background: radial-gradient(ellipse at 85% 15%, #26694348, transparent 35%), radial-gradient(ellipse at 0 55%, #1e634134, transparent 40%), #0d291d;
-}
 .page-loading-download.page { padding: 0; display: block; min-height: 100dvh; }
 .dl-sk-title { width: 95%; height: 160px; margin-block: 28px; }
 .dl-sk-button { width: 215px; max-width: 100%; height: 56px; margin-bottom: 13px; }
 .dl-sk-phone { width: min(100%, 310px); height: 620px; border-radius: 42px; }
 .dl-sk-qr { width: 100%; aspect-ratio: 1; border-radius: 19px; }
-.dl-page .lp-header { background: #0d291dec; }
 .dl-page .lp-container { width: 92%; max-width: 1560px; }
 .dl-hero { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 3fr); gap: clamp(20px, 2.2vw, 36px); align-items: center; padding-block: 58px 68px; }
 .dl-hero > * { min-width: 0; }

@@ -1,7 +1,31 @@
 .lp {
+  /* Public pages keep the same green palette regardless of the app or system theme. */
+  color-scheme: dark;
+  --color-text: #eaf7f0;
+  --color-text-secondary: #a7c7b7;
+  --color-text-muted: #7fa493;
+  --color-bg: #0b1a14;
+  --color-primary: #2ecc71;
+  --color-primary-soft: #7ed8a6;
+  --color-primary-tint: rgba(46, 204, 113, 0.12);
+  --color-success-border: rgba(126, 216, 166, 0.42);
+  --color-border-muted: rgba(40, 66, 56, 0.72);
+  --color-surface-subtle: rgba(255, 255, 255, 0.05);
+  --color-surface-strong: #13261e;
+  --color-secondary: #13261e;
+  --color-secondary-strong: #1a3326;
+  --color-button-primary: #2ecc71;
+  --color-on-primary: #0b1a14;
+  --color-focus-ring: rgba(46, 204, 113, 0.42);
+  --color-positive: #7ed8a6;
+  --color-expense: #ff6b6b;
+  --color-report-track: #284238;
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.22);
+  --shadow-elevated: 0 22px 60px rgba(0, 0, 0, 0.38);
   --lp-forest: #17452f;
   --lp-muted: var(--color-text-secondary);
   --lp-rule: var(--color-border-muted);
+  min-height: 100dvh;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
@@ -13,7 +37,7 @@
 .lp-container { width: 92%; margin-inline: auto; }
 .lp-skip { position: fixed; left: 20px; top: -80px; z-index: 1000; padding: 12px 18px; background: var(--color-surface-strong); }
 .lp-skip:focus { top: 15px; }
-.lp-header { position: sticky; top: 0; z-index: 80; border-bottom: 1px solid var(--lp-rule); background: color-mix(in srgb, var(--color-bg) 90%, transparent); backdrop-filter: blur(22px); }
+.lp-header { position: sticky; top: 0; z-index: 80; border-bottom: 1px solid var(--lp-rule); background: #0b1a14ec; backdrop-filter: blur(22px); }
 .lp-nav { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .lp-brand { display: inline-flex; gap: 11px; align-items: center; font-size: 23px; font-weight: 760; letter-spacing: -1.15px; white-space: nowrap; }
 .lp-brand-mark { display: grid; place-items: center; width: 39px; height: 39px; border-radius: 13px; background: var(--color-primary-tint); color: var(--color-primary); border: 1px solid var(--color-success-border); }

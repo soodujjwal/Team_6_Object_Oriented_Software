@@ -76,50 +76,20 @@ async function select(label, value) {
   await click([...document.querySelectorAll('[role="option"]')].find(node => node.textContent === value));
 }
 
-test("dashboard forecasts real balances and refreshes after recurring activity changes", async () => {
+test("dashboard keeps its balances and recurring bills without Cash-Flow Outlook", async () => {
   setup(); try {
     await show(DashboardPage);
-    assert.match(document.querySelector(".forecast-summary-grid").textContent, /\$800\.00/);
-    assert.match(document.querySelector(".forecast-events").textContent, /Rent/);
-    recurring = [{ ...recurring[0], amount: "1200" }];
+    assert.equal(document.querySelector(".cash-flow-forecast"), null);
+    assert.doesNotMatch(document.body.textContent, /Cash-Flow Outlook|Projected balance|Expected bills/);
+    assert.match(document.querySelector(".balance-panel").textContent, /\$1,000\.00/);
+    for (const heading of ["Recent Transactions", "Budgets", "Savings Goals", "Upcoming Bills"])
+      assert.ok([...document.querySelectorAll("h2")].some(node => node.textContent === heading));
+    const bills = [...document.querySelectorAll(".section-stack")].find(node => node.querySelector("h2")?.textContent === "Upcoming Bills");
+    assert.match(bills.textContent, /Rent/);
+    recurring = [{ ...recurring[0], amount: "250" }];
     await act(async () => window.dispatchEvent(new Event("RECURRING_TRANSACTIONS_UPDATED_EVENT"))); await settle();
-    assert.match(document.querySelector(".forecast-status").textContent, /Shortfall risk/);
-    assert.match(document.querySelector(".forecast-summary-grid").textContent, /-\$200\.00/);
-  } finally { await cleanup(); }
-});
-
-test("forecast waits for account balances instead of projecting from a false zero", async () => {
-  setup(); let resolve;
-  pendingAccounts = new Promise(done => resolve = done);
-  try {
-    await show(DashboardPage);
-    assert.equal(document.querySelector(".forecast-summary-grid"), null);
-    assert.equal(document.querySelector(".forecast-status"), null);
-    await act(async () => resolve(accounts));
-    assert.match(document.querySelector(".forecast-summary-grid").textContent, /\$800\.00/);
-  } finally { await cleanup(); }
-});
-
-test("failed balances or schedules hide projections and recover on refresh", async () => {
-  for (const fail of ["accounts", "schedule"]) {
-    setup(); if (fail === "accounts") accountFailure = true; else scheduleFailure = true;
-    try {
-      await show(DashboardPage);
-      assert.match(document.querySelector(".cash-flow-forecast").textContent, /Forecast unavailable/);
-      assert.equal(document.querySelector(".forecast-summary-grid"), null);
-      accountFailure = scheduleFailure = false;
-      await act(async () => window.dispatchEvent(new Event("focus"))); await settle();
-      assert.ok(document.querySelector(".forecast-summary-grid"));
-    } finally { await cleanup(); }
-  }
-});
-
-test("unrelated failures preserve the forecast and empty schedules offer working navigation", async () => {
-  setup(); budgetFailure = true; recurring = [];
-  try {
-    await show(DashboardPage);
-    assert.match(document.body.textContent, /Add recurring income and bills/);
-    await click(button("Set up recurring activity")); assert.equal(destination, "recurring");
+    assert.match(bills.textContent, /\$250\.00/);
+    await click(bills.querySelector("button")); assert.equal(destination, "recurring");
   } finally { await cleanup(); }
 });
 
